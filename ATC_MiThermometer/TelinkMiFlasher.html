@@ -983,7 +983,7 @@ function CustomConfig() {
 	is += '<button type="button" onclick="SendCustomConfig()">Send Config</button>';
 	is += ' <button type="button" onclick="sendCustomSetting(&quot;56&quot;);">Set default</button>'; 
 	is += ' <button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>'; 
-	if(cfg.ver >= 0x11) {
+	if(cfg.ver >= 0x12) {
 		is += '<br><input size="6" maxlength="6" type="text" title="000000..999999, 6 digits, 000000 - PinCode Disable" id="pincode" value="000000"> <button type="button" onclick="sendPinCode();">Set PinCode</button><br>'; 
 		pincode.enable = true;
 	}
