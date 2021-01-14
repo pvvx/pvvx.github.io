@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head><meta charset="utf-8">
+  <title>E-ink Xiaomi Mijia MHO-C401</title>
+  </head>
+  <body>
+	<div style="height: auto; width: auto;">
+	<h2>Power Consumption Xiaomi Mijia BLE MHO-C401 (E-ink)</h2><hr>
+	Потребление по старту питания:<br>
+	<img src="img/PowerOnOriginal.gif" style="max-width:100%;"><br>
+	Далее идет реклама с интервалом примерно 1675 ms. Каждый 4-й интервал производится снятие показаний с датчика SHTV3:<br>
+	<img src="img/PowerWrokOriginal.gif" style="max-width:100%;"><br>
+	и это чередуется с обновлениями экрана при изменении значений с датчика:<br>
+	<img src="img/PowerEInkUpdateOriginal.gif" style="max-width:100%;"><br>
+	Если не активировать устройство в MiHome, то получаем примерно такую картину потребления - средний ток около 50 uA и зависит от частоты смены изображения по изменению значений с датчика:<br>
+	<img src="img/PowerAverageOriginal.gif" style="max-width:100%;"><br>
+
+	Но, <b>если активировать устройство в MiHome</b>, тогда по питанию творится что-то невообразимое. Жрет как лошадь. ПО от Xiaomi пытается убить батарейку CR2032 за две недели!<br>
+	Потребление при соединения когда включаем просмотр значений в телефоне (среднее 0.7 мА, время соединения для запроса значений 8.2 сек):<br>
+	<img src="img/PowerConnectionOriginal.gif" style="max-width:100%;"><br>
+	
+	В дальнейшем происходят такие варианты:<br>
+	1. Меняются интервалы на 500 ms и потребление уходит за 76 uA:<br>
+	<img src="img/PowerAverage2Original.gif" style="max-width:100%;"><br>	
+
+	2. Меняются интервалы на 114 ms и потребление уходит за 0.21 mA:<br>
+	<img src="img/PowerAverage3Original.gif" style="max-width:100%;"><br>
+
+	И так всё чередуется от пожеланий разработчиков в Xiaomi.<br>
+
+	Замеры произведены при использовании шлюза Xiaomi Gateway 3.<br>
+
+	<hr><br>PS: Не зря в комплекте 2 батарейки...<br>
+	</div>
+  </body>
+</html>
