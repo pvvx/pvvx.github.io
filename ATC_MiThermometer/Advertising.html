@@ -1,10 +1,15 @@
 <!DOCTYPE html>
 <html>
-  <head><meta charset="utf-8">
-  <title>ATC Temperature and Humidity</title>
+  <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Advertising</title>
   </head>
   <body>
 	<div style="height: auto; width: auto; text-align: center;">
+	Web Experimental Features!<br>
+ 	#enable-experimental-web-platform-features may be needed to read MAC (copy link:
+  	<a href=chrome://flags/#enable-experimental-web-platform-features>Chrome<a>,
+ 	<a href=opera://flags/#enable-experimental-web-platform-features>Opera<a>,
+  	<a href=edge://flags/#enable-experimental-web-platform-features>Edge<a>)<br>
 	<input type="button" id="butConnect" onclick="onButtonClick();" value="Select an advertising device">
 	</div><hr>
 	<div id="log"></div>
@@ -16,84 +21,19 @@ function log(data) {
     var logString = time + ": " + data;
     document.getElementById("log").innerHTML += logString + "<br>";
 }
-
 function onButtonClick() {
+  var deviceOptions = { optionalServices: [0xfe95, 0x181a] };
+  deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz_#@!*';,.<>{}[]"
+	.split("").map((x) => ({namePrefix:x}));
   log('Requesting Bluetooth Scan...');
-  navigator.bluetooth.requestDevice({
-  filters: [
-    { name: '' },
-    { namePrefix: '0' },
-    { namePrefix: '1' },
-    { namePrefix: '2' },
-    { namePrefix: '3' },
-    { namePrefix: '4' },
-    { namePrefix: '5' },
-    { namePrefix: '6' },
-    { namePrefix: '7' },
-    { namePrefix: '8' },
-    { namePrefix: '9' },
-    { namePrefix: 'a' },
-    { namePrefix: 'b' },
-    { namePrefix: 'c' },
-    { namePrefix: 'd' },
-    { namePrefix: 'e' },
-    { namePrefix: 'f' },
-    { namePrefix: 'g' },
-    { namePrefix: 'h' },
-    { namePrefix: 'i' },
-    { namePrefix: 'j' },
-    { namePrefix: 'k' },
-    { namePrefix: 'l' },
-    { namePrefix: 'm' },
-    { namePrefix: 'n' },
-    { namePrefix: 'o' },
-    { namePrefix: 'p' },
-    { namePrefix: 'q' },
-    { namePrefix: 'r' },
-    { namePrefix: 's' },
-    { namePrefix: 't' },
-    { namePrefix: 'u' },
-    { namePrefix: 'v' },
-    { namePrefix: 'w' },
-    { namePrefix: 'x' },
-    { namePrefix: 'y' },
-    { namePrefix: 'z' },
-    { namePrefix: 'A' },
-    { namePrefix: 'B' },
-    { namePrefix: 'C' },
-    { namePrefix: 'D' },
-    { namePrefix: 'E' },
-    { namePrefix: 'F' },
-    { namePrefix: 'G' },
-    { namePrefix: 'H' },
-    { namePrefix: 'I' },
-    { namePrefix: 'J' },
-    { namePrefix: 'K' },
-    { namePrefix: 'L' },
-    { namePrefix: 'M' },
-    { namePrefix: 'N' },
-    { namePrefix: 'O' },
-    { namePrefix: 'P' },
-    { namePrefix: 'Q' },
-    { namePrefix: 'R' },
-    { namePrefix: 'S' },
-    { namePrefix: 'T' },
-    { namePrefix: 'U' },
-    { namePrefix: 'V' },
-    { namePrefix: 'W' },
-    { namePrefix: 'X' },
-    { namePrefix: 'Y' },
-    { namePrefix: 'Z' }
-  ], optionalServices: [0xfe95, 0x181a]
-	}).then(device => {
+  navigator.bluetooth.requestDevice(deviceOptions).then(device => {
     log('> Requested ' + device.name);
     device.addEventListener('advertisementreceived', (event) => {
-      log('Device Name: ' + event.device.name + ', RSSI: ' + event.rssi);
+      //log('Device Name: ' + event.device.name + ', RSSI: ' + event.rssi);
       event.serviceData.forEach((valueDataView, key) => {
         logDataView('ServiceData', key, valueDataView);
       });
     });
-
     log('Watching advertisements from "' + device.name + '"...');
     return device.watchAdvertisements();  
   })
@@ -101,13 +41,70 @@ function onButtonClick() {
     log('Argh! ' + error);
   });
 }
-
 /* Utils */
-
-const logDataView = (labelOfDataSource, key, valueDataView) => {
-  let s = '', h = '0123456789ABCDEF';
-  (new Uint8Array(valueDataView.buffer)).forEach((v) => { s += h[v >> 4] + h[v & 15]; });
-  log(` ${labelOfDataSource} Data: ` + key + ', ' + s);
+function hex(number, len) {
+	var str = (number.toString(16)).toUpperCase();
+	while (str.length < len) str = '0' + str;
+	return str;
+}
+const logDataView = (labelOfDataSource, key, b) => {
+	let s = '', h = '0123456789ABCDEF';
+	let buf = new Uint8Array(b.buffer);
+	buf.forEach((v) => { s += h[v >> 4] + h[v & 15]; });
+	log(` ${labelOfDataSource} Data: ` + key + ', ' + s);
+	if(key == '0000fe95-0000-1000-8000-00805f9b34fb') { // mi
+		if(b.byteLength == 18) { // custom mi
+			let ctrl = b.getUint16(0, true);
+			let dev_id = b.getUint16(2, true);
+			if(ctrl == 0x3050 && dev_id == 0x055B) {
+				let cnt = b.getUint8(4);
+				let s = 'MAC: '+hex(buf[10],2)+hex(buf[9],2)+hex(buf[8],2)+hex(buf[7],2)+hex(buf[6],2)+hex(buf[5],2);
+				s +=', Count: '+cnt;
+				let data_id =  b.getUint8(11);
+				if(b.getUint8(12) == 0x10) { 
+					if(data_id == 0x0a && b.getUint8(13) == 0x01) {
+					    //  0 1  2 3  4  5 6 7 8 910 1112 13 14 15 1617
+						// 5030 5B05 9A 1C250F38C1A4 0A10 01 64 02 EF0C
+						let bat = b.getUint8(14);
+						s += ', Bat: '+ bat + '%';
+						if(b.getUint8(15) == 0x02) {
+							let Vbat = b.getUint16(16, true);
+							s += ', Vbat: '+ Vbat + ' mV';
+						}
+					} else if(data_id == 0x0d && b.getUint8(13) == 0x04) {
+					    //  0 1  2 3  4  5 6 7 8 910 1112 13 1415 1617
+						// 5030 5B05 3D 1C250F38C1A4 0D10 04 0201 1401 
+						let temp = b.getInt16(14, true) / 10.0;
+						let humi = b.getInt16(16, true) / 10.0;
+						s += ', Temp: '+temp+'°C, Humi: '+humi+'%';
+					}
+				}
+				log(s);
+			}
+		}
+	} else if(key == '0000181a-0000-1000-8000-00805f9b34fb') {
+		if(b.byteLength >= 15) { // pvvx
+			// 70 58 56 38 C1 A4 69 0A 60 09 25 0B 48 70 04
+			let temp = b.getInt16(6, true) / 100.0;
+			let humi = b.getInt16(8, true) / 100.0;
+			let vbat = b.getUint16(10, true);
+			let bat = b.getUint8(12);
+			let cnt = b.getUint8(13);
+			let flg = b.getUint8(14);
+			let s = 'MAC: '+hex(buf[5],2)+hex(buf[4],2)+hex(buf[3],2)+hex(buf[2],2)+hex(buf[1],2)+hex(buf[0],2);
+			s += ', Bat: '+bat+'%, Vbat: '+vbat+' mV , Temp: '+temp+'°C, Humi: '+humi+'%, Count: '+cnt+', Flg: '+flg;
+			log(s); }
+		else if(b.byteLength == 13) { // atc1441
+			// A4 C1 38 56 58 70 01 0A 18 48 0B 25 70
+			let temp = b.getInt16(6, false) / 10.0;
+			let humi = b.getUint8(8);
+			let bat = b.getUint8(9);
+			let vbat = b.getUint16(10, false);
+			let cnt = b.getUint8(12);
+			let s = 'MAC: '+hex(buf[0],2)+hex(buf[1],2)+hex(buf[2],2)+hex(buf[3],2)+hex(buf[4],2)+hex(buf[5],2);
+			s += ', Bat: '+bat+'%, Vbat: '+vbat+' mV, Temp: '+temp+'°C, Humi: '+humi+'%, Count: '+cnt;
+			log(s); }
+	}
 };
 </script>
 </html>
