@@ -126,12 +126,12 @@ function catchAdvertisement(device) {
     const buffer = new Uint8Array(valueDataView.buffer);
    	console.log(buffer, device, event);
     if(key == '0000fe95-0000-1000-8000-00805f9b34fb') { // mi
-	    let s = 'MI MAC: '+hex(buffer[10],2)+hex(buffer[9],2)+hex(buffer[8],2)+hex(buffer[7],2)+hex(buffer[6],2)+hex(buffer[5],2);
+	    let s = 'MAC: '+hex(buffer[10],2)+hex(buffer[9],2)+hex(buffer[8],2)+hex(buffer[7],2)+hex(buffer[6],2)+hex(buffer[5],2);
 	    console.log(s);
     	document.getElementById("MAC").innerHTML = s+'<hr>';
 	} else if(key == '0000181a-0000-1000-8000-00805f9b34fb') {
 		if(device.name.startsWith('ATC')) {
-	   	  let s = 'ATC MAC: ';
+	   	  let s = 'MAC: ';
 		  if(buffer.byteLength > 13) {	// custom
 	    	  s += hex(buffer[5],2)+hex(buffer[4],2)+hex(buffer[3],2)+hex(buffer[2],2)+hex(buffer[1],2)+hex(buffer[0],2);
 		  } else { // atc1441
@@ -1063,7 +1063,8 @@ function sendTrg() {
 function CustomConfig() {
   if(cfg.ver >= 0x10) {
 	let is = 'Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting(document.getElementById(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button>';
-	is += ' Test: [ <button type="button" onclick="lcd_clock();">Show clock on LCD</button> <button type="button" onclick="lcd_restore();">Repair LCD</button> ]';
+	if(cfg.hver == 0)
+		is += ' Test: [ <button type="button" onclick="lcd_clock();">Show clock on LCD</button> <button type="button" onclick="lcd_restore();">Repair LCD</button> ]';
 	is += '<br><br><input size="5" title="Big number: -99.5..1999.5" id="extbignumb" maxlength="5" value="123.4">';
 	is += ' <select id="exttmpsmb"><option value="0">&nbsp;&nbsp;</option><option value="1">°Г</option><option value="2">&nbsp;-</option><option value="3">°F</option><option value="4">&nbsp;_</option><option value="5">°C</option><option value="6" selected>&nbsp;=</option><option value="7">°E</option></select>';
 	is += ' <select id="extsmiley"><option value="0">&nbsp;&nbsp;&nbsp;</option><option value="1">&nbsp;^_^&nbsp;</option><option value="2">&nbsp;-&and;-&nbsp;</option><option value="3">&nbsp;&Delta;&#9651;&Delta;&nbsp;</option><option value="4">(&nbsp;&nbsp;&nbsp;)</option><option value="5">(^_^)</option><option value="6">(-&and;-)</option><option value="7" selected>(&Delta;&#9651;&Delta;)</option></select>';
@@ -1095,10 +1096,10 @@ function CustomConfig() {
 	is += ' <button type="button" onclick="sendCustomSetting(&quot;56&quot;);">Set default</button>'; 
 	is += ' <button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>'; 
 	if(cfg.ver >= 0x11) {
-		is += '<br><input size="6" maxlength="6" type="text" title="000000..999999, 6 decimal digits, 000000 - PinCode Disable. Warning: If the PinCode is forgotten - only a hardware flasher!" id="pincode" value="000000"> <button type="button" onclick="sendPinCode();">!Set PinCode!</button><br>'; 
+		is += '<br><input size="6" maxlength="6" type="text" title="000000..999999, 6 decimal digits, 000000 - PinCode Disable. Warning: If the PinCode is forgotten - only a hardware flasher!" id="pincode" value="000000"> <button title="Warning: If the PinCode is forgotten - only a hardware flasher!" type="button" onclick="sendPinCode();">!Set PinCode!</button><br>'; 
 		pincode.enable = true;
 		if(cfg.ver >= 0x14) {
-			is += '<br><button type="button" onclick="sendCustomSetting(&quot;01&quot;);">Get device Name</button> <input size="10" maxlength="10" type="text" title="Device Name" id="dev_name" value=""> <button type="button" onclick="sendDevName();">Set New Name</button> <button type="button" onclick="CleanDevName();">Set default Name</button><br>'; 
+			is += '<br><button type="button" onclick="sendCustomSetting(&quot;01&quot;);">Get device Name</button> <input size="10" maxlength="10" type="text" title="Device Name: 1..10 chars" id="dev_name" value=""> <button type="button" title="Set New Name" onclick="sendDevName();">Set New Name</button> <button title="Clean Name: ATC_xxxx" type="button" onclick="CleanDevName();">Set default Name</button><br>'; 
 			dnm.enable = true;
 		}
 	}
