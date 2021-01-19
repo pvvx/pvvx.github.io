@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v1.2</title>
+<title>Telink Flasher v1.3</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -20,9 +20,10 @@ var state = 0,
 var customEnabled;
 var settingsCharacteristics = null;
 // Custom config
-var cfg = {ver: 0, hver: 0, flg: 0, smiley: 0, temp_offset: 0, humi_offset: 0, advertising_interval: 32, measure_interval: 5, rf_tx_power: 191, connect_latency: 99, lcd_tint: 55};
+var cfg = {enable: false, ver: 0, hver: 0, flg: 0, smiley: 0, temp_offset: 0, humi_offset: 0, advertising_interval: 32, measure_interval: 5, rf_tx_power: 191, connect_latency: 99, lcd_tint: 55};
 var trg = {enable: false, tmp_thr: 2100, hm_thr: 5000, tmp_hst: -1, hm_hst: 0, flg: 0}; 
 var cmf = {enable: false, tmp_lo: 2100, tmp_hi: 2600, hm_lo: 3000, hm_hi: 6000}; 
+var dnm = {enable: false, name: ""}; 
 var pincode = {enable: false, value: 0}; 
 //Mi values
 var miEnabled = false,
@@ -47,8 +48,10 @@ function resetVariables() {
 	mikeys.delkeys = null;
 	ext.enable = false;
 	pincode.enable = false;
+	cfg.enable = false;
 	trg.enable = false;
 	cmf.enable = false;
+	dnm.enable = false;
 	cnt_buf11 = 0;
     writeCharacteristic = null;
     settingsCharacteristics = null;
@@ -72,6 +75,10 @@ function handleError(error) {
 
 function onDisconnected() {
     addLog('Disconnected.');
+	resetVariables();
+	document.getElementById("custcfg").innerHTML = '';
+	document.getElementById("tempHumiData").innerHTML = "Temp/Humi: waiting for data after connecting";
+	document.getElementById("percent").innerHTML = "Status: Disconnected";
 }
 
 function connect() {
@@ -194,9 +201,11 @@ function dump(ar, len) {
 }
 var atc_mac, atc_rmac;
 function CustomBlkParse(value) {
-	let blkid = value.getUint8(0);
 	let len = value.byteLength;
-	if(blkid == 0x55 && len >= 10) {
+	if(len == 0) return;
+	len--;
+	let blkid = value.getUint8(0);
+	if(blkid == 0x55 && len >= 9) {
 		cfg.ver = value.getUint8(1);
 		cfg.flg = value.getUint8(2);
 		cfg.smiley = value.getUint8(3);
@@ -206,9 +215,9 @@ function CustomBlkParse(value) {
 		cfg.measure_interval = value.getUint8(7);
 		cfg.rf_tx_power = value.getUint8(8);
 		cfg.connect_latency = value.getUint8(9);
-		if(len >= 11) cfg.lcd_tint = value.getUint8(10);
+		if(len >= 10) cfg.lcd_tint = value.getUint8(10);
 		else cfg.lcd_tint = 55;
-		if(len >= 12) cfg.hver = value.getUint8(11); else cfg.hver = 0;
+		if(len >= 11) cfg.hver = value.getUint8(11); else cfg.hver = 0;
 		let s = 'Hardware Version: ';
 		if((cfg.hver & 3) == 0) s +='LYWSD03MMC.';
 		else if((cfg.hver & 3) == 1) s +='MHO-C401.';
@@ -217,7 +226,7 @@ function CustomBlkParse(value) {
 		addClog(s);	addLog(s);
 		if(cfg.ver >= 5) CustomConfig();
 		else addLog('Old version - out of service!')
-	} else if(blkid == 0x33 && len >= 9) {
+	} else if(blkid == 0x33 && len >= 8) {
 		let vbat = value.getUint16(1, true);
 		let temp = value.getInt16(3, true) / 100.0;
 		let humi = value.getInt16(5, true) / 100.0;
@@ -233,7 +242,7 @@ function CustomBlkParse(value) {
 		ext.flg = value.getInt8(7); 
 		let s = 'ExtShow: big_number: '+ext.big_number+', small_number: '+ext.small_number+', ext.vtime: '+ext.vtime+' s, flg: '+hex(ext.flg,2);
 	    addClog(s); addLog(s); UpdExt();
-	} else if(blkid == 0x44 && len >= 8) {
+	} else if(blkid == 0x44 && len >= 7) {
 		trg.tmp_thr = value.getInt16(1, true); // temp threshold
 		trg.hm_thr = value.getInt16(3, true); // humi threshold
 		trg.tmp_hst = value.getInt8(5);        // temp hysteresis
@@ -241,10 +250,10 @@ function CustomBlkParse(value) {
 		trg.flg = value.getInt8(7);
 		let s = 'Threshold Temp/Humi: '+(trg.tmp_thr/100.0)+'°C/'+(trg.hm_thr/100.0)+'%, Hysteresis T/H: '+(trg.tmp_hst/10.0)+'°/'+(trg.hm_hst/10.0)+'%, flg: 0x'+hex(trg.flg,2);
 	    addClog(s); addLog(s); UpdTrg();
-	} else if(blkid >= 0x10 && blkid <= 0x14 && len > 1) {
+	} else if(blkid >= 0x10 && blkid <= 0x14 && len >= 1) {
 		let lb = value.getUint8(1);
 		if(lb != 0) {
-			len -= 2;
+			len -= 1;
 			if(cnt_buf11 == 0){
 				// addClog('New miKey length: '+lb);
 				buf11 = new Uint8Array(lb);
@@ -284,7 +293,7 @@ function CustomBlkParse(value) {
 					} else if(cnt_buf11 == 8) {
 						// * public_mac: 		[0][1][2][3][4][5], const: [3]=38;[4]=C1;[5]=A4
 						// * random_static_mac: [0][1][2][6][7]C0
- 						s += 'miMAC: '+hex(buf11[5],2)+hex(buf11[4],2)+hex(buf11[3],2)+hex(buf11[2],2)+hex(buf11[1],2)+hex(buf11[0],2)+', miRandMAC: '+'C0'+hex(buf11[7],2)+hex(buf11[6],2)+hex(buf11[2],2)+hex(buf11[1],2)+hex(buf11[0],2);
+ 						s += 'MAC: '+hex(buf11[5],2)+hex(buf11[4],2)+hex(buf11[3],2)+hex(buf11[2],2)+hex(buf11[1],2)+hex(buf11[0],2)+', RandMAC: '+'C0'+hex(buf11[7],2)+hex(buf11[6],2)+hex(buf11[2],2)+hex(buf11[1],2)+hex(buf11[0],2);
 						if(blkid == 0x10) {
 							cnt_delkeys = 0;
 							mikeys.mac = buf11;
@@ -314,7 +323,7 @@ function CustomBlkParse(value) {
 			else addClog("End keys");
 			cnt_buf11 = 0;
 		}
-	} else if(blkid == 0x60 && len >= 7) {
+	} else if(blkid == 0x60 && len >= 6) {
 		let s = 'LCD data: '+bytesToHex(value.buffer.slice(1));
 		addClog(s);
 	} else if(blkid == 0x61 && len >= 1) {
@@ -326,7 +335,12 @@ function CustomBlkParse(value) {
 		cmf.hm_lo = value.getUint16(5, true); // humi lo
 		cmf.hm_hi = value.getUint16(7, true); // humi lo
 		let s = 'Comfort Temp: '+(cmf.tmp_lo/100.0)+'..'+(cmf.tmp_hi/100.0)+'°C, Humi: '+(cmf.hm_lo/100.0)+'..'+(cmf.hm_hi/100.0)+'%';
-	    addClog(s); addLog(s); UpdCmf();
+		addClog(s); addLog(s); UpdCmf();
+	} else if(blkid == 0x01 && len >= 1) {
+		dnm.name = new TextDecoder("utf-8").decode(value.buffer.slice(1)); 
+		if(document.getElementById("dev_name"))
+			document.getElementById("dev_name").value = dnm.name;
+		addClog("DevName: ["+dnm.name+"]"); addLog("DevName: ["+dnm.name+"]");
 	} else {
 		let s = 'Custom (0x1f1f) Notifications id: 0x'+hex(blkid,2)+' ['+bytesToHex(value.buffer.slice(1))+']';
 		addClog(s);
@@ -923,11 +937,72 @@ function sendPinCode() {
 			settingsCharacteristics.writeValue(new Uint8Array([0x70, x&0xff, (x>>8)&0xff, (x>>16)&0xff, (x>>24)&0xff])).then(_ => {addClog('Send pincode ok'); addLog('Send pincode ok');});
 		} else  {
 			el.value = s;	
-			addLog("Must be 6 digits! 000000..999999, 6 digits, if '000000' - PinCode Disable.") 
+			addLog("Must be 6 decimal digits! 000000..999999, 6 digits, if '000000' - PinCode Disable.") 
 		}
 	}
 }
-
+function CleanDevName() {
+	addClog("Send cmd (0100) Clean DevName...");
+	settingsCharacteristics.writeValue(new Uint8Array([0x01, 0])).then(_ => {
+			addClog('Send Clean DevName ok');
+	});
+}	
+function sendDevName() {
+	if(dnm.enable) {
+		let el = document.getElementById("dev_name").value;
+		if(el.length >= 1 && el.length <= 12) {
+			let encoder = new TextEncoder();
+			blk = new Uint8Array(el.length + 1);
+			blk.set(encoder.encode(el), 1);
+			blk[0] = 0x01;
+			addClog("Send cmd New DevName ("+dump(blk, blk.length)+")...");
+			settingsCharacteristics.writeValue(blk).then(_ => {
+				addClog('Send New DevName ok');
+			});
+		}
+	}
+}	
+function CleanMAC() {
+	addClog("Send cmd Clean MAC (1000)...");
+	settingsCharacteristics.writeValue(new Uint8Array([0x10, 0])).then(_ => {
+		addClog('Send Clean MAC ok');
+	});
+}
+function sendMAC() {
+	if(mikeys.mac) {
+		let el = document.getElementById("mi_mac").value;
+		let len = el.length;
+		addClog(len + ' ' + el);
+		if(len == 12 || len == 16) {
+			let mac = hexToBytes(el);
+			len = mac.length;
+			addClog(len + ' ' + el);
+			if(len == 6 || len == 8) {
+				let blk = new Uint8Array(len+2);
+				blk[0] = 0x10;
+				blk[1] = len;
+				blk[2] = mac[5];
+				blk[3] = mac[4];
+				blk[4] = mac[3];
+				blk[5] = mac[2];
+				blk[6] = mac[1];
+				blk[7] = mac[0];
+				if(len == 8) {
+					blk[8] = mac[7];
+					blk[9] = mac[6];
+				}
+				addClog(blk);
+				addClog("Send cmd New MAC ("+dump(blk, blk.length)+")...");
+				settingsCharacteristics.writeValue(blk).then(_ => {
+					addClog('Send New MAC ok');
+					addLog("Send New MAC: "+dump(mac, 6)+" RAND:" +dump(mac.slice(6), 2)+" ok");
+				});
+			}
+		}
+		addLog("Must be 6 hex MAC digits [+ 2 hex RandMAC digits]!") 
+		return;
+	}
+}
 function sendExt() {
 	if(ext.enable) {
 		ext.big_number = Math.round(10.0 * parseFloat(document.getElementById("extbignumb").value)); 
@@ -939,6 +1014,7 @@ function sendExt() {
 		(document.getElementById("extpersent").checked ? 8 : 0) +
 		(document.getElementById("extbattery").checked ? 16 : 0) +
 		((parseInt(document.getElementById("exttmpsmb").value) & 7) << 5);
+		addClog("Send cmd (22 + ext data)...");
 		settingsCharacteristics.writeValue(new Uint8Array([0x22, ext.big_number&0xff, (ext.big_number>>8)&0xff,ext.small_number&0xff,(ext.small_number>>8)&0xff,ext.vtime&0xff,(ext.vtime>>8)&0xff,ext.cfg])).then(_ => {
 			addClog('Send ext data ok');
 		});
@@ -958,6 +1034,7 @@ function SendCmf() {
 		cmf.tmp_hi = Math.round(100.0 * parseFloat(document.getElementById("cmf_tmp_hi").value));
 		cmf.hm_lo = Math.round(100.0 * parseFloat(document.getElementById("cmf_hm_lo").value));
 		cmf.hm_hi = Math.round(100.0 * parseFloat(document.getElementById("cmf_hm_hi").value));
+		addClog("Send cmd (20 + cmf data)...");
 		settingsCharacteristics.writeValue(new Uint8Array([0x20, cmf.tmp_lo&0xff, (cmf.tmp_lo>>8)&0xff, cmf.tmp_hi&0xff, (cmf.tmp_hi>>8)&0xff, cmf.hm_lo&0xff, (cmf.hm_lo>>8)&0xff, cmf.hm_hi&0xff, (cmf.hm_hi>>8)&0xff])).then(_ => {
 			addClog('Send cmf data ok');
 		});
@@ -977,6 +1054,7 @@ function sendTrg() {
 		trg.hm_thr = Math.round(100.0 * parseFloat(document.getElementById("trg_hm_thr").value));
 		trg.tmp_hst = Math.round(10.0 * parseFloat(document.getElementById("trg_tmp_hst").value)); 
 		trg.hm_hst = Math.round(10.0 * parseFloat(document.getElementById("trg_hm_hst").value)); 
+		addClog("Send cmd (44 + trg data)...");
 		settingsCharacteristics.writeValue(new Uint8Array([0x44, trg.tmp_thr&0xff, (trg.tmp_thr>>8)&0xff,trg.hm_thr&0xff,(trg.hm_thr>>8)&0xff,trg.tmp_hst&0xff,trg.hm_hst&0xff])).then(_ => {
 			addClog('Send trg data ok');
 		});
@@ -1017,8 +1095,12 @@ function CustomConfig() {
 	is += ' <button type="button" onclick="sendCustomSetting(&quot;56&quot;);">Set default</button>'; 
 	is += ' <button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>'; 
 	if(cfg.ver >= 0x11) {
-		is += '<br><input size="6" maxlength="6" type="text" title="000000..999999, 6 digits, 000000 - PinCode Disable" id="pincode" value="000000"> <button type="button" onclick="sendPinCode();">Set PinCode</button><br>'; 
+		is += '<br><input size="6" maxlength="6" type="text" title="000000..999999, 6 decimal digits, 000000 - PinCode Disable. Warning: If the PinCode is forgotten - only a hardware flasher!" id="pincode" value="000000"> <button type="button" onclick="sendPinCode();">!Set PinCode!</button><br>'; 
 		pincode.enable = true;
+		if(cfg.ver >= 0x14) {
+			is += '<br><button type="button" onclick="sendCustomSetting(&quot;01&quot;);">Get device Name</button> <input size="10" maxlength="10" type="text" title="Device Name" id="dev_name" value=""> <button type="button" onclick="sendDevName();">Set New Name</button> <button type="button" onclick="CleanDevName();">Set default Name</button><br>'; 
+			dnm.enable = true;
+		}
 	}
 	is += '<hr>Management GPIO_PA5 (mark "reset"):<br>';
 	is += 'Temperature hysteresis: <input size="8" title="-12.7..12.7°, default -0.1, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="trg_tmp_hst" maxlength="5" value="-0.1"> °';
@@ -1040,8 +1122,13 @@ function CustomConfig() {
 	}
 	trg.enable = true;
 	is += '<button type="button" onclick="sendCustomSetting(&quot;15&quot;);">Show all mi keys</button><br>';
-	if(mikeys.mac)
-		is +='Device MAC, RandMAC:<br><input size="40" maxlength="18" type="text" id="known_id" value="'+hex(mikeys.mac[5],2)+hex(mikeys.mac[4],2)+hex(mikeys.mac[3],2)+hex(mikeys.mac[2],2)+hex(mikeys.mac[1],2)+hex(mikeys.mac[0],2)+', C0'+hex(mikeys.mac[7],2)+hex(mikeys.mac[6],2)+hex(mikeys.mac[2],2)+hex(mikeys.mac[1],2)+hex(mikeys.mac[0],2)+'"><br>';
+	if(mikeys.mac) {
+		is +='Device MAC [+ 2 Rand]:<br><input size="40" maxlength="16" type="text" id="mi_mac" title="Must be 6 hex MAC digits [+ 2 hex RandMAC digits]!" value="'+hex(mikeys.mac[5],2)+hex(mikeys.mac[4],2)+hex(mikeys.mac[3],2)+hex(mikeys.mac[2],2)+hex(mikeys.mac[1],2)+hex(mikeys.mac[0],2)+hex(mikeys.mac[7],2)+hex(mikeys.mac[6],2)+'">';
+		// ', C0'+hex(mikeys.mac[7],2)+hex(mikeys.mac[6],2)+hex(mikeys.mac[2],2)+hex(mikeys.mac[1],2)+hex(mikeys.mac[0],2)'
+		if(cfg.ver >= 0x14)
+			is +=' <button type="button" title="Set Custom MAC. Warning: If the pin code is set, restart all Soft & Hard for the next connection!" onclick="sendMAC();">!Set MAC!</button> <button type="button" title="Clean MAC - Set Standart Random MAC: A4C138******. Warning: If the pin code is set, restart all Soft & Hard for the next connection!" onclick="CleanMAC();">!Clean MAC!</button>';
+		is +='<br>';
+	}
 	if(mikeys.id) {
 		let str = new TextDecoder("utf-8").decode(mikeys.id.slice(1));
 		is +='Device known id:<br><input size="40" maxlength="19" type="text" id="known_id" value="'+str+'"><br>';
@@ -1068,8 +1155,9 @@ function CustomConfig() {
 	document.getElementById("cfg_rf_tx").value = String(cfg.rf_tx_power);
 	document.getElementById("cfg_con_lat").value = String((cfg.connect_latency + 1) * 20);
 	document.getElementById("cfg_lcd_tint").value = String(cfg.lcd_tint * 0.05);
+	cfg.enable = true;
   } else
-	document.getElementById("custcfg").innerHTML = '<br><br>Unsupported device software version! Custom ATC version >= 1.0.<br><br>';
+	document.getElementById("custcfg").innerHTML = '<br><br>Unsupported device software version! Custom ATC version >= 1.0!<br><br>';
 }
 function hex(number, len) {
     var str = (number.toString(16)).toUpperCase();
