@@ -305,11 +305,12 @@ function connect() {
 }
 // Запрос выбора Bluetooth устройства
 function requestBluetoothDevice() {
+	var deviceOptions = {optionalServices: [0x181a]};
+	deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz_#@!*';,.<>{}[]"
+	.split("").map((x) => ({namePrefix:x}));
+	// deviceOptions.filters.services = [0xfe95, 0x181a, 0x1f10];
 	log('Requesting bluetooth device...');
-	return navigator.bluetooth.requestDevice({
-	filters: [{namePrefix: 'ATC'}],
-		optionalServices: ['0000181a-0000-1000-8000-00805f9b34fb']
-	}).
+	return navigator.bluetooth.requestDevice(deviceOptions).
 	then(device => {
 		log('"' + device.name + '" bluetooth device selected');
 		deviceCache = device;

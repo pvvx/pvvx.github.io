@@ -122,7 +122,7 @@
   -ms-transform: rotate(-90deg);
 }
 </style>
-  <title>ATC Temperature and Humidity</title>
+  <title>ATC Temperature and Humidity (Dev Point)</title>
   </head>
   <body>
 	<div style="height: auto; width: auto; text-align: center;">
@@ -143,7 +143,7 @@
 var $ = function(id) {
 	return document.getElementById(id);
 }
-var temp, humi, vbat;
+var temp, humi, vbat, dewpoint;
 var cur_idx = 0;
 var samples = 20000;
 // Вывод в терминал
@@ -179,7 +179,7 @@ $("butClr").onclick =  function() {
 function ShowGrf() {
 	if(rend) {
 		if(!sttim)	sttim = new Date().getTime();
-		datau.push([(new Date().getTime() - sttim)/1000.0, temp, humi]);
+		datau.push([(new Date().getTime() - sttim)/1000.0, temp, dewpoint]);
 		if(++cur_idx >= samples) datau.shift();
 	}
 	if(!stg) {
@@ -187,18 +187,18 @@ function ShowGrf() {
 			$("div_v"),
 		    datau,
 			{
-				title: 'ATC Temperature and Humidity',
+				title: 'ATC Temperature and Dev Point',
 				showRangeSelector: true,
 				showRoller: true,
 				rollPeriod: 7,
 				xlabel: 'Time(sec)',
 				ylabel: 'Temp(C&deg;)',
-				y2label: 'H(%)',
+				y2label: 'Dp(C&deg;)',
 				colors: ['green', 'blue'],
-				series : { 'H(%)': { axis: 'y2' } },
+				series : { 'Dp(°C)': { axis: 'y2' } },
 				axes: {
 					x: {valueFormatter: function(x){return this.getLabels()[0] + ': '+ x.toPrecision(5);}}},
-					labels: ['T(sec)', 'T(°C)', 'H(%)'],
+					labels: ['T(sec)', 'T(°C)', 'Dp(°C)'],
 					labelsDiv: $('labdiv'),
 					legend: 'always',  // "follow"
 					digitsAfterDecimal: 3,
@@ -334,6 +334,22 @@ function handleDisconnection(event) {
 			catch(error => log(error));
 	}
 }
+
+function ShowDevPoint() {
+	let dp = Math.round(dewpoint*10);
+	let hm = Math.round(humi);
+	blk = new Uint8Array(8);
+	blk[0] = 0x22;
+	blk[1] = dp & 0xff;  // lo byte big_number
+	blk[2] = dp >> 8; // hi byte big_number
+	blk[3] = humi & 0xff; // lo byte small_number 
+	blk[4] = humi >> 8; // hi byte small_number 
+	blk[5] = 100; // lo byte vtime_sec (100 sec)
+	blk[6] = 0; // hi byte vtime_sec 
+	blk[7] = 0xef; // flg
+	characteristicVTH.writeValue(blk)
+}
+
 // Подключение к определенному устройству, получение сервиса и характеристики
 function connectDeviceAndCacheCharacteristic(device) {
   if (device.gatt.connected && characteristicVTH && characteristicVTH) { // 
@@ -343,11 +359,11 @@ function connectDeviceAndCacheCharacteristic(device) {
   return device.gatt.connect().
 	then(server => {
 		log('GATT server connected, getting service...');
-		return server.getPrimaryService(0x1F10); // (0x180F);
+		return server.getPrimaryService(0x1F10); 
 	}).
 	then(service => {
 		log('Service found, getting characteristic...');
-		return service.getCharacteristic(0x1F1F); // (0x2A19)
+		return service.getCharacteristic(0x1F1F); 
 	}).
 	then(characteristic => {
 		log('Characteristic found');
@@ -365,9 +381,12 @@ function connectDeviceAndCacheCharacteristic(device) {
 					temp = value.getInt16(3, true) / 100.0;
 					humi = value.getInt16(5, true) / 100.0;
 					let count = value.getUint8(7);
-					let s = 'Vbat: '+vbat+' mV , Temp: '+temp+'°C, Humi: '+humi+'%, Count: '+count;
+					let H = (Math.log10(humi)-2)/0.4343 + (17.62*temp)/(243.12+temp);
+					dewpoint = 243.12*H/(17.62-H); // this is the dew point in Celsius	
+					let s = 'Vbat: '+vbat+' mV, Temp: '+temp+'°C, Humi: '+humi+'%, '+dewpoint.toFixed(2)+'°C, Count: '+count;
 					$('info').innerHTML = s;
 					log(s);
+					ShowDevPoint();
 					ShowGrf();
 					renderChart();
 				};
