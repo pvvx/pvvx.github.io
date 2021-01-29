@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v1.4</title>
+<title>Telink Flasher v1.5</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -20,7 +20,7 @@ var state = 0,
 var customEnabled;
 var settingsCharacteristics = null;
 // Custom config
-var cfg = {enable: false, ver: 0, hver: 0, flg: 0, smiley: 0, temp_offset: 0, humi_offset: 0, advertising_interval: 32, measure_interval: 5, rf_tx_power: 191, connect_latency: 99, lcd_tint: 55};
+var cfg = {enable: false, ver: 0, hver: 0, flg: 0, flg2: 0, temp_offset: 0, humi_offset: 0, advertising_interval: 32, measure_interval: 5, rf_tx_power: 191, connect_latency: 99, lcd_tint: 55};
 var trg = {enable: false, tmp_thr: 2100, hm_thr: 5000, tmp_hst: -1, hm_hst: 0, flg: 0};
 var cmf = {enable: false, tmp_lo: 2100, tmp_hi: 2600, hm_lo: 3000, hm_hi: 6000};
 var dnm = {enable: false, name: ""};
@@ -242,7 +242,7 @@ function CustomBlkParse(value) {
 	if(blkid == 0x55 && len >= 9) {
 		cfg.ver = value.getUint8(1);
 		cfg.flg = value.getUint8(2);
-		cfg.smiley = value.getUint8(3);
+		cfg.flg2 = value.getUint8(3);
 		cfg.temp_offset = value.getInt8(4);
 		cfg.humi_offset = value.getInt8(5);
 		cfg.advertising_interval = value.getUint8(6);
@@ -257,7 +257,7 @@ function CustomBlkParse(value) {
 		else if((cfg.hver & 3) == 1) s +='MHO-C401.';
 		else s += 'Unknown!'
 		addAlog(s);
-		s = ' Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f)+', Custom config: ['+cfg.flg+', '+cfg.smiley+', '+cfg.temp_offset+', '+cfg.humi_offset+', '+cfg.advertising_interval+', '+cfg.measure_interval+', '+cfg.rf_tx_power+', '+cfg.connect_latency+', '+cfg.lcd_tint+']';
+		s = ' Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f)+', Custom config: ['+cfg.flg+', '+cfg.flg2+', '+cfg.temp_offset+', '+cfg.humi_offset+', '+cfg.advertising_interval+', '+cfg.measure_interval+', '+cfg.rf_tx_power+', '+cfg.connect_latency+', '+cfg.lcd_tint+']';
 		addAlog(s);
 		if(cfg.ver >= 5) CustomConfig();
 		else addLog('Old version - out of service!')
@@ -364,6 +364,19 @@ function CustomBlkParse(value) {
 	} else if(blkid == 0x61 && len >= 1) {
 		let s = 'LCD flg: '+hex(value.getUint8(1), 2);
 		addClog(s);
+	} else if(blkid == 0x35) {
+		if(len >= 12) {
+			let cnt = value.getUint16(1, true);
+			let tc = value.getUint32(3, true);
+			let tm = value.getInt16(7, true) / 100.0;
+			let hm = value.getUint16(9, true) / 100.0;
+			let vb = value.getUint16(11, true);
+			let dt = new Date(tc*1000);
+			addAlog(((dt.toISOString().slice(0, -1)).replace('T',' ')).replace('.000','')+' # Vbat: '+vb+' mV , Temp: '+tm+'°C, Humi: '+hm+'%, Count: '+cnt);
+		} else if(len >= 2) {
+			let cnt = value.getUint16(1, true);
+			addClog('Memo end: '+cnt);
+		}
 	} else if(blkid == 0x23 && len >= 4) {
 		let time = value.getUint32(1,true);
 		addClog('Device Time: 0x' + hex(time,8));
@@ -1153,6 +1166,10 @@ function CustomConfig() {
 	is += 'Connect latency: <input size="5" title="0..4000 ms, default 2500 ms" id="cfg_con_lat" maxlength="4" value="2500">, step 20 ms<br><br>';
 	is += 'RF TX Power: <select id="cfg_rf_tx"><option value="63">VBAT+10.46 dbm</option><option value="61">VBAT+10.29 dbm</option><option value="58">VBAT+10.01 dbm</option><option value="56">VBAT+9.81 dbm</option><option value="53">VBAT+9.48 dbm</option><option value="51">VBAT+9.24 dbm</option><option value="49">VBAT+8.97 dbm</option><option value="47">VBAT+8.73 dbm</option><option value="45">VBAT+8.44 dbm</option><option value="43">VBAT+8.13 dbm</option><option value="41">VBAT+7.79 dbm</option><option value="39">VBAT+7.41 dbm</option><option value="37">VBAT+7.02 dbm</option><option value="35">VBAT+6.60 dbm</option><option value="33">VBAT+6.14 dbm</option><option value="31">VBAT+5.65 dbm</option><option value="29">VBAT+5.13 dbm</option><option value="27">VBAT+4.57 dbm</option><option value="25">VBAT+3.94 dbm</option><option value="23">VBAT+3.23 dbm</option><option value="191" selected>VANT+3.01 dbm</option><option value="189">VANT+2.81 dbm</option><option value="187">VANT+2.61 dbm</option><option value="185">VANT+2.39 dbm</option><option value="182">VANT+1.99 dbm</option><option value="180">VANT+1.73 dbm</option><option value="178">VANT+1.45 dbm</option><option value="176">VANT+1.17 dbm</option><option value="174">VANT+0.90 dbm</option><option value="172">VANT+0.58 dbm</option><option value="169">VANT+0.04 dbm</option><option value="168">VANT-0.14 dbm</option><option value="164">VANT-0.97 dbm</option><option value="162">VANT-1.42 dbm</option><option value="160">VANT-1.89 dbm</option><option value="158">VANT-2.48 dbm</option><option value="156">VANT-3.03 dbm</option><option value="154">VANT-3.61 dbm</option><option value="152">VANT-4.26 dbm</option><option value="150">VANT-5.03 dbm</option><option value="148">VANT-5.81 dbm</option><option value="146">VANT-6.67 dbm</option><option value="144">VANT-7.65 dbm</option><option value="142">VANT-8.65 dbm</option><option value="140">VANT-9.89 dbm</option><option value="138">VANT-11.4 dbm</option><option value="136">VANT-13.29 dbm</option><option value="134">VANT-15.88 dbm</option><option value="132">VANT-19.27 dbm</option><option value="130">VANT-25.18 dbm</option></select><br><br>';
 	is += 'Minimum LCD refresh rate: <input size="5" title="0.5..12.75 sec, step: 0.05 s, default 2.45 s" id="cfg_lcd_tint" maxlength="6" value="2.45">, step: 0.05 s<br><br>';
+	if(cfg.ver >= 0x19) {
+		is += 'Recording measurements to flash memory <input type="checkbox" id="cfg_flg2_memo" title="Recording measurements to flash memory (cyclic buffer for 19632 measurements)">';
+		is += ' <button type="button" onclick="sendCustomSetting(&quot;350001&quot;);">Get the last 256 records</button><br><br>';
+	}
 	is += '<button type="button" onclick="SendCustomConfig()">Send Config</button>';
 	is += ' <button type="button" onclick="sendCustomSetting(&quot;56&quot;);">Set default</button>';
 	is += ' <button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>';
@@ -1209,7 +1226,9 @@ function CustomConfig() {
 	document.getElementById("cfg_flg_show_batt").checked = (cfg.flg&32) != 0;
 	document.getElementById("cfg_flg_tx_meas").checked = (cfg.flg&64) != 0;
 	document.getElementById("cfg_flg_lp_meas").checked = (cfg.flg&128) != 0;
-	document.getElementById("cfg_smiley").value = cfg.smiley&7;
+	document.getElementById("cfg_smiley").value = cfg.flg2&7;
+	if(cfg.ver >= 0x19)
+		document.getElementById("cfg_flg2_memo").checked = (cfg.flg2&8) != 0;
 	document.getElementById("cfg_tmp_off").value = String(cfg.temp_offset / 10.0);
 	document.getElementById("cfg_hm_off").value = String(cfg.humi_offset / 10.0 );
 	document.getElementById("cfg_adv_int").value = String(cfg.advertising_interval * 62.5);
@@ -1234,7 +1253,9 @@ function SendCustomConfig() {
 	((document.getElementById("cfg_flg_show_batt").checked) ? 32 : 0) +
 	((document.getElementById("cfg_flg_tx_meas").checked) ? 64 : 0) +
 	((document.getElementById("cfg_flg_lp_meas").checked) ? 128 : 0);
-	cfg.smiley = (parseInt(document.getElementById("cfg_smiley").value) & 7);
+	cfg.flg2 = (parseInt(document.getElementById("cfg_smiley").value) & 7);
+	if(cfg.ver >= 0x19)
+		cfg.flg2 += ((document.getElementById("cfg_flg2_memo").checked) ? 8 : 0);
 	cfg.temp_offset = Math.round(10.0 * parseFloat(document.getElementById("cfg_tmp_off").value));
 	if(cfg.temp_offset < -127) cfg.temp_offset = -127;
 	else if(cfg.temp_offset > 127) cfg.temp_offset = 127;
@@ -1256,9 +1277,9 @@ function SendCustomConfig() {
 	cfg.lcd_tint = Math.round(parseFloat(document.getElementById("cfg_lcd_tint").value) / 0.05);
 	if(cfg.lcd_tint < 10) cfg.lcd_tint = 10;
 	else if(cfg.lcd_tint > 255) cfg.lcd_tint = 255;
-	let s = 'New custom config: ['+cfg.flg+', '+cfg.temp_offset+', '+cfg.humi_offset+', '+cfg.advertising_interval+', '+cfg.measure_interval+', '+cfg.rf_tx_power+', '+cfg.connect_latency+']';
+	let s = 'New custom config: ['+cfg.flg+', '+cfg.flg2+', '+cfg.temp_offset+', '+cfg.humi_offset+', '+cfg.advertising_interval+', '+cfg.measure_interval+', '+cfg.rf_tx_power+', '+cfg.connect_latency+', '+cfg.lcd_tint+']';
 	addAlog(s);
-	sendCustomSetting('55'+hex(cfg.flg,2)+hex(cfg.smiley,2)+hex(cfg.temp_offset&0xff,2)+hex(cfg.humi_offset&0xff,2)+hex(cfg.advertising_interval,2)+hex(cfg.measure_interval,2)+hex(cfg.rf_tx_power,2)+hex(cfg.connect_latency,2)+hex(cfg.lcd_tint,2));
+	sendCustomSetting('55'+hex(cfg.flg,2)+hex(cfg.flg2,2)+hex(cfg.temp_offset&0xff,2)+hex(cfg.humi_offset&0xff,2)+hex(cfg.advertising_interval,2)+hex(cfg.measure_interval,2)+hex(cfg.rf_tx_power,2)+hex(cfg.connect_latency,2)+hex(cfg.lcd_tint,2));
 	document.getElementById("custcfg").innerHTML = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting(document.getElementById(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
 }
 
