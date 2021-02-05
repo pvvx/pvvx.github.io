@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v1.6</title>
+<title>Telink Flasher v1.7</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -10,9 +10,12 @@
 var bluetoothDevice, gattServer, Theservice, writeCharacteristic;
 var ServiceMain, writeCharacteristicSpeed, nitifiyCharTemp, time_char, enc_main, enc_10, enc_19;
 //Firmware values
+var rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/";
+var otafiles = { loaded: false, version: 0x21, custom: ['ATC_Thermometer21.bin','MHO_C401_v21.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0106.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin']};
 var firmwareArray = "",
 	startTime = 0,
 	blockCount = 0;
+var fwname = '';
 //Connection values
 var state = 0,
 	connectTrys = 0;
@@ -57,7 +60,11 @@ function resetVariables() {
 	settingsCharacteristics = null;
 	miConnected = false;
 	is_logged_in = false;
-	document.getElementById("MAC").innerHTML = '';
+	fwname = '';
+	document.getElementById("ldfrmw").innerHTML ='';
+	document.getElementById("custcfg").innerHTML = '';
+	document.getElementById("tempHumiData").innerHTML = "Temp/Humi: waiting for data after connecting";
+	document.getElementById("percent").innerHTML = "Status: Disconnected";
 }
 
 function handleError(error) {
@@ -75,10 +82,9 @@ function handleError(error) {
 
 function onDisconnected() {
 	addLog('Disconnected.');
+	document.getElementById("MAC").innerHTML = '';
+	document.getElementById("ldfile").hidden = true;
 	resetVariables();
-	document.getElementById("custcfg").innerHTML = '';
-	document.getElementById("tempHumiData").innerHTML = "Temp/Humi: waiting for data after connecting";
-	document.getElementById("percent").innerHTML = "Status: Disconnected";
 }
 
 function connect() {
@@ -254,11 +260,13 @@ function CustomBlkParse(value) {
 		if(len >= 11) cfg.hver = value.getUint8(11); else cfg.hver = 0;
 		if(len >= 12) cfg.av_meas_mem = value.getUint8(12); else cfg.av_meas_mem = 0;
 		let s = 'Hardware Version: ';
-		if((cfg.hver & 3) == 0) s +='LYWSD03MMC.';
-		else if((cfg.hver & 3) == 1) s +='MHO-C401.';
-		else s += 'Unknown!'
+		if((cfg.hver & 3) == 0) s +='LYWSD03MMC';
+		else if((cfg.hver & 3) == 1) s +='MHO-C401';
+		else s += 'Unknown'
+		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
+		setStatus(s);
 		addAlog(s);
-		s = ' Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f)+', Custom config: ['+cfg.flg+', '+cfg.flg2+', '+cfg.temp_offset+', '+cfg.humi_offset+', '+cfg.advertising_interval+', '+cfg.measure_interval+', '+cfg.rf_tx_power+', '+cfg.connect_latency+', '+cfg.lcd_tint+', '+cfg.hver+', '+cfg.av_meas_mem+']';
+		s = 'Custom config: ['+cfg.flg+', '+cfg.flg2+', '+cfg.temp_offset+', '+cfg.humi_offset+', '+cfg.advertising_interval+', '+cfg.measure_interval+', '+cfg.rf_tx_power+', '+cfg.connect_latency+', '+cfg.lcd_tint+', '+cfg.hver+', '+cfg.av_meas_mem+']';
 		addAlog(s);
 		if(cfg.ver >= 5) CustomConfig();
 		else addLog('Old version - out of service!')
@@ -394,7 +402,7 @@ function CustomBlkParse(value) {
 		dnm.name = new TextDecoder("utf-8").decode(value.buffer.slice(1));
 		if(document.getElementById("dev_name"))
 			document.getElementById("dev_name").value = dnm.name;
-		addClog("DevName: ["+dnm.name+"]"); addLog("DevName: ["+dnm.name+"]");
+		addAlog("DevName: ["+dnm.name+"]");
 	} else {
 		let s = 'Custom (0x1f1f) Notifications id: 0x'+hex(blkid,2)+' ['+bytesToHex(value.buffer.slice(1))+']';
 		addClog(s);
@@ -417,6 +425,7 @@ function customAction() {
 	            addClog("Read Characteristics (0x1f1f)");
 				settingsCharacteristics.readValue()
 				.then(value => {
+					document.getElementById("ldfile").hidden = false;
 					addClog("Send cmd (3303): Query 3 measurements");
 					settingsCharacteristics.writeValue(new Uint8Array([0x33,0x03])).then(_ => {
 					  addClog('Send cmd ok');
@@ -456,6 +465,7 @@ function miAuthorization() {
 					} else if (value == "21000000") {
 						is_logged_in = true;
 						addLog("Login successfull");
+						document.getElementById("ldfile").hidden = false;
 					}
 				});
 			}).then(characteristic => {
@@ -465,9 +475,9 @@ function miAuthorization() {
 						addClog("Enc_19: " + value);
 
 						if (mode_activation == 1) {
-							if (value == "000000000100") {
+							if (value == "000000000100") { // BLE_UUID_STDIO_SRV  00000100-0065-6c62-2e74-6f696d2e696d
 								is_activated = false;
-								mainCharSend("00000101", enc_19);
+								mainCharSend("00000101", enc_19);  // BLE_UUID_STDIO_RX, 102 - BLE_UUID_STDIO_TX 
 							} else if (value == "000000000200") {
 								is_activated = true;
 								mainCharSend("00000101", enc_19);
@@ -583,7 +593,14 @@ function miAuthorization() {
 						}
 					});
 					addLog("Connected");
-					setStatus("Connected, you can now Do the Activation to either get the Token or flash a new Firmware")
+					setStatus("Connected, you can now Do the Activation to either get the Token or flash a new Firmware");
+					if(otafiles.loaded && otafiles.version) {
+						if(bluetoothDevice.name == 'LYWSD03MMC') cfg.hver = 0;
+						else if (bluetoothDevice.name == 'MHO-C401') cfg.hver = 1;
+						else cfg.hver = null;
+						if(cfg.hver)
+							document.getElementById("ldfrmw").innerHTML = ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button> ';
+					}
 				});
 			});
 		}).catch(handleError);
@@ -699,7 +716,7 @@ function addAlog(logTXT) {
 }
 
 function clearLog() {
-	document.getElementById("log").innerHTML = "Log:<br>";
+	document.getElementById("log").innerHTML = "";
 }
 
 function setStatus(status) {
@@ -766,34 +783,96 @@ function hex2ascii(hexx) {
 		str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
 	return str;
 }
+//-------------
+function getFirmwareArray(data, filename) {
+    //addAlog(filename);
+	firmwareArray = bytesToHex(data);
+	if(firmwareArray.substring(16,24)!="4b4e4c54"){
+		let s = "This file is no telink firmware .bin!"
+		alert(s);
+		addAlog(s);
+		blockCount = 0;
+		firmwareArray = "";
+		return;
+	}
+	addAlog("File size: " + firmwareArray.length / 2 + " bytes");
+	if (firmwareArray.length % 32 !== 0) { // pad last block to 16bytes
+		var padHex = "ffffffffffffffffffffffffffffffff";
+		firmwareArray += padHex.substr(0, 32 - firmwareArray.length % 32);
+	}
+	blockCount = firmwareArray.length / 32;
+	addAlog("Count: " + blockCount); 
+	fwname = filename;
+	let is = '<button type="button" onclick="startDFU();">Start Flashing</button> fw: \''+fwname+'\'';
+	document.getElementById("ldfrmw").innerHTML = is;
+}
+
+function ajax_file(filename, fn) {
+	let xhr;  
+	if(window.XMLHttpRequest) xhr = new XMLHttpRequest();
+	else if(window.ActiveXObject) xhr = new ActiveXObject("Microsoft.XMLHTTP")
+	if (!xhr) { addClog(msg("Your browser does not support AJAX!")); fn(); return;};
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState == 4) {
+			if (xhr.status == 200) fn(xhr.response, filename);
+			else { addClog('XMLHttpRequest: response ' + xhr.status); fn();}
+			xhr.abort();
+			xhr = null;
+		}
+	};
+    xhr.ontimeout = function() { addClog('XMLHttpRequest: timeout'); fn();};
+	xhr.onerror = function () { addClog('XMLHttpRequest error!'); fn();};    
+	xhr.open('GET', rawurl+filename, true);
+	xhr.timeout = 10000;
+	xhr.responseType = "arraybuffer";
+   	xhr.send();
+}
+
+function getOtaJson(d, name) {
+	if (!d) {
+		addClog("No load index file!");
+	} else {
+		let str = '';
+		if (typeof d === 'string')
+			str = d;
+		else
+			str = new TextDecoder("utf-8").decode(d);
+		let x = JSON.parse(str);
+		if(x.version) {
+			otafiles = x;
+			otafiles.loaded = true;
+			addClog(otafiles);
+		}
+	}
+}
+
+function FirmwareUpgrade() {
+	if(cfg.hver) {
+		let fn = otafiles.custom[cfg.hver & 3];
+		addAlog("Load firmware file '"+fn+"'...");
+		ajax_file(fn, getFirmwareArray);
+	}
+}
+
+function BackToOriginal() {
+	if(cfg.enable) {
+		let fn = otafiles.original[cfg.hver & 3];
+		addAlog("Load firmware file '"+fn+"'...");
+		ajax_file(fn, getFirmwareArray);
+	}
+}
 
 window.onload = function() {
+	addClog("Load index file 'firmware.json'...");
+	ajax_file('firmware.json', getOtaJson);
 	document.querySelector("#file").addEventListener("change", function() {
-		var reader = new FileReader();
-		reader.onload = function() {
-			firmwareArray = bytesToHex(this.result);
-			if(firmwareArray.substring(16,24)!="4b4e4c54"){
-				alert("Select file is no telink firmware .bin");
-				addLog("Select file is no telink firmware .bin");
-				blockCount = 0;
-				firmwareArray = "";
-				return;
-			}
-			addLog("File was selected, size: " + firmwareArray.length / 2 + " bytes");
-
-
-			if (firmwareArray.length % 32 !== 0) { // pad last block to 16bytes
-				var padHex = "ffffffffffffffffffffffffffffffff";
-				firmwareArray += padHex.substr(0, 32 - firmwareArray.length % 32);
-			}
-			blockCount = firmwareArray.length / 32;
-			addLog("Count: " + blockCount);
-		}
-		if (this.files[0] != null)
+		let reader = new FileReader();
+		reader.fname = "";
+		reader.onload = function() {getFirmwareArray(this.result, this.fname);};
+		if (this.files[0] != null) {
+			reader.fname = this.files[0].name;
 			reader.readAsArrayBuffer(this.files[0]);
-		else
-			addLog("No file selected");
-	}, false);
+		} else	addLog("No file selected");	}, false);
 }
 
 function updateBegin() {
@@ -801,9 +880,7 @@ function updateBegin() {
 		addLog("No file selected aborting");
 		return;
 	}
-
 	if (miEnabled) mainCharSend("1e0000", writeCharacteristicSpeed); // this makes the upload faster
-
 	setTimeout(function() {
 		otaCharSend("00ff").then(function(character) {
 			otaCharSend("01ff").then(function(character) {
@@ -1133,8 +1210,16 @@ function sendTrg() {
 	}
 }
 function CustomConfig() {
+  let is = '';
+  if(otafiles.loaded && fwname == '') {
+	if(otafiles.version)
+		is += ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>';
+	if(otafiles.original.length > (cfg.hver & 3))
+		is += ' <button type="button" onclick="BackToOriginal();">'+ otafiles.original[cfg.hver & 3] +'</button> ';
+	document.getElementById("ldfrmw").innerHTML = is;
+  }
   if(cfg.ver >= 0x10) {
-	let is = 'Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting(document.getElementById(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button>';
+	is = 'Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting(document.getElementById(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button>';
 	if((cfg.hver & 7)  == 0)
 		is += ' Test: [ <button type="button" onclick="lcd_clock();">Show clock on LCD</button> <button type="button" onclick="lcd_restore();">Repair LCD</button> ]';
 	is += '<br><br><input size="5" title="Big number: -99.5..1999.5" id="extbignumb" maxlength="5" value="123.4">';
@@ -1221,8 +1306,12 @@ function CustomConfig() {
 		is +='Mi Token:<br><input size="40" maxlength="12" type="text" id="mi_token" value="'+dump(mikeys.token,12)+'"><br>';
 	if(mikeys.bindkey)
 		is +='Mi Bind Key:<br><input size="40" maxlength="16" type="text" id="mi_bind_key" value="'+dump(mikeys.bindkey,16)+'"><br>';
-	if(mikeys.restore)
-		is += '<br><button type="button" onclick="sendCustomSetting(&quot;16&quot;);">Swap previous token + bindkey</button><br><br>';
+	if(mikeys.restore) {
+		is += '<br><button type="button" onclick="sendCustomSetting(&quot;16&quot;);">Swap previous token + bindkey</button>';
+		if(cfg.ver >= 0x21)
+			is +=' <button type="button" title="Erase all MiKeys" onclick="sendCustomSetting(&quot;17&quot;);">!Erase all Mi Keys!</button>';
+		is += '<br><br>';
+	}
 	document.getElementById("custcfg").innerHTML = is;
 	document.getElementById("cfg_flg_adv_type").value = cfg.flg&3;
 	document.getElementById("cfg_flg_comfort").checked = (cfg.flg&4) != 0;
@@ -1307,10 +1396,8 @@ function SendCustomConfig() {
   <input type="checkbox" id="hideUnknown" checked><br>
   <label for="namePrefix">BLE device name prefix filter(s)</label>
   <input type="text" id="namePrefix" value="" placeholder="LYWSD03,ATC"><br>
-  <button type="button" onclick="startDFU();">Start Flashing</button>
-  <button type="button" onclick="clearLog();">Clear Log</button><br><br>
-Please select a .bin file you want to flash to a Telink BLE device.<br>
-  Select Firmware: <input type="file" accept=".bin" id="file"/><br>
+  <div id="ldfile" hidden="true">Select Firmware: <input type="file" accept=".bin" id="file"/></div>
+  <div id="ldfrmw"></div>
  <div id="percent">Status: waiting for you to connect a device</div><hr>
  <div id="tempHumiData">Temp/Humi: waiting for data after connecting</div><hr>
  <div id="MAC">#enable-experimental-web-platform-features may be needed to read MAC (copy link:
@@ -1320,6 +1407,6 @@ Please select a .bin file you want to flash to a Telink BLE device.<br>
   <hr>
   </div>
   <div id="custcfg"></div><hr>
- <div id="log">Log:<br></div>
- <div id="result"></div>
+  <button type="button" onclick="clearLog();">Clear Log</button>
+ <div id="log"></div>
 </body></html>
