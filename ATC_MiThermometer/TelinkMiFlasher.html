@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v1.7</title>
+<title>Telink Flasher v1.8</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -15,6 +15,7 @@ var otafiles = { loaded: false, version: 0x21, custom: ['ATC_Thermometer21.bin',
 var firmwareArray = "",
 	startTime = 0,
 	blockCount = 0;
+var flg_memo_act = false;
 var fwname = '';
 //Connection values
 var state = 0,
@@ -374,17 +375,20 @@ function CustomBlkParse(value) {
 		let s = 'LCD flg: '+hex(value.getUint8(1), 2);
 		addClog(s);
 	} else if(blkid == 0x35) {
-		if(len >= 12) {
-			let cnt = value.getUint16(1, true);
-			let tc = value.getUint32(3, true);
-			let tm = value.getInt16(7, true) / 100.0;
-			let hm = value.getUint16(9, true) / 100.0;
-			let vb = value.getUint16(11, true);
-			let dt = new Date(tc*1000);
-			addAlog(((dt.toISOString().slice(0, -1)).replace('T',' ')).replace('.000','')+' # Vbat: '+vb+' mV , Temp: '+tm+'°C, Humi: '+hm+'%, Count: '+cnt);
-		} else if(len >= 2) {
-			let cnt = value.getUint16(1, true);
-			addClog('Memo end: '+cnt);
+		if(flg_memo_act) {
+			if(len >= 12) {
+				let cnt = value.getUint16(1, true);
+				let tc = value.getUint32(3, true);
+				let tm = value.getInt16(7, true) / 100.0;
+				let hm = value.getUint16(9, true) / 100.0;
+				let vb = value.getUint16(11, true);
+				let dt = new Date(tc*1000);
+				addAlog(((dt.toISOString().slice(0, -1)).replace('T',' ')).replace('.000','')+' # Vbat: '+vb+' mV , Temp: '+tm+'°C, Humi: '+hm+'%, Count: '+cnt);
+			} else if(len >= 2) {
+				let cnt = value.getUint16(1, true);
+				addClog('Memo end: '+cnt);
+				flg_memo_act = false;
+			}
 		}
 	} else if(blkid == 0x23 && len >= 4) {
 		let time = value.getUint32(1,true);
@@ -466,6 +470,13 @@ function miAuthorization() {
 						is_logged_in = true;
 						addLog("Login successfull");
 						document.getElementById("ldfile").hidden = false;
+						if(otafiles.loaded && otafiles.version) {
+							if(bluetoothDevice.name == 'LYWSD03MMC') cfg.hver = 0;
+							else if (bluetoothDevice.name == 'MHO-C401') cfg.hver = 1;
+							else cfg.hver = null;
+							if(cfg.hver != null)
+								document.getElementById("ldfrmw").innerHTML = ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button> ';
+						}
 					}
 				});
 			}).then(characteristic => {
@@ -594,13 +605,6 @@ function miAuthorization() {
 					});
 					addLog("Connected");
 					setStatus("Connected, you can now Do the Activation to either get the Token or flash a new Firmware");
-					if(otafiles.loaded && otafiles.version) {
-						if(bluetoothDevice.name == 'LYWSD03MMC') cfg.hver = 0;
-						else if (bluetoothDevice.name == 'MHO-C401') cfg.hver = 1;
-						else cfg.hver = null;
-						if(cfg.hver)
-							document.getElementById("ldfrmw").innerHTML = ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button> ';
-					}
 				});
 			});
 		}).catch(handleError);
@@ -847,7 +851,7 @@ function getOtaJson(d, name) {
 }
 
 function FirmwareUpgrade() {
-	if(cfg.hver) {
+	if(cfg.hver != null) {
 		let fn = otafiles.custom[cfg.hver & 3];
 		addAlog("Load firmware file '"+fn+"'...");
 		ajax_file(fn, getFirmwareArray);
@@ -1209,6 +1213,19 @@ function sendTrg() {
 		});
 	}
 }
+function sendGetMemo(cnt) {
+	let count = cnt & 0x7fff;
+	let start = 0;
+	if(count > 19632) count = 19632;
+	if(start < 0) start = 0;
+	else if(start >= count) start = count - 1;
+	blk = new Uint8Array([0x35, count&0xff, (count>>8)&0xff,start&0xff,(start>>8)&0xff]);
+	addClog("Send cmd GetMemo: ("+dump(blk, blk.length)+")...");
+	settingsCharacteristics.writeValue(blk).then(_ => {
+		flg_memo_act = true;
+		addAlog('Send cmd GetMemo ok');
+	});
+}
 function CustomConfig() {
   let is = '';
   if(otafiles.loaded && fwname == '') {
@@ -1254,11 +1271,11 @@ function CustomConfig() {
 	is += 'Minimum LCD refresh rate: <input size="5" title="0.5..12.75 sec, step: 0.05 s, default 2.45 s" id="cfg_lcd_tint" maxlength="6" value="2.45">, step: 0.05 s<br><br>';
 	if(cfg.ver == 0x19) {
 		is += 'Recording measurements to flash memory <input type="checkbox" id="cfg_flg2_memo" title="Recording measurements to flash memory (cyclic buffer for 19632 measurements)">';
-		is += ' <button type="button" onclick="sendCustomSetting(&quot;353200&quot;);">Get the last 50 records</button><br><br>';
+		is += ' <button type="button" onclick="sendGetMemo(50);">Get the last 50 records</button> <a href="GraphMemo.html">GraphMemo.html</a><br><br>';
 	}
 	if(cfg.ver >= 0x20) {
-		is += 'Recording averaging measurements to flash memory <input size="5" title="0..255, =0 - off, default 60" id="cfg_av_meas_mem" maxlength="3" value="60"> x(measure interval)';
-		is += ' <button type="button" title="Test" onclick="sendCustomSetting(&quot;353200&quot;);">Get the last 50 records</button><br><br>';
+		is += 'Recording averaging measurements to flash memory <input size="5" title="0..255, =0 - off, default 60. Set time/date!" id="cfg_av_meas_mem" maxlength="3" value="60"> x(measure interval)';
+		is += ' <button type="button" onclick="sendGetMemo(50);">Get the last 50 records</button> <a href="GraphMemo.html">GraphMemo.html</a><br><br>';
 	}
 	is += '<button type="button" onclick="SendCustomConfig()">Send Config</button>';
 	is += ' <button type="button" onclick="sendCustomSetting(&quot;56&quot;);">Set default</button>';
