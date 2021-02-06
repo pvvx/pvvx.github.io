@@ -85,6 +85,7 @@ function onDisconnected() {
 	addLog('Disconnected.');
 	document.getElementById("MAC").innerHTML = '';
 	document.getElementById("ldfile").hidden = true;
+	cfg.hver = null;
 	resetVariables();
 }
 
@@ -471,9 +472,6 @@ function miAuthorization() {
 						addLog("Login successfull");
 						document.getElementById("ldfile").hidden = false;
 						if(otafiles.loaded && otafiles.version) {
-							if(bluetoothDevice.name == 'LYWSD03MMC') cfg.hver = 0;
-							else if (bluetoothDevice.name == 'MHO-C401') cfg.hver = 1;
-							else cfg.hver = null;
 							if(cfg.hver != null)
 								document.getElementById("ldfrmw").innerHTML = ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button> ';
 						}
@@ -604,6 +602,12 @@ function miAuthorization() {
 						}
 					});
 					addLog("Connected");
+					if(bluetoothDevice.name == 'LYWSD03MMC') cfg.hver = 0;
+					else if (bluetoothDevice.name == 'MHO-C401') cfg.hver = 1;
+					else {
+						cfg.hver = null;
+						document.getElementById("ldfile").hidden = false;
+					}
 					setStatus("Connected, you can now Do the Activation to either get the Token or flash a new Firmware");
 				});
 			});
