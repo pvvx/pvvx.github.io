@@ -166,20 +166,17 @@ $("butConnect").onclick =  function() {
 	else {$("butConnect").value = "Connect..."; connect();};
 }
 // Буфер входящих данных
-var sttim = null;
 var datau = [];
 var gu;
 $("butClr").onclick =  function() {
 	datau = new Array();
 	stg = 0;
 	cur_idx = 0;
-	sttim = null;
 	gu.destroy();
 }
 function ShowGrf() {
 	if(rend) {
-		if(!sttim)	sttim = new Date().getTime();
-		datau.push([(new Date().getTime() - sttim)/1000.0, temp, humi]);
+		datau.push([new Date(), temp, humi]);
 		cur_idx++;
 		if(cur_idx >= samples) datau.shift();
 	}
@@ -197,12 +194,10 @@ function ShowGrf() {
 				y2label: 'H(%)',
 				colors: ['green', 'blue'],
 				series : { 'H(%)': { axis: 'y2' } },
-				axes: {
-					x: {valueFormatter: function(x){return this.getLabels()[0] + ': '+ x.toPrecision(5);}}},
-					labels: ['T(sec)', 'T(°C)', 'H(%)'],
-					labelsDiv: $('labdiv'),
-					legend: 'always',  // "follow"
-					digitsAfterDecimal: 3,
+				labels: ['T(sec)', 'T(°C)', 'H(%)'],
+				labelsDiv: $('labdiv'),
+				legend: 'always',  // "follow"
+				digitsAfterDecimal: 3,
 			});
 		setInterval(function(){renderChart()}, 500);
 		stg = 1;
@@ -225,35 +220,43 @@ var renderChart = function() {
 }
 function convertArrayOfObjectsToCSV(value){
 	var result, ctr, keys, columnDelimiter, lineDelimiter, data;
-
 	data = value.data || null;
 	if (data == null || !data.length) {return null;}
 	columnDelimiter = value.columnDelimiter || ';';
 	lineDelimiter = value.lineDelimiter || '\n';
 	keys = Object.keys(data[1]);
 	result = '';
-	result += keys.join(columnDelimiter);
-	result += lineDelimiter;
 	data.forEach(function(item){
 		ctr = 0;
 		keys.forEach(function(key){
-			if (ctr > 0)
+			if (ctr > 0) {
 				result += columnDelimiter;
-			result += item[key];
+				result += item[key];
+			} else 
+				result += item[key].getTime();
 			ctr++;
 		});
 		result += lineDelimiter;
 	});
 	return result;
 }
+function download(data, filename, type) {
+	var file = new Blob([data], {type: type});
+	if (window.navigator.msSaveOrOpenBlob) { // ie10+
+		window.navigator.msSaveOrOpenBlob(file, filename);
+	} else { // ff, chrome
+		url = URL.createObjectURL(file);
+		var a = document.createElement("a");
+		a.href = url;
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		setTimeout(function(){document.body.removeChild(a);window.URL.revokeObjectURL(url);},0);
+		URL.revokeObjectURL(url);
+	}
+}
 $("butSave").onclick =  function() {
-	var csv = convertArrayOfObjectsToCSV({data: datau});
-	if (!csv.match(/^data:text\/csv/i)) {csv = 'data:text/csv;charset=utf-8,' + csv;}
-	var encodedUri = encodeURI(csv);
-	var link = document.createElement('a');
-	link.setAttribute('href', encodedUri);
-	link.setAttribute('download',"data.csv");
-	link.click();
+    download(convertArrayOfObjectsToCSV({data: datau}), 'data.csv', 'text/csv;charset=utf-8');
 }
 if(window.innerHeight > 320) $('div_v').style.height = (window.innerHeight-80) + 'px';
 window.onresize = function(){
@@ -266,15 +269,6 @@ function hex(number, length) {
     while (str.length < length) str = '0' + str;
     return str;
 } 
-function ResponsePkt(head, value) {
-	let ds = value.byteLength;
-	s = head + ': ';
-    for(let i=0; i < ds; i++) {
-		s+=' '+value.getUint8(i);
-		if(i<ds-1) s+=',';
-	}
-	log(s);
-}	
 function WaitConnection() {
 	if(devcnn && !stg) {
 		disconnect(); 

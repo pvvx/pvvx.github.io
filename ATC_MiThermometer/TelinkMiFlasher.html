@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v1.8</title>
+<title>Telink Flasher v1.9</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -132,32 +132,123 @@ function catchAdvertisement(device) {
 	addClog(buf, device, event);
 	let s = 'MAC: ?';
 	if(key == '0000fe95-0000-1000-8000-00805f9b34fb') { // mi
-		s = 'MAC: '+hex(buf[10],2)+hex(buf[9],2)+hex(buf[8],2)+hex(buf[7],2)+hex(buf[6],2)+hex(buf[5],2);
-		if(b.byteLength == 18) { // custom mi
+		if(b.byteLength >= 2) { // custom mi
 			let ctrl = b.getUint16(0, true);
-			let dev_id = b.getUint16(2, true);
-			if(ctrl == 0x3050 && dev_id == 0x055B) {
-				let cnt = b.getUint8(4);
-				s +=', Count: '+cnt;
-				let data_id =  b.getUint8(11);
-				if(b.getUint8(12) == 0x10) { 
-					if(data_id == 0x0a && b.getUint8(13) == 0x01) {
-					    //  0 1  2 3  4  5 6 7 8 910 1112 13 14 15 1617
-						// 5030 5B05 9A 1C250F38C1A4 0A10 01 64 02 EF0C
-						let bat = b.getUint8(14);
-						s += ', Bat: '+ bat + '%';
-						if(b.getUint8(15) == 0x02) {
-							let Vbat = b.getUint16(16, true);
-							s += ', Vbat: '+ Vbat + ' mV';
-						}
-					} else if(data_id == 0x0d && b.getUint8(13) == 0x04) {
-					    //  0 1  2 3  4  5 6 7 8 910 1112 13 1415 1617
-						// 5030 5B05 3D 1C250F38C1A4 0D10 04 0201 1401 
-						let temp = b.getInt16(14, true) / 10.0;
-						let humi = b.getInt16(16, true) / 10.0;
-						s += ', Temp: '+temp+'°C, Humi: '+humi+'%';
+			s = 'MiVer'+ (ctrl>>12);
+			let i = 2;
+			if((ctrl&0xf000) > 0x2000 && b.byteLength >= i + 3) {
+				let dev_id = b.getUint16(i, true);
+				let frcntr = b.getUint8(i+2);
+				i += 3;
+				s += ', DevID: 0x'+ hex(dev_id, 4);
+				s += ', FnCnt: '+ frcntr;
+				s += ', CtrID: 0x'+ hex(ctrl, 4);
+				if(ctrl & 0x100)
+					s +=' Registered and bound';
+				else
+					s +=' Not bound';
+				if(ctrl & 0x200)
+					s +=', Request APP to register and bind';
+				switch((ctrl>>10)&3) {
+					case 0:
+						s +=', Old version certification';
+						break;
+					case 1:
+						s +=', Safety certification';
+						break;
+					case 2:
+						s +=', Standard certification';
+						break;
+					//case 3:
+					//	s +=' reserved';
+					//	break;
+				}
+				if(ctrl & 0x200)
+					s +=', Request APP to register and bind';
+				if((ctrl & 0x10) && b.byteLength >= i + 6) {
+					s += ', MAC: '+hex(buf[i+5],2)+hex(buf[i+4],2)+hex(buf[i+3],2)+hex(buf[i+2],2)+hex(buf[i+1],2)+hex(buf[i],2);
+					i += 6;
+				}
+				if((ctrl & 0x20) && b.byteLength >= i + 1) {
+					let cap = b.getUint8(i);
+					i += 1;
+					s +=', Capability: 0x'+ hex(cap,2);
+					switch((cap>>3) & 3) {
+						case 0:
+							s +=' - no binding';
+							break;							
+						case 1:
+							s +=' - front binding';
+							break;							
+						case 2:
+							s +=' - back binding';
+							break;							
+						case 3:
+							s +=' - Combo';
+							break;							
+					}
+					if(cap & 0x20 && b.byteLength >= i + 2) {
+						s +=', IO: 0x'+ hex(b.getUint16(i, true), 4);
+						i += 2;
 					}
 				}
+				if((ctrl & 0x40)) {
+					if(b.byteLength >= i + 4) {
+						if(ctrl & 8) {
+								s += ', Data encrypted';
+						} else {
+							let data_id = b.getUint16(i, true);
+							let data_len = b.getUint8(i+2);
+							i += 3;
+							if(b.byteLength >= i + data_len) switch(data_id) {
+								case 0x1006:
+									if(data_len == 2) {
+										let humi = b.getInt16(i, true) / 10.0;
+										s += ', Humi: '+humi+'%';
+									}
+									break;
+								case 0x1004:
+									if(data_len == 2) {
+										let temp = b.getInt16(i, true) / 10.0;
+										s += ', Temp: '+temp+'В°C';
+									}
+									break;
+								case 0x100a:
+									if(data_len == 1) {
+										s += ', Bat: '+ b.getUint8(i) + '%';
+										if(b.byteLength >= i + 3 && b.getUint8(i+1) == 2) {
+											let Vbat = b.getUint16(i+2, true);
+											s += ', Vbat: '+ Vbat + ' mV';
+											i += 3;
+										}
+									}
+									break;
+								case 0x100d:
+									if(data_len == 4 && b.byteLength >= i + 3) {
+										let temp = b.getInt16(i, true) / 10.0;
+										let humi = b.getInt16(i+2, true) / 10.0;
+										s += ', Temp: '+temp+'В°C Humi: '+humi+'%';
+									}
+									break;
+								default:
+									s += ', DataID: 0x'+hex(data_id,4);
+									let data_value = 0;
+									if(data_len == 1)
+										s += ' Value: 0x'+hex(b.getUint8(i),2);
+									else if(data_len == 2)
+										s += ' Value: 0x'+hex(b.getUint16(i, true),4);
+									else if(data_len == 4)
+										s += ' Value: 0x'+hex(b.getUint32(i, true), 8);
+									else 
+										s += ' DataLen: ' + data_len;
+									break;
+							}
+							i += data_len;
+						}
+					}
+				}
+				if(ctrl & 0x80)
+					s +=', Mesh Data';
 			}
 		}
 	} else if(key == '0000181a-0000-1000-8000-00805f9b34fb') {
@@ -210,10 +301,11 @@ function miAction() {
 			nitifiyCharTemp = characteristic;
 			return nitifiyCharTemp.startNotifications().then(() => {
 				nitifiyCharTemp.addEventListener('characteristicvaluechanged', event => {
-					var value = event.target.value;
-					var temp = (value.getUint8(1) << 8 | value.getUint8(0)) / 100;
-					var hum = value.getUint8(2);
-					var tempTempString = "Temp/Humi: " + temp + "°C / " + hum + "%";
+					let value = event.target.value;
+					let temp = value.getInt16(0, true) / 100;
+					let hum = value.getUint8(2);
+					let vbat = value.getUint16(3,true);
+					let tempTempString = "Temp: " + temp + "°C, Humi: " + hum + "%, "+vbat+" mV";
 					document.getElementById("tempHumiData").innerHTML = '<hr>'+tempTempString;
 					addClog(tempTempString);
 				});
