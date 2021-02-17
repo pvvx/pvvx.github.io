@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v2.0</title>
+<title>Telink Flasher v2.0p</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -1451,10 +1451,10 @@ function CustomConfig() {
 	$("cfg_smiley").value = cfg.flg2&7;
 	if(cfg.ver == 0x19)
 		$("cfg_flg2_memo").checked = (cfg.flg2&8) != 0;
+	if(cfg.ver >= 0x22)
+		$("mi_beacon").checked = (cfg.flg2&0x08) != 0;
 	if(cfg.ver >= 0x20)
 		$("cfg_av_meas_mem").value = String(cfg.av_meas_mem);
-	if(cfg.ver >= 0x22)
-		$("mi_beacon").checked = (cfg.flg2&0x40) != 0;
 	$("cfg_tmp_off").value = String(cfg.temp_offset / 10.0);
 	$("cfg_hm_off").value = String(cfg.humi_offset / 10.0);
 	$("cfg_adv_int").value = String(cfg.advertising_interval * 62.5);
@@ -1482,10 +1482,10 @@ function SendCustomConfig() {
 	cfg.flg2 = (parseInt($("cfg_smiley").value) & 7);
 	if(cfg.ver == 0x19)
 		cfg.flg2 += (($("cfg_flg2_memo").checked) ? 8 : 0);
+	if(cfg.ver >= 0x22)
+		cfg.flg2 += (($("mi_beacon").checked) ? 0x08 : 0);
 	if(cfg.ver >= 0x20)
 		cfg.av_meas_mem = parseInt($("cfg_av_meas_mem").value);
-	if(cfg.ver >= 0x22)
-		cfg.flg2 += (($("mi_beacon").checked) ? 0x40 : 0);
 	cfg.temp_offset = Math.round(10.0 * parseFloat($("cfg_tmp_off").value));
 	if(cfg.temp_offset < -127) cfg.temp_offset = -127;
 	else if(cfg.temp_offset > 127) cfg.temp_offset = 127;
