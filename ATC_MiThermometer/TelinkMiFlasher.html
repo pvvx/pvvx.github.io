@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v2.0p</title>
+<title>Telink Flasher v2.1</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -1257,7 +1257,7 @@ function sendMAC() {
 				addClog(blk);
 				addClog("Send cmd New MAC ("+dump(blk, blk.length)+")...");
 				settingsCharacteristics.writeValue(blk).then(_ => {
-					addALog("Send New MAC: "+dump(mac, 6)+" RAND:" +dump(mac.slice(6), 2)+" ok");
+					addAlog("Send New MAC: "+dump(mac, 6)+" RAND:" +dump(mac.slice(6), 2)+" ok");
 				});
 			}
 		}
@@ -1309,6 +1309,35 @@ function UpdTrg() {
 		$("trg_tmp_hst").value =  trg.tmp_hst/10.0;
 		$("trg_hm_hst").value =  trg.hm_hst/10.0;
 	}
+}
+function setNewTBKey() {
+	let bk = $("mi_bind_key").value;
+	if(bk.length == 32) {
+		let bkey = hexToBytes(bk);
+		if(bkey.length == 16) {
+			let tk = $("mi_token").value;
+			if(tk.length == 24) {
+				let token = hexToBytes(tk);
+				if(token.length == 12) {
+					let blk = new Uint8Array(29);
+					blk.set(token,1);
+					blk.set(bkey,13);
+					blk[0] = 0x12;
+					addClog(blk);
+					addClog("Send cmd MtuSizeExchange (7120)");
+					settingsCharacteristics.writeValue(new Uint8Array([0x71,0x20])).then(_ => {
+						addClog("Send cmd New bindkey ("+dump(blk, blk.length)+")...");
+						settingsCharacteristics.writeValue(blk).then(_ => {
+							addAlog("Send cmd New keys ok");
+					})});
+					return;
+				}
+			}
+			addLog("Mi Token must be 12 hex digits!")
+			return;
+		}
+	}
+	addLog("Bind Key must be 16 hex digits!")
 }
 function sendTrg() {
 	if(trg.enable) {
@@ -1430,10 +1459,11 @@ function CustomConfig() {
 		let str = new TextDecoder("utf-8").decode(mikeys.id.slice(1));
 		is +='Device known id:<br><input size="40" maxlength="19" type="text" id="known_id" value="'+str+'"><br>';
 	}
-	if(mikeys.token)
-		is +='Mi Token:<br><input size="40" maxlength="12" type="text" id="mi_token" value="'+dump(mikeys.token,12)+'"><br>';
-	if(mikeys.bindkey)
-		is +='Mi Bind Key:<br><input size="40" maxlength="16" type="text" id="mi_bind_key" value="'+dump(mikeys.bindkey,16)+'"><br>';
+	if(mikeys.bindkey && mikeys.token) {
+		is +='Mi Token:<br><input size="40" maxlength="24" type="text" id="mi_token" value="'+dump(mikeys.token,12)+'"><br>';
+		is +='Mi Bind Key:<br><input size="40" maxlength="32" type="text" id="mi_bind_key" value="'+dump(mikeys.bindkey,16)+'">';
+		is +=' <button type="button" title="Set new Mi Token and Bind keys" onclick="setNewTBKey();">Set new Token & Bind keys</button><br>';
+	}
 	if(mikeys.restore) {
 		is += '<br><button type="button" onclick="sendCustomSetting(&quot;16&quot;);">Swap previous token + bindkey</button>';
 		if(cfg.ver >= 0x21)
