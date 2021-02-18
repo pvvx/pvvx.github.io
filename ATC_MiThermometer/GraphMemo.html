@@ -129,6 +129,7 @@
 	<div id="div_v"	style="height:400px;"></div>
 		<input type="button" id="butConnect" value="Connect">
 		<input type="button" id="butSave" value="Save data.csv">
+		Set device time<input type="checkbox" id="setDevTime" checked>
 		Hide old dates<input type="checkbox" id="hideLoDate" checked>
 		Vbat<input type="checkbox" id="thvbat"><br>
 		<span id='info'>?</span>
@@ -250,6 +251,13 @@ function hex(number, length) {
     while (str.length < length) str = '0' + str;
     return str;
 } 
+function dump(ar, len) {
+	let s = '';
+	for(let i=0; i < len; i++) {
+		s += hex(ar[i],2);
+	}
+	return s;
+}
 function ResponsePkt(head, value) {
 	let ds = value.byteLength;
 	let s = 'msg: ';
@@ -266,14 +274,14 @@ function show_graph() {
 		if($('thvbat').checked) {
 			memo.reduceRight(function(a, b)	{ 
 			if(hideldate) {
-				if(b[0] > 1609459200) datau.push([new Date(b[0]*1000.0+localOffset), b[3]/1000.0]); 
+				if(b[0] > 1609459200 && b[0] < 2255486400) datau.push([new Date(b[0]*1000.0+localOffset), b[3]/1000.0]); 
 			} else datau.push([new Date(b[0]*1000.0+localOffset), b[3]/1000.0]); 
 			return a+1;}, 1 );
 		} else {
 			memo.reduceRight(function(a, b)	{ 
 			if(hideldate) {
-				if(b[0] > 1609459200) datau.push([new Date(b[0]*1000.0+localOffset), b[1], b[2]]); 
-			} else datau.push([new Date(b[0]*1000.0+localOffset), b[1], b[2]]); 
+				if(b[0] > 1609459200 && b[0] < 2255486400) datau.push([new Date(b[0]*1000.0+localOffset), b[1], b[2]]); 
+			} else datau.push([new Date(b[0]*1000.0+localOffset), b[1], b[2]]);
 			return a+1;}, 1 );
 		}
 		log('Load '+ datau.length + ' samples.')
@@ -364,15 +372,33 @@ function connectDeviceAndCacheCharacteristic(device) {
 						let tm = value.getInt16(7, true) / 100.0;
 						let hm = value.getUint16(9, true) / 100.0;
 						let vb = value.getUint16(11, true);
-						//let dt = new Date(tc*1000);
-						// log('Memo '+((dt.toISOString().slice(0, -1)).replace('T',' ')).replace('.000','')+' - Vbat: '+vb+' mV , Temp: '+tm+'°C, Humi: '+hm+'%, Count: '+cnt);
+						let dt = new Date(tc*1000);
+						console.log('Memo '+((dt.toISOString().slice(0, -1)).replace('T',' ')).replace('.000','')+' - Vbat: '+vb+' mV , Temp: '+tm+'°C, Humi: '+hm+'%, Count: '+cnt);
 						log('Read Count: '+cnt);
 						memo.push([tc,tm,hm,vb]);
 					} else if(len >= 3) {
-						disconnect();
-						show_graph();
+						console.log('Read count: '+ memo.length);
+						let time = Date.now()/1000;
+						time -= (new Date()).getTimezoneOffset() * 60;
+						blk = new Uint8Array(5);
+						blk[0] = 0x23;
+						blk[1] = time & 0xff;
+						blk[2] = (time >> 8) & 0xff;
+						blk[3] = (time >> 16) & 0xff;
+						blk[4] = (time >> 24) & 0xff;
+						console.log("Send cmd Set DevTime ("+dump(blk, blk.length)+")...");
+						characteristicVTH.writeValue(blk).then(_ => {
+							console.log('Send new DevTime ok');
+						});
 					}
-				};
+				} else if(value.getUint8(0) == 0x23 && len >= 4) {
+					let time = value.getUint32(1,true);
+					console.log('Device Time: 0x' + hex(time,8));
+					let dt = new Date(time*1000);
+					console.log('Device Date: '+(dt.toISOString().slice(0, -1)).replace('T',' '));
+					disconnect();
+					show_graph();
+				}
 			});
 			DevConnected();
 			memo = new Array();

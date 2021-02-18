@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v2.1</title>
+<title>Telink Flasher v2.2</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -123,6 +123,36 @@ function connect() {
 	}).catch(handleError);
 }
 
+const tabid2name = [
+  { id: 0x01AA, name: "LYWSDCGQ"},
+  { id: 0x0347, name: "CGG1"},
+  { id: 0x0B48, name: "CGG1_ENCRYPTED"},
+  { id: 0x066F, name: "CGDK2"},
+  { id: 0x045B, name: "LYWSD02"},
+  { id: 0x055B, name: "LYWSD03MMC"},
+  { id: 0x0576, name: "CGD1"},
+  { id: 0x06d3, name: "MHO_C303"},
+  { id: 0x0387, name: "MHO_C401"},
+  { id: 0x02DF, name: "JQJCY01YM"},
+  { id: 0x0098, name: "HHCCJCY01"},
+  { id: 0x03BC, name: "GCLS002"},
+  { id: 0x015D, name: "HHCCPOT002"},
+  { id: 0x040A, name: "WX08ZM"},
+  { id: 0x098B, name: "MCCGQ02HL"},
+  { id: 0x0083, name: "YM_K1501"},
+  { id: 0x0113, name: "YM_K1501EU"},
+  { id: 0x045C, name: "V_SK152"},
+  { id: 0x0863, name: "SJWS01LM"},
+  { id: 0x07F6, name: "MJYD02YL"},
+];
+
+function id2name(dev_id) {
+	let did = tabid2name.map(el => el.id); 
+	let i = did.indexOf(dev_id);
+	if(i != -1) return tabid2name[i].name;
+	return "?";
+}
+
 function catchAdvertisement(device) {
   addAlog("Get Advertising MAC (Web Experimental Features!)");
   const abortController = new AbortController();
@@ -142,6 +172,7 @@ function catchAdvertisement(device) {
 				let frcntr = b.getUint8(i+2);
 				i += 3;
 				s += ', DevID: 0x'+ hex(dev_id, 4);
+				s += "-" + id2name(dev_id);
 				s += ', FnCnt: '+ frcntr;
 				s += ', CtrID: 0x'+ hex(ctrl, 4);
 				if(ctrl & 0x100)
@@ -1414,8 +1445,10 @@ function CustomConfig() {
 		is += ' <button type="button" onclick="sendGetMemo(50);">Get the last 50 records</button> <a href="GraphMemo.html">GraphMemo.html</a><br><br>';
 	}
 	if(cfg.ver >= 0x20) {
-		is += 'Recording averaging measurements to flash memory <input size="5" title="0..255, =0 - off, default 60. Set time/date!" id="cfg_av_meas_mem" maxlength="3" value="60"> x(measure interval)';
-		is += ' <button type="button" onclick="sendGetMemo(50);">Get the last 50 records</button> <a href="GraphMemo.html">GraphMemo.html</a><br><br>';
+		is += 'Recording averaging measurements to flash memory <input size="5" title="0..255, =0 - off, default 60. Set time/date!" id="cfg_av_meas_mem" maxlength="3" value="60"> x(measure interval)<br>';
+		if(cfg.ver >= 0x23) 
+			is += '<button type="button" onclick="sendCustomSetting(&quot;361234&quot;);">!Delete all records!</button> '
+		is += '<a href="GraphMemo.html">GraphMemo.html</a> <button type="button" onclick="setDevTime();">Set Time</button> <button type="button" onclick="sendGetMemo(50);">Get the last 50 records</button><br><br>';
 	}
 	is += '<button type="button" onclick="SendCustomConfig()">Send Config</button>';
 	is += ' <button type="button" onclick="sendCustomSetting(&quot;56&quot;);">Set default</button>';
