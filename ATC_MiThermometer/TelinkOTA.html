@@ -15,6 +15,8 @@ var firmwareArray = "",
 //Connection values
 var connectTrys = 0;
 
+var $ = function(id) { return document.getElementById(id);}
+
 function resetVariables() {
     busy = false;
     gattServer = null;
@@ -40,12 +42,14 @@ function onDisconnected() {
 }
 
 function connect() {
+	PServ = $('iPServ').value;
+	PChar = $('iPChar').value;
     var deviceOptions = {
         optionalServices: [PServ],
         acceptAllDevices: true,
     };
-    const hideUnknown = document.getElementById('hideUnknown').checked;
-    const namePrefix = document.getElementById('namePrefix').value;
+    const hideUnknown = $('hideUnknown').checked;
+    const namePrefix = $('namePrefix').value;
     if (hideUnknown) {
         deviceOptions.acceptAllDevices = false;
         deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz"
@@ -110,7 +114,7 @@ function sendBLEdata(data) {
 function addLog(logTXT) {
     var time = new Date().toLocaleTimeString();
     var logString = time + ": " + logTXT;
-    document.getElementById("log").innerHTML += logString + "<br>";
+    $("log").innerHTML += logString + "<br>";
 }
 
 function addClog(logTXT) {
@@ -118,12 +122,12 @@ function addClog(logTXT) {
 }
 
 function clearLog() {
-    document.getElementById("log").innerHTML = "";
+    $("log").innerHTML = "";
 }
 
 function setStatus(status) {
     addClog("Status: " + status);
-    document.getElementById("percent").innerHTML = "Status: " + status;
+    $("percent").innerHTML = "Status: " + status;
 }
 
 function updateFail(err) {
@@ -308,7 +312,11 @@ var mainCharSend = function(data, characteristic) {
 }
 
 </script>
-<h2>Telink OTA</h2><hr>
+<big><big>Telink OTA</big></big> <a href="https://github.com/pvvx/ATC_MiThermometer">&#9432;</a><hr>
+Services UUID:<br>
+<input size="40" type="text" id="iPServ" value="00010203-0405-0607-0809-0a0b0c0d1912" maxlength="36"><br>
+Characteristic:<br>
+<input size="40" type="text" id="iPChar" value="00010203-0405-0607-0809-0a0b0c0d2b12" maxlength="36"><br>
 <button type="button" onclick="connect();">Connect</button>
 <button type="button" onclick="reConnect();">Reconnect</button><br>
 <label for="hideUnknown">Hide unknown</label>
