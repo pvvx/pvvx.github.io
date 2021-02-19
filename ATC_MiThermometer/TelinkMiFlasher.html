@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="Styles.css">
 <title>Telink Flasher v2.2</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
@@ -63,6 +64,7 @@ function resetVariables() {
 	miConnected = false;
 	is_logged_in = false;
 	fwname = '';
+	$("selfrmw").innerHTML ='';
 	$("ldfrmw").innerHTML ='';
 	$("custcfg").innerHTML = '';
 	$("tempHumiData").innerHTML = "Temp/Humi: waiting for data after connecting";
@@ -547,26 +549,65 @@ function customAction() {
 		}).then(characteristic => {
 			addClog("Found custom read-write characteristic");
 			settingsCharacteristics = characteristic;
-			if(devidEnabled) settingsCharacteristics.startNotifications().
+			if(devidEnabled && settingsCharacteristics.properties.read) settingsCharacteristics.startNotifications().
 				then(_ => {
-		            addClog("Start Notifications (0x1f1f)");
+					addClog("Start Notifications (0x1f1f)");
 					settingsCharacteristics.addEventListener('characteristicvaluechanged', event => CustomBlkParse(event.target.value));
-		            addClog("Read Characteristics (0x1f1f)");
+					addClog("Read Characteristics (0x1f1f)");
 					settingsCharacteristics.readValue()
 					.then(value => {
+						addLog("Detected custom firmware");
+						setStatus("Detected custom firmware");
 						$("ldfile").hidden = false;
 						addClog("Send cmd (3303): Query 3 measurements");
 						settingsCharacteristics.writeValue(new Uint8Array([0x33,0x03])).then(_ => {
-						  addClog('Send cmd ok');
+							addClog('Send cmd ok');
 						})
 						.catch(error => addClog(error));
 					}).catch(error => addClog(error));
-		        }).catch(error => addClog(error));
-		    else {
-				addLog("Detected alternative Firmware? Use: https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html");
-				setStatus('Detected alternative Firmware? <a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html">TelinkOTA</a>');
-		    }
+				}).catch(error => addClog(error));
+			else {
+				addLog("Detected unknown firmware");
+				setStatus('Detected unknown firmware');
+				unknownFirmwareAction();
+			}
 		}).catch(handleError);
+}
+
+function unknownFirmwareAction() {
+	let is = '';
+	if(otafiles.loaded) {
+		is += '<br><div><b>Choose the type of device that you want to flash:</div><br>';
+		is += '<table>';
+			is += '<tr>';
+				is += '<th><b>Xiaomi Mijia (LYWSD03MMC)</b></th>';
+				is += '<th><b>Xiaomi Miaomiaoce (MHO-C401)</b></th>';
+				is += '<th><b>Choose a specific firmware</b></th>';
+			is += '</tr>';
+			is += '<tr>';
+				is += '<td><img class="table-image" src="img/lywsd03mmc.png" alt="Xiaomi Mijia (LYWSD03MMC)"></td>';
+				is += '<td><img class="table-image" src="img/mho-c401.png" alt="Xiaomi Miaomiaoce (MHO-C401)"></td>';
+				is += '<td>Different firmware versions are available from the pvvx github site</td>';
+			is += '</tr>';
+			is += '<tr>';
+				is += '<td>';
+					is += '<button class="table-button" type="button" id="firmupg" onclick="FirmwareUpgrade(0);">Custom Firmware</button>';
+					is += '<button class="table-button" type="button" onclick="BackToOriginal(0, true);">Xiaomi Firmware</button>';
+				is += '</td>';
+				is += '<td>';
+					is += '<button class="table-button" type="button" id="firmupg" onclick="FirmwareUpgrade(1);">Custom Firmware</button>';
+					is += '<button class="table-button" type="button" onclick="BackToOriginal(1, true);">Xiaomi Firmware</button>';
+				is += '</td>';
+				is += '<td>';
+					// Use button to proxy file input selector so we can hide the default label text
+					is += '<input type="file" accept=".bin" id="file" style="display: none;" />';
+					is += '<input type="button" value="Browse..." onclick="document.getElementById(\'file\').click();" />';
+				is += '</td>';
+			is += '</tr>';
+		is += '</table><br>';		
+
+		document.getElementById("selfrmw").innerHTML = is;
+	}
 }
 
 function miAuthorization() {
@@ -779,13 +820,14 @@ function detectMi() {
 			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
 			miAction();
 		} else if (customEnabled) {
-			addLog("Detected custom Firmware");
-			setStatus("Detected custom Firmware");
+			addLog("Checking for custom firmware");
+			setStatus("Checking for custom firmware");
 			customAction();
 			$("custcfg").innerHTML = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
 		} else {
-			addLog("Connected");
-			setStatus("Connected")
+			addLog("Connected to unknown firmware");
+			setStatus("Connected to unknown firmware");
+			unknownFirmwareAction();
 		}
 	}).catch(handleError);
 }
@@ -988,17 +1030,17 @@ function getOtaJson(d, name) {
 	}
 }
 
-function FirmwareUpgrade() {
-	if(cfg.hver != null) {
-		let fn = otafiles.custom[cfg.hver & 3];
+function FirmwareUpgrade(hver = cfg.hver) {
+	if (hver != null) {
+		let fn = otafiles.custom[hver & 3];
 		addAlog("Load firmware file '"+fn+"'...");
 		ajax_file(fn, getFirmwareArray);
 	}
 }
 
-function BackToOriginal() {
-	if(cfg.enable) {
-		let fn = otafiles.original[cfg.hver & 3];
+function BackToOriginal(hver = cfg.hver, enable = cfg.enable) {
+	if(enable) {
+		let fn = otafiles.original[hver & 3];
 		addAlog("Load firmware file '"+fn+"'...");
 		ajax_file(fn, getFirmwareArray);
 	}
@@ -1595,6 +1637,7 @@ function SendCustomConfig() {
   <label for="namePrefix">BLE device name prefix filter(s)</label>
   <input type="text" id="namePrefix" value="" placeholder="LYWSD03,ATC"><br>
   <div id="ldfile" hidden="true">Select Firmware: <input type="file" accept=".bin" id="file"/></div>
+  <div id="selfrmw"></div>
   <div id="ldfrmw"></div>
  <div id="percent">Status: waiting for you to connect a device</div><hr>
  <div id="tempHumiData">Temp/Humi: waiting for data after connecting</div><hr>

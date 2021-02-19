@@ -1,0 +1,23 @@
+table {
+	width: 540px;
+}
+
+th, td {
+    width: 180px;
+}
+
+td {
+    text-align: center;
+}
+
+table-image {
+    display: block;
+    margin: auto;
+    width: 128;
+    height: 128;
+}
+
+button.table-button {
+    margin-bottom: 5px;
+    width: 128px;
+}
