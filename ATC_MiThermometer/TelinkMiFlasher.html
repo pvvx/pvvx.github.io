@@ -11,7 +11,7 @@ var bluetoothDevice, gattServer, Theservice, writeCharacteristic;
 var ServiceMain, writeCharacteristicSpeed, nitifiyCharTemp, time_char, enc_main, enc_10, enc_19;
 //Firmware values
 var rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/";
-var otafiles = { loaded: false, version: 0x21, custom: ['ATC_Thermometer21.bin','MHO_C401_v21.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin']};
+var otafiles = { loaded: false, version: 0x23, custom: ['ATC_Thermometer23p.bin','MHO_C401_v23p.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin']};
 var firmwareArray = "",
 	startTime = 0,
 	blockCount = 0;
@@ -511,7 +511,7 @@ function CustomBlkParse(value) {
 				addAlog(((dt.toISOString().slice(0, -1)).replace('T',' ')).replace('.000','')+' # Vbat: '+vb+' mV , Temp: '+tm+'°C, Humi: '+hm+'%, Count: '+cnt);
 			} else if(len >= 2) {
 				let cnt = value.getUint16(1, true);
-				addClog('Memo end: '+cnt);
+				addAlog('Memo end: '+cnt);
 				flg_memo_act = false;
 			}
 		}
@@ -563,8 +563,8 @@ function customAction() {
 					}).catch(error => addClog(error));
 		        }).catch(error => addClog(error));
 		    else {
-				addLog("Detected ATC1441 Firmware?");
-				setStatus("Detected ATC1441 Firmware?");
+				addLog("Detected alternative Firmware? Use: https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html");
+				setStatus('Detected alternative Firmware? <a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html">TelinkOTA</a>');
 		    }
 		}).catch(handleError);
 }
@@ -1100,7 +1100,9 @@ var otaCharSend = function(data) {
 }
 
 function sendCustomSetting(data){
-	mainCharSend(data,settingsCharacteristics).then(function() {
+	if((hexToBytes(data))[0] == 0x35)
+		flg_memo_act = true;		
+	mainCharSend(data, settingsCharacteristics).then(function() {
 		addLog("Settings " + data + " was send successful");
 	}).catch(function(err) {
 		addLog("Error on sending setting " + data);
@@ -1584,7 +1586,7 @@ function SendCustomConfig() {
 
 
 </script>
-<big><big>Telink Flasher for Mi Thermostat</big></big> <a href="https://github.com/atc1441/ATC_MiThermometer">©</a><br>
+<big><big>Telink Flasher for Mi Thermostat</big></big> <a href="https://github.com/atc1441/ATC_MiThermometer">©</a> <a href="https://github.com/pvvx/ATC_MiThermometer">&#9432;</a><br>
 <!-- Copyright: Aaron Christophel / Atc1441  <a href="https://atcnetz.de">https://ATCnetz.de</a><br> -->
   <button type="button" onclick="connect();">Connect</button> Get Advertising MAC:<input type="checkbox" title="Web Experimental Features!" id="advmac">
   <button type="button" onclick="reConnect();">Reconnect</button><br>

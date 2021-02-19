@@ -403,8 +403,8 @@ function connectDeviceAndCacheCharacteristic(device) {
 			DevConnected();
 			memo = new Array();
 			datau = new Array();
-			log('Send command tx-memo (0x35,0x4CB0)...');
-			return characteristicVTH.writeValue(new Uint8Array([0x35,0xB0,0x4C]));
+			log('Send command get-memo (0..19632 samples)...');
+			return characteristicVTH.writeValue(new Uint8Array([0x35,0xB0,0x4C,0,0]));
 		});
 	});
 }
@@ -424,7 +424,7 @@ function disconnect() {
 					}
 					deviceCache.removeEventListener('gattserverdisconnected', handleDisconnection);
 					deviceCache = null;
-					log('Disconnected.');
+					log('Disconnected. Load '+memo.length+' samples.' );
 					ShowConnect();
 				})
 				.catch(error => { log(error); 
