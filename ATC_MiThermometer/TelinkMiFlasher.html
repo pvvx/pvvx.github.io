@@ -610,7 +610,6 @@ function miAuthorization() {
 					enc_19.addEventListener('characteristicvaluechanged', event => {
 						var value = bytesToHex(event.target.value.buffer);
 						addClog("Enc_19: " + value);
-
 						if (mode_activation == 1) {
 							if (value == "000000000100") { // BLE_UUID_STDIO_SRV  00000100-0065-6c62-2e74-6f696d2e696d
 								is_activated = false;
@@ -736,6 +735,7 @@ function miAuthorization() {
 						cfg.hver = null;
 						$("ldfile").hidden = false;
 					}
+					if(cfg.hver!=null) $("log").innerHTML += '<a href="https://pvvx.github.io/ATC_MiThermometer/GraphOriginal.html">GraphOriginal</a><br>';
 					setStatus("Connected, you can now Do the Activation to either get the Token or flash a new Firmware");
 				});
 			});
