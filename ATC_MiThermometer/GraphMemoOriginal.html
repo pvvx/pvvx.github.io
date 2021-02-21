@@ -129,13 +129,8 @@
 	<div style="height: auto; width: auto; text-align: center;">
 	<div id="div_v"	style="height:400px;"></div>
 		<input type="button" id="butConnect" value="Connect">
-		<input type="button" id="butOnOff" value="Stop">
-		<input type="button" id="butClr" value="#">
-		<input type="radio" checked name='rm1'  id="FixEnd"/>
-		<label for="FixEnd">Fixed</label>
-		<input type="radio" name='rm1' id="FixNone"/>
-		<label for="FixNone">Float</label>
 		<input type="button" id="butSave" value="Save data.csv"><br>
+		<span id='info'>?</span>
 	<div id='labdiv' style=></div>
 	</div>
   </body>
@@ -144,18 +139,11 @@ var $ = function(id) {
 	return document.getElementById(id);
 }
 var start_time, time_dev, time_data, idx_data, time, temp, humi, temp_hi, temp_lo, humi_hi, humi_lo;
+var index_end = 0;
 var start_data = false;
-var cur_idx = 0;
-var samples = 20000;
 // Вывод в терминал
-function log(data) {console.log(data);}
+function log(data) {$('info').innerHTML=data} // {console.log(data);}
 var devcnn = 0;
-var stg = 0;
-var rend = 1;
-$("butOnOff").onclick =  function() {
-	if(rend) {rend = 0; $("butOnOff").value = "Run";}
-	else {rend = 1; $("butOnOff").value = "Stop";}
-}
 function ShowConnect() {
 	if(devcnn==0) $("butConnect").value = "Connect"
 	else $("butConnect").value = "Disconnect";
@@ -169,18 +157,9 @@ $("butConnect").onclick =  function() {
 // Буфер входящих данных
 var datau = [];
 var gu;
-$("butClr").onclick =  function() {
-	datau = new Array();
-	stg = 0;
-	cur_idx = 0;
-	gu.destroy();
-}
+var stg = false;
 function ShowGrf() {
-	if(rend) {
-		datau.push([new Date(start_time + time_data*1000), [temp_lo, temp, temp_hi], [humi_lo, humi, humi_hi]]);
-		cur_idx++;
-		if(cur_idx >= samples) datau.shift();
-	}
+	datau.push([new Date(start_time + time_data*1000), [temp_lo, temp, temp_hi], [humi_lo, humi, humi_hi]]);
 	if(!stg) {
 		gu = new Dygraph(
 			$("div_v"),
@@ -202,23 +181,11 @@ function ShowGrf() {
 				digitsAfterDecimal: 3,
 			});
 		//setInterval(function(){renderChart()}, 1000);
-		stg = 1;
+		stg = true;
 	}
 }
 var renderChart = function() {
-	let dl;
-	if (gu.dateWindow_) {
-		dl = gu.dateWindow_[1] - gu.dateWindow_[0];
-	    if ($("FixEnd").checked) {
-			var ls = datau.length - 1;
-			gu.dateWindow_[1] = datau[ls][0];
-			gu.dateWindow_[0] = datau[ls][0] - dl;
-		} else if (gu.dateWindow_[0] < datau[0][0]) {
-			gu.dateWindow_[0] = datau[0][0];
-			gu.dateWindow_[1] = datau[0][0] + dl;
-	   	}
-	}
-	if(rend && datau.length != 0) gu.updateOptions({'file': datau});
+	gu.updateOptions({'file': datau});
 }
 function convertArrayOfObjectsToCSV(value){
 	var result, ctr, keys, columnDelimiter, lineDelimiter, data;
@@ -228,18 +195,19 @@ function convertArrayOfObjectsToCSV(value){
 	lineDelimiter = value.lineDelimiter || '\n';
 	keys = Object.keys(data[1]);
 	result = '';
-	data.forEach(function(item){
+	//result += keys.join(columnDelimiter);
+	//result += lineDelimiter;
+	data.reduceRight(function(a, i) {
 		ctr = 0;
 		keys.forEach(function(key){
-			if (ctr > 0) {
+			if (ctr > 0)
 				result += columnDelimiter;
-				result += item[key];
-			} else
-				result += item[key].getTime();
+			result += i[key];
 			ctr++;
 		});
 		result += lineDelimiter;
-	});
+		return 1;
+	}, 1);
 	return result;
 }
 function download(data, filename, type) {
@@ -258,35 +226,13 @@ function download(data, filename, type) {
 	}
 }
 $("butSave").onclick =  function() {
-	download(convertArrayOfObjectsToCSV({data: datau}), 'data.csv', 'text/csv;charset=utf-8');
+    download(convertArrayOfObjectsToCSV({data: datau}), 'data.csv', 'text/csv;charset=utf-8');
 }
 if(window.innerHeight > 320) $('div_v').style.height = (window.innerHeight-80) + 'px';
 window.onresize = function(){
 	if(window.innerHeight > 320) $('div_v').style.height = (window.innerHeight-80) + 'px';
 //	$('div_v').style.width = (window.innerWidth-50) + 'px';
 }
-var pack_samples = 8;
-function hex(number, length) {
-	var str = (number.toString(16)).toUpperCase();
-	while (str.length < length) str = '0' + str;
-	return str;
-}
-function WaitConnection() {
-	if(devcnn && !stg) {
-		disconnect();
-		alert('Device not Start!');
-	}
-}
-function ResponsePkt(head, value) {
-	let ds = value.byteLength;
-	let s = 'msg: ';
-	for(let i=0; i < ds; i++) {
-		s+=' '+hex(value.getUint8(i),2);
-		if(i<ds-1) s+=',';
-	}
-	log(s);
-}
-var index_end = 0;
 //--BLE---------------------------------------
 // Кэш объекта выбранного устройства
 let deviceCache = null;
@@ -294,6 +240,7 @@ let deviceCache = null;
 var characteristicDataCount = null;
 var characteristicDataRead = null;
 var characteristicIndex = null;
+var characteristicTime = null;
 // Запустить выбор Bluetooth устройства и подключиться к выбранному
 function connect() {
 	return (deviceCache ? Promise.resolve(deviceCache) :
@@ -326,8 +273,6 @@ function handleDisconnection(event) {
 			then(characteristic => {
 				devcnn = 1;
 		        ShowConnect()
-				stage_read = 0;
-				setTimeout(WaitConnection, 20000);
 			}).
 			catch(error => log(error));
 	}
@@ -379,7 +324,7 @@ function connectDeviceAndCacheCharacteristic(device) {
 										humi_lo = value.getUint8(13);
 										temp = (temp_hi + temp_lo)/2;
 										humi = (humi_hi + humi_lo)/2;
-										log('Index: ' + index_cur + ', DevTime: '+ time_data +', Temp: '+ temp +', Humi: '+humi+ '%');
+										log('Index: ' + index_cur + ', DevTime: '+ time_data +', Temp: '+ temp.toFixed(2) +', Humi: '+humi.toFixed(2)+ '%');
 										ShowGrf();
 										renderChart();
 										if(index_cur >= index_end) {
@@ -421,34 +366,37 @@ function connectDeviceAndCacheCharacteristic(device) {
 // Отключиться от подключенного устройства
 function disconnect() {
 	devcnn = 0;
-	if (deviceCache != null) {
+	if (deviceCache) {
 		log('Disconnecting from "' + deviceCache.name + '" bluetooth device...');
-		deviceCache.removeEventListener('gattserverdisconnected', handleDisconnection);
 		if (deviceCache.gatt.connected) {
 			if (characteristicDataRead) {
 				characteristicDataRead.stopNotifications()
-				.then(_ => {
+                .then(_ => {
 					log('Notifications stopped');
-				})
-				.catch(error => { log(error);
 					characteristicDataRead = null;
+				  	if (deviceCache.gatt.connected) {
+						deviceCache.gatt.disconnect();
+					}
+					deviceCache.removeEventListener('gattserverdisconnected', handleDisconnection);
 					characteristicDataCount = null;
 					characteristicIndex = null;
+					characteristicTime = null;
 					deviceCache = null;
-					devcnn = 0;
+					log('Disconnected. Load '+datau.length+' samples.' );
+					ShowConnect();
+				})
+				.catch(error => { log(error); 
+					if (characteristicDataRead) {
+						characteristicDataRead.removeEventListener('characteristicvaluechanged', handleCharacteristicValueChanged);
+						characteristicDataRead = null;
+					}
+					deviceCache.removeEventListener('gattserverdisconnected', handleDisconnection);
+					characteristicDataCount = null;
+					characteristicIndex = null;
+					characteristicTime = null;
+					deviceCache = null;
 					ShowConnect();
 				});
-			};
-			if (characteristicIndex || characteristicDataCount) {
-			  	if (deviceCache.gatt.connected) {
-					deviceCache.gatt.disconnect();
-					log('"' + deviceCache.name + '" bluetooth device disconnected');
-				}
-				characteristicDataCount = null;
-				characteristicIndex = null;
-				deviceCache = null;
-				devcnn = 0;
-				ShowConnect();
 			}
 		}
 	}
