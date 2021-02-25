@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v2.2</title>
+<title>Telink Flasher v2.3</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -11,7 +11,7 @@ var bluetoothDevice, gattServer, Theservice, writeCharacteristic;
 var ServiceMain, writeCharacteristicSpeed, nitifiyCharTemp, time_char, enc_main, enc_10, enc_19;
 //Firmware values
 var rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/";
-var otafiles = { loaded: false, version: 0x23, custom: ['ATC_Thermometer23p.bin','MHO_C401_v23p.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin']};
+var otafiles = { loaded: false, version: 0x24, custom: ['ATC_Thermometer24.bin','MHO_C401_v24.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin']};
 var firmwareArray = "",
 	startTime = 0,
 	blockCount = 0;
@@ -24,7 +24,7 @@ var state = 0,
 var customEnabled;
 var settingsCharacteristics = null;
 // Custom config
-var cfg = {enable: false, ver: 0, hver: 0, flg: 0, flg2: 0, temp_offset: 0, humi_offset: 0, advertising_interval: 32, measure_interval: 5, rf_tx_power: 191, connect_latency: 99, lcd_tint: 55, av_meas_mem: 60};
+var cfg = {enable: false, ver: 0, hver: 0, flg: 0, flg2: 0, temp_offset: 0, humi_offset: 0, advertising_interval: 32, measure_interval: 5, rf_tx_power: 191, connect_latency: 99, lcd_tint: 55, av_meas_mem: 60, step_time: 16000000};
 var trg = {enable: false, tmp_thr: 2100, hm_thr: 5000, tmp_hst: -1, hm_hst: 0, flg: 0};
 var cmf = {enable: false, tmp_lo: 2100, tmp_hi: 2600, hm_lo: 3000, hm_hi: 6000};
 var dnm = {enable: false, name: ""};
@@ -520,6 +520,12 @@ function CustomBlkParse(value) {
 		addClog('Device Time: 0x' + hex(time,8));
 		let dt = new Date(time*1000);
 		addAlog('Device Date: '+(dt.toISOString().slice(0, -1)).replace('T',' '));
+	} else if(blkid == 0x24 && len >= 4) {
+		cfg.step_time = value.getUint32(1,true);
+		addAlog('Device StepTimeSec: ' + (cfg.step_time / 16.0).toFixed(3) + ' us');
+		if(cfg.ver >= 0x24 && $("cfg_time_delta")) {
+			$("cfg_time_delta").value = cfg.step_time - 16000000;
+		};
 	} else if(blkid == 0x20 && len >= 8) {
 		cmf.tmp_lo = value.getInt16(1, true); // temp lo
 		cmf.tmp_hi = value.getInt16(3, true); // temp hi
@@ -602,6 +608,7 @@ function miAuthorization() {
 						if(otafiles.loaded && otafiles.version) {
 							if(cfg.hver != null)
 								$("ldfrmw").innerHTML = ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>  <button type="button" onclick="BackToOriginal();">'+ otafiles.original[cfg.hver & 3] +'</button>';
+							$("log").innerHTML += '<a href="https://pvvx.github.io/ATC_MiThermometer/GraphOriginal.html">GraphOriginal</a><br>';
 						}
 					}
 				});
@@ -735,7 +742,6 @@ function miAuthorization() {
 						cfg.hver = null;
 						$("ldfile").hidden = false;
 					}
-					if(cfg.hver!=null) $("log").innerHTML += '<a href="https://pvvx.github.io/ATC_MiThermometer/GraphMemoOriginal.html">GraphOriginal</a><br>';
 					setStatus("Connected, you can now Do the Activation to either get the Token or flash a new Firmware");
 				});
 			});
@@ -1384,6 +1390,17 @@ function sendTrg() {
 		});
 	}
 }
+function sendDeltaTime() {
+	let dtim = parseInt($("cfg_time_delta").value);
+	if(dtim > -32768 && dtim < 32768) {
+		addClog("Send cmd set delta (24 + delta: '+dtim+' )...");
+		settingsCharacteristics.writeValue(new Uint8Array([0x24, dtim&0xff, (dtim>>8)&0xff])).then(_ => {
+			addAlog('Send delta time ok');
+		});
+	} else {
+		addAlog("Delta time -32767 to 32767!");
+	}
+}
 function sendGetMemo(cnt) {
 	let count = cnt & 0x7fff;
 	let start = 0;
@@ -1455,8 +1472,13 @@ function CustomConfig() {
 	is += '<button type="button" onclick="SendCustomConfig()">Send Config</button>';
 	is += ' <button type="button" onclick="sendCustomSetting(&quot;56&quot;);">Set default</button>';
 	is += ' <button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>';
+	if(cfg.ver >= 0x24) {
+		is += '<hr><button type="button" title="Get time clock delta" onclick="sendCustomSetting(&quot;24&quot;);">Get delta time</button>';
+		is += ' Adjust time clock delta: <input size="5" title="-32767..32767, in 1/16 us for 1 sec, default 0" id="cfg_time_delta" maxlength="6" value="0">';
+		is += ' <button type="button" onclick="sendDeltaTime();">Set delta time</button><br>';
+	}
 	if(cfg.ver >= 0x11) {
-		is += '<br><input size="6" maxlength="6" type="text" title="000000..999999, 6 decimal digits, 000000 - PinCode Disable. Warning: If the PinCode is forgotten - only a hardware flasher!" id="pincode" value="000000"> <button title="Warning: If the PinCode is forgotten - only a hardware flasher!" type="button" onclick="sendPinCode();">!Set PinCode!</button><br>';
+		is += '<hr><input size="6" maxlength="6" type="text" title="000000..999999, 6 decimal digits, 000000 - PinCode Disable. Warning: If the PinCode is forgotten - only a hardware flasher!" id="pincode" value="000000"> <button title="Warning: If the PinCode is forgotten - only a hardware flasher!" type="button" onclick="sendPinCode();">!Set PinCode!</button><br>';
 		pincode.enable = true;
 		if(cfg.ver >= 0x14) {
 			is += '<br><button type="button" onclick="sendCustomSetting(&quot;01&quot;);">Get device Name</button> <input size="10" maxlength="10" type="text" title="Device Name: 1..10 chars" id="dev_name" value=""> <button type="button" title="Set New Name" onclick="sendDevName();">Set New Name</button> <button title="Clean Name: ATC_xxxx" type="button" onclick="CleanDevName();">Set default Name</button><br>';
