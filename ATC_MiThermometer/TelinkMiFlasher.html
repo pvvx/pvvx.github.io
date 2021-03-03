@@ -566,7 +566,10 @@ function customAction() {
 						  addClog('Send cmd ok');
 						})
 						.catch(error => addClog(error));
-					}).catch(error => addClog(error));
+					}).catch(error => { addClog(error);
+						addLog("Detected alternative Firmware? Use: https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html");
+						setStatus('Detected alternative Firmware? <a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html">TelinkOTA</a>');
+					 });
 		        }).catch(error => addClog(error));
 		    else {
 				addLog("Detected alternative Firmware? Use: https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html");
