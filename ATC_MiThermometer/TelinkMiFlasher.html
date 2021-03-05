@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v2.3</title>
+<title>Telink Flasher v2.4</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -400,8 +400,9 @@ function CustomBlkParse(value) {
 		let vbat = value.getUint16(1, true);
 		let temp = value.getInt16(3, true) / 100.0;
 		let humi = value.getInt16(5, true) / 100.0;
-		let count = value.getUint8(7);
-		let flg = value.getUint8(8);
+		let count = value.getUint16(7, true);
+		let flg = 0;
+		if(len > 8) flg = value.getUint8(9);
 		let s = 'Vbat: '+vbat+' mV , Temp: '+temp+'°C, Humi: '+humi+'%, Count: '+count+', flg: '+hex(flg,2);
 		$("tempHumiData").innerHTML = s;
 	    addClog(s);
