@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v2.4</title>
+<title>Telink Flasher v2.5</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -371,6 +371,7 @@ function CustomBlkParse(value) {
 	if(len == 0) return;
 	len--;
 	let blkid = value.getUint8(0);
+	addClog("blk:"+bytesToHex(value.buffer));
 	if(blkid == 0x55 && len >= 9) {
 		cfg.ver = value.getUint8(1);
 		cfg.flg = value.getUint8(2);
@@ -414,12 +415,18 @@ function CustomBlkParse(value) {
 		let s = 'ExtShow: big_number: '+ext.big_number+', small_number: '+ext.small_number+', ext.vtime: '+ext.vtime+' s, flg: '+hex(ext.flg,2);
 	    addAlog(s); UpdExt();
 	} else if(blkid == 0x44 && len >= 7) {
-		trg.tmp_thr = value.getInt16(1, true); // temp threshold
-		trg.hm_thr = value.getInt16(3, true); // humi threshold
-		trg.tmp_hst = value.getInt8(5);        // temp hysteresis
-		trg.hm_hst = value.getInt8(6);        // humi hysteresis
-		trg.flg = value.getInt8(7);
-		let s = 'Threshold Temp/Humi: '+(trg.tmp_thr/100.0)+'°C/'+(trg.hm_thr/100.0)+'%, Hysteresis T/H: '+(trg.tmp_hst/10.0)+'°/'+(trg.hm_hst/10.0)+'%, flg: 0x'+hex(trg.flg,2);
+		trg.tmp_thr = value.getInt16(1, true) / 100.0; // temp threshold
+		trg.hm_thr = value.getInt16(3, true) / 100.0; // humi threshold
+		if(len >= 9) {
+			trg.tmp_hst = value.getInt16(5, true) / 100.0;        // temp hysteresis
+			trg.hm_hst = value.getInt16(7, true) / 100.0;        // humi hysteresis
+			trg.flg = value.getInt8(9);
+		} else {
+			trg.tmp_hst = value.getInt8(5) / 10.0;        // temp hysteresis
+			trg.hm_hst = value.getInt8(6) / 10.0;        // humi hysteresis
+			trg.flg = value.getInt8(7);
+		}
+		let s = 'Threshold Temp/Humi: '+trg.tmp_thr+'°C/'+trg.hm_thr+'%, Hysteresis T/H: '+trg.tmp_hst+'°/'+trg.hm_hst+'%, flg: 0x'+hex(trg.flg,2);
 	    addAlog(s); UpdTrg();
 	} else if(blkid >= 0x10 && blkid <= 0x14 && len >= 1) {
 		let lb = value.getUint8(1);
@@ -1347,10 +1354,10 @@ function SendCmf() {
 }
 function UpdTrg() {
 	if(trg.enable && $("trg_tmp_hst").value) {
-		$("trg_tmp_thr").value =  trg.tmp_thr/100.0;
-		$("trg_hm_thr").value =  trg.hm_thr/100.0;
-		$("trg_tmp_hst").value =  trg.tmp_hst/10.0;
-		$("trg_hm_hst").value =  trg.hm_hst/10.0;
+		$("trg_tmp_thr").value =  trg.tmp_thr;
+		$("trg_hm_thr").value =  trg.hm_thr;
+		$("trg_tmp_hst").value =  trg.tmp_hst;
+		$("trg_hm_hst").value =  trg.hm_hst;
 	}
 }
 function setNewTBKey() {
@@ -1386,12 +1393,19 @@ function sendTrg() {
 	if(trg.enable) {
 		trg.tmp_thr = Math.round(100.0 * parseFloat($("trg_tmp_thr").value));
 		trg.hm_thr = Math.round(100.0 * parseFloat($("trg_hm_thr").value));
-		trg.tmp_hst = Math.round(10.0 * parseFloat($("trg_tmp_hst").value));
-		trg.hm_hst = Math.round(10.0 * parseFloat($("trg_hm_hst").value));
-		addClog("Send cmd (44 + trg data)...");
-		settingsCharacteristics.writeValue(new Uint8Array([0x44, trg.tmp_thr&0xff, (trg.tmp_thr>>8)&0xff,trg.hm_thr&0xff,(trg.hm_thr>>8)&0xff,trg.tmp_hst&0xff,trg.hm_hst&0xff])).then(_ => {
-			addAlog('Send Trg data ok');
-		});
+		if(cfg.ver >= 0x26) {
+			trg.tmp_hst = Math.round(100.0 * parseFloat($("trg_tmp_hst").value));
+			trg.hm_hst = Math.round(100.0 * parseFloat($("trg_hm_hst").value));
+			addClog("Send cmd (44 + trg data)...");
+			settingsCharacteristics.writeValue(new Uint8Array([0x44, trg.tmp_thr&0xff, (trg.tmp_thr>>8)&0xff,trg.hm_thr&0xff,(trg.hm_thr>>8)&0xff,trg.tmp_hst&0xff,(trg.tmp_hst>>8)&0xff,trg.hm_hst&0xff,(trg.hm_hst>>8)&0xff])).then(_ => {
+				addAlog('Send Trg data ok');});
+		} else {
+			trg.tmp_hst = Math.round(10.0 * parseFloat($("trg_tmp_hst").value));
+			trg.hm_hst = Math.round(10.0 * parseFloat($("trg_hm_hst").value));
+			addClog("Send cmd (44 + trg data)...");
+			settingsCharacteristics.writeValue(new Uint8Array([0x44, trg.tmp_thr&0xff, (trg.tmp_thr>>8)&0xff,trg.hm_thr&0xff,(trg.hm_thr>>8)&0xff,trg.tmp_hst&0xff,trg.hm_hst&0xff])).then(_ => {
+				addAlog('Send Trg data ok');});
+		}
 	}
 }
 function sendDeltaTime() {
@@ -1490,8 +1504,13 @@ function CustomConfig() {
 		}
 	}
 	is += '<hr>Management GPIO_PA5 (mark "reset"):<br>';
-	is += 'Temperature hysteresis: <input size="8" title="-12.7..12.7°, default -0.1, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="trg_tmp_hst" maxlength="5" value="-0.1"> °';
-	is += ', Humidity hysteresis: <input size="8" title="-12.7..12.7%, default 0, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="trg_hm_hst" maxlength="5" value="0.0"> %<br>';
+	if(cfg.ver >= 0x26) {
+		is += 'Temperature hysteresis: <input size="8" title="Step 0.01°, default -0.55°, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="trg_tmp_hst" maxlength="7" value="-0.55"> °';
+		is += ', Humidity hysteresis: <input size="8" title="Step 0.01%, default 0, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="trg_hm_hst" maxlength="7" value="0.0"> %<br>';
+	} else {
+		is += 'Temperature hysteresis: <input size="8" title="-12.7..12.7°, default -0.1, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="trg_tmp_hst" maxlength="5" value="-0.1"> °';
+		is += ', Humidity hysteresis: <input size="8" title="-12.7..12.7%, default 0, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="trg_hm_hst" maxlength="5" value="0.0"> %<br>';
+	}
 	is += 'Temperature threshold: <input size="8" title="-40.00..80.00°C, default 21.00°C" id="trg_tmp_thr" maxlength="6" value="21.00"> °';
 	is += ', Humidity threshold: <input size="8" title="0..99.00%, default 50.00%" id="trg_hm_thr" maxlength="6" value="50.00"> %<br>';
 	is += ' <button type="button" title="Get/read current setings" onclick="sendCustomSetting(&quot;44&quot;);">Get TRG</button>';
