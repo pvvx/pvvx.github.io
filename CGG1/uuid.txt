@@ -1,0 +1,50 @@
+BT Address: 58:2d:34:11:c3:b2
+Number of Services: 10
+BT 4.2 Secure Connection: False
+Device Connected: True
+Service Name: GenericAccess
+Service UUID: 00001800-0000-1000-8000-00805f9b34fb
+Characteristic Name: DeviceName - User Description: - Handle: 2 - Value: Qingping Temp & RH M
+Characteristic Name: Appearance - User Description: - Handle: 4 - Value: 00-00
+Characteristic Name: PeripheralPreferredConnectionParameters - User Description: - Handle: 6 - Value: 14-00-28-00-00-00-E8-03
+Service Name: GenericAttribute
+Service UUID: 00001801-0000-1000-8000-00805f9b34fb
+Characteristic Name: ServiceChanged - User Description: - Handle: 9 - Value:
+Service Name: Battery
+Service UUID: 00001 80f-0000-1000-8000-00805f9b34fb
+Characteristic Name: BatteryLevel - User Description: - Handle: 13 - Value: 64
+Service Name: 0001 0203-0405-0607-0809-OaObOcOdl 912
+Service UUID: 0001 0203-0405-0607-0809-OaObOcOdl 912
+Characteristic Name: 00010203-0405-0607-0809-OaObOcOd2bl2 - User Description: OTA - Handle: 17 - Value: 00
+Service Name: 00010203 -0405-0607-0809-OaObOcOd2b2O
+Service UUID: 00010203-0405-0607-0809-OaObOcOd2b2O
+Characteristic Name: 00010203-0405-0607-0809-OaObOcOd2b2l - User Description: Vendor - Handle: 21 - Value: 00
+Service Name: 65173
+Service UUID: 0000fe95-0000-1000-8000-00805f9b34fb
+Characteristic Name: 4 - User Description: Version - Handle: 26 - Value: 1.0.1_0093
+Characteristic Name: 16 - User Description: Authentication - Handle: 29 - Value:
+Characteristic Name: 23 - User Description: ota_ctrl - Handle: 33 - Value:
+Characteristic Name: 24 - User Description: ota_data - Handle: 37 - Value:
+Characteristic Name: 25 - User Description: standard - Handle: 41 - Value:
+Service Name: 00000100-0065-6c62-2e74-6f696d2e696d
+Service UUID: 00000100-0065-6c62-2e74-6f696d2e696d
+Characteristic Name: 00000101-0065-6c62-2e74-6f696d2e696d - User Description: STDIO_RX - Handle: 46 - Value:
+Characteristic Name: 00000102-0065-6c62-2e74-6f696d2e696d - User Description: STDIO_TX - Handle: 50 - Value:
+Service Name: 22210000-554a-4546-5542-46534450464d
+Service UUID: 22210000-554a-4546-5542-46534450464d
+Characteristic Name: 1 - User Description: - Handle: 55 - Value:
+Characteristic Name: 2 - User Description: - Handle: 57 - Value:
+Characteristic Name: 3 - User Description: - Handle: 60 - Value:
+Characteristic Name: 4 - User Description: - Handle: 62 - Value:
+Characteristic Name: 256 - User Description: - Handle: 65 - Value:
+Service Name: Devicelnformation
+Service UUID: 0000180a-0000-1000-8000-00805f9b34fb
+Characteristic Name: ManufacturerNameString - User Description: - Handle: 69 - Value: Qingping Technology (Beijing) Co., Ltd.
+Characteristic Name: ModelNumberString - User Description: - Handle: 71 - Value: CGG1
+Characteristic Name: SerialNumberString - User Description: - Handle: 73 - Value: 1234
+Characteristic Name: HardwareRevisionString - User Description: - Handle: 75 - Value: 0001
+Characteristic Name: FirmwareRevisionString - User Description: - Handle: 77 - Value: 1.0.1_0093
+Service Name: 6e400001-b5a3-f393-eOa9-e50e24dcca9e
+Service UUID: 6e400001-b5a3-f393-eOa9-e50e24dcca9e
+Characteristic Name: 6e400002-b5a3-f393-eOa9-e50e24dcca9e - User Description: - Handle: 80 - Value:
+Characteristic Name: 6e400003-b5a3-f393-eOa9-e50e24dcca9e - User Description: - Handle: 82 - Value:
