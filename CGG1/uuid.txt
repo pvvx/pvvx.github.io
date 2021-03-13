@@ -48,3 +48,8 @@ Service Name: 6e400001-b5a3-f393-e0a9-e50e24dcca9e
 Service UUID: 6e400001-b5a3-f393-e0a9-e50e24dcca9e
 Characteristic Name: 6e400002-b5a3-f393-e0a9-e50e24dcca9e - User Description: - Handle: 80 - Value:
 Characteristic Name: 6e400003-b5a3-f393-e0a9-e50e24dcca9e - User Description: - Handle: 82 - Value:
+
+---
+Watching advertisements from "Qingping Temp & RH M"...
+ServiceData Data: 0000fe95-0000-1000-8000-00805f9b34fb, 3058480B01B2C311342D58280100
+MiVer5, DevID: 0x0B48-CGG1_ENCRYPTED, FnCnt: 1, CtrID: 0x5830 Not bound, Standard certification, MAC: 582D3411C3B2, Capability: 0x28 - front binding, IO: 0x0001
