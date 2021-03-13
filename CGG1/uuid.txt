@@ -11,14 +11,14 @@ Service Name: GenericAttribute
 Service UUID: 00001801-0000-1000-8000-00805f9b34fb
 Characteristic Name: ServiceChanged - User Description: - Handle: 9 - Value:
 Service Name: Battery
-Service UUID: 00001 80f-0000-1000-8000-00805f9b34fb
+Service UUID: 0000180f-0000-1000-8000-00805f9b34fb
 Characteristic Name: BatteryLevel - User Description: - Handle: 13 - Value: 64
-Service Name: 0001 0203-0405-0607-0809-OaObOcOdl 912
-Service UUID: 0001 0203-0405-0607-0809-OaObOcOdl 912
-Characteristic Name: 00010203-0405-0607-0809-OaObOcOd2bl2 - User Description: OTA - Handle: 17 - Value: 00
-Service Name: 00010203 -0405-0607-0809-OaObOcOd2b2O
-Service UUID: 00010203-0405-0607-0809-OaObOcOd2b2O
-Characteristic Name: 00010203-0405-0607-0809-OaObOcOd2b2l - User Description: Vendor - Handle: 21 - Value: 00
+Service Name: 00010203-0405-0607-0809-0a0b0c0d1912
+Service UUID: 00010203-0405-0607-0809-0a0b0c0d1912
+Characteristic Name: 00010203-0405-0607-0809-0a0b0c0d2b12 - User Description: OTA - Handle: 17 - Value: 00
+Service Name: 00010203-0405-0607-0809-0a0b0c0d2b20
+Service UUID: 00010203-0405-0607-0809-0a0b0c0d2b20
+Characteristic Name: 00010203-0405-0607-0809-0a0b0c0d2b21 - User Description: Vendor - Handle: 21 - Value: 00
 Service Name: 65173
 Service UUID: 0000fe95-0000-1000-8000-00805f9b34fb
 Characteristic Name: 4 - User Description: Version - Handle: 26 - Value: 1.0.1_0093
@@ -44,7 +44,7 @@ Characteristic Name: ModelNumberString - User Description: - Handle: 71 - Value:
 Characteristic Name: SerialNumberString - User Description: - Handle: 73 - Value: 1234
 Characteristic Name: HardwareRevisionString - User Description: - Handle: 75 - Value: 0001
 Characteristic Name: FirmwareRevisionString - User Description: - Handle: 77 - Value: 1.0.1_0093
-Service Name: 6e400001-b5a3-f393-eOa9-e50e24dcca9e
-Service UUID: 6e400001-b5a3-f393-eOa9-e50e24dcca9e
-Characteristic Name: 6e400002-b5a3-f393-eOa9-e50e24dcca9e - User Description: - Handle: 80 - Value:
-Characteristic Name: 6e400003-b5a3-f393-eOa9-e50e24dcca9e - User Description: - Handle: 82 - Value:
+Service Name: 6e400001-b5a3-f393-e0a9-e50e24dcca9e
+Service UUID: 6e400001-b5a3-f393-e0a9-e50e24dcca9e
+Characteristic Name: 6e400002-b5a3-f393-e0a9-e50e24dcca9e - User Description: - Handle: 80 - Value:
+Characteristic Name: 6e400003-b5a3-f393-e0a9-e50e24dcca9e - User Description: - Handle: 82 - Value:
