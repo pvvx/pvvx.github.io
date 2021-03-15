@@ -388,9 +388,9 @@ function CustomBlkParse(value) {
 		if(len >= 11) cfg.hver = value.getUint8(11); else cfg.hver = 0;
 		if(len >= 12) cfg.av_meas_mem = value.getUint8(12); else cfg.av_meas_mem = 0;
 		let s = 'Hardware Version: ';
-		if((cfg.hver & 0x0f) == 0) s +='LYWSD03MMC';
-		else if((cfg.hver & 0x0f) == 1) s +='MHO-C401';
-		else if((cfg.hver & 0x0f) == 2) s +='CGG1';
+		if((cfg.hver & 0x07) == 0) s +='LYWSD03MMC';
+		else if((cfg.hver & 0x07) == 1) s +='MHO-C401';
+		else if((cfg.hver & 0x07) == 2) s +='CGG1';
 		else s += 'Unknown'
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
 		setStatus(s);
@@ -620,7 +620,7 @@ function miAuthorization() {
 						$("ldfile").hidden = false;
 						if(otafiles.loaded && otafiles.version) {
 							if(cfg.hver != null)
-								$("ldfrmw").innerHTML = ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>  <button type="button" onclick="BackToOriginal();">'+ otafiles.original[cfg.hver & 0x0f] +'</button>';
+								$("ldfrmw").innerHTML = ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>  <button type="button" onclick="BackToOriginal();">'+ otafiles.original[cfg.hver & 0x07] +'</button>';
 							$("log").innerHTML += '<a href="https://pvvx.github.io/ATC_MiThermometer/GraphOriginal.html">GraphOriginal</a><br>';
 						}
 					}
@@ -1013,15 +1013,15 @@ function getOtaJson(d, name) {
 
 function FirmwareUpgrade() {
 	if(cfg.hver != null) {
-		let fn = otafiles.custom[cfg.hver & 0x0f];
+		let fn = otafiles.custom[cfg.hver & 0x07];
 		addAlog("Load firmware file '"+fn+"'...");
 		ajax_file(fn, getFirmwareArray);
 	}
 }
 
 function BackToOriginal() {
-	if(cfg.enable) {
-		let fn = otafiles.original[cfg.hver & 0x0f];
+	if(cfg.hver != null) {
+		let fn = otafiles.original[cfg.hver & 0x07];
 		addAlog("Load firmware file '"+fn+"'...");
 		ajax_file(fn, getFirmwareArray);
 	}
@@ -1324,7 +1324,7 @@ function sendMAC() {
 function sendExt() {
 	if(ext.enable) {
 		ext.big_number = Math.round(10.0 * parseFloat($("extbignumb").value));
-		if((cfg.hver & 0x0f)  == 2)
+		if((cfg.hver & 0x07)  == 2)
 			ext.small_number = Math.round(10.0 * parseFloat($("extsmalnumb").value));
 		else
 			ext.small_number = parseInt($("extsmalnumb").value);
@@ -1446,18 +1446,18 @@ function CustomConfig() {
   if(otafiles.loaded && fwname == '') {
 	if(otafiles.version)
 		is += ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>';
-	if(otafiles.original.length > (cfg.hver & 0x0f))
-		is += ' <button type="button" onclick="BackToOriginal();">'+ otafiles.original[cfg.hver & 0x0f] +'</button> ';
+	if(otafiles.original.length > (cfg.hver & 0x07))
+		is += ' <button type="button" onclick="BackToOriginal();">'+ otafiles.original[cfg.hver & 0x07] +'</button> ';
 	$("ldfrmw").innerHTML = is;
   }
   if(cfg.ver >= 0x10) {
 	is = 'Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button>';
-	if((cfg.hver & 0x0f)  == 0)
+	if((cfg.hver & 0x07)  == 0)
 		is += ' Test: [ <button type="button" onclick="lcd_clock();">Show clock on LCD</button> <button type="button" onclick="lcd_restore();">Repair LCD</button> ]';
 	is += '<br><br><input size="5" title="Big number: -99.5..1999.5" id="extbignumb" maxlength="5" value="123.4">';
 	is += ' <select id="exttmpsmb"><option value="0">&nbsp;&nbsp;</option><option value="1">°Г</option><option value="2">&nbsp;-</option><option value="3">°F</option><option value="4">&nbsp;_</option><option value="5">°C</option><option value="6" selected>&nbsp;=</option><option value="7">°E</option></select>';
 	is += ' <select id="extsmiley"><option value="0">&nbsp;&nbsp;&nbsp;</option><option value="1">&nbsp;^_^&nbsp;</option><option value="2">&nbsp;-&and;-&nbsp;</option><option value="3">&nbsp;&Delta;&#9651;&Delta;&nbsp;</option><option value="4">(&nbsp;&nbsp;&nbsp;)</option><option value="5">(^_^)</option><option value="6">(-&and;-)</option><option value="7" selected>(&Delta;&#9651;&Delta;)</option></select>';
-	if((cfg.hver & 0x0f)  == 2)
+	if((cfg.hver & 0x07)  == 2)
 		is += '	<input size="5" title="Small number: -99..999" id="extsmalnumb" maxlength="5" value="56.7">';
 	else
 		is += '	<input size="5" title="Small number: -9..99" id="extsmalnumb" maxlength="2" value="99">';
@@ -1640,7 +1640,6 @@ function SendCustomConfig() {
 	}
 	$("custcfg").innerHTML = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
 }
-
 
 </script>
 <big><big>Telink Flasher for Mi Thermostat</big></big> <a href="https://github.com/atc1441/ATC_MiThermometer">©</a> <a href="https://github.com/pvvx/ATC_MiThermometer">&#9432;</a><br>
