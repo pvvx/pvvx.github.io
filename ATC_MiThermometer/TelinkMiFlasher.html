@@ -8,10 +8,10 @@
 <script>
 //BLE values
 var bluetoothDevice, gattServer, Theservice, writeCharacteristic;
-var ServiceMain, writeCharacteristicSpeed, nitifiyCharTemp, time_char, enc_main, enc_10, enc_19;
+var ServiceMain, writeCharacteristicSpeed = null, nitifiyCharTemp, time_char, enc_main, enc_10, enc_19;
 //Firmware values
 var rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/";
-var otafiles = { loaded: false, version: 0x26, custom: ['ATC_Thermometer26.bin','MHO_C401_v26.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin']};
+var otafiles = { loaded: false, version: 0x27, custom: ['ATC_Thermometer27.bin','MHO_C401_v27.bin', 'CGG1_v27.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin']};
 var firmwareArray = "",
 	startTime = 0,
 	blockCount = 0;
@@ -63,6 +63,7 @@ function resetVariables() {
 	miConnected = false;
 	is_logged_in = false;
 	fwname = '';
+	writeCharacteristicSpeed = null;
 	$("ldfrmw").innerHTML ='';
 	$("custcfg").innerHTML = '';
 	$("tempHumiData").innerHTML = "Temp/Humi: waiting for data after connecting";
@@ -387,9 +388,9 @@ function CustomBlkParse(value) {
 		if(len >= 11) cfg.hver = value.getUint8(11); else cfg.hver = 0;
 		if(len >= 12) cfg.av_meas_mem = value.getUint8(12); else cfg.av_meas_mem = 0;
 		let s = 'Hardware Version: ';
-		if((cfg.hver & 3) == 0) s +='LYWSD03MMC';
-		else if((cfg.hver & 3) == 1) s +='MHO-C401';
-		else if((cfg.hver & 3) == 2) s +='CGG1';
+		if((cfg.hver & 0x0f) == 0) s +='LYWSD03MMC';
+		else if((cfg.hver & 0x0f) == 1) s +='MHO-C401';
+		else if((cfg.hver & 0x0f) == 2) s +='CGG1';
 		else s += 'Unknown'
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
 		setStatus(s);
@@ -619,7 +620,7 @@ function miAuthorization() {
 						$("ldfile").hidden = false;
 						if(otafiles.loaded && otafiles.version) {
 							if(cfg.hver != null)
-								$("ldfrmw").innerHTML = ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>  <button type="button" onclick="BackToOriginal();">'+ otafiles.original[cfg.hver & 3] +'</button>';
+								$("ldfrmw").innerHTML = ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>  <button type="button" onclick="BackToOriginal();">'+ otafiles.original[cfg.hver & 0x0f] +'</button>';
 							$("log").innerHTML += '<a href="https://pvvx.github.io/ATC_MiThermometer/GraphOriginal.html">GraphOriginal</a><br>';
 						}
 					}
@@ -804,7 +805,7 @@ function detectMi() {
 		} else {
 			addLog("Detected Telink OTA service");
 			setStatus("Connected.")
-			miEnabled = true;	
+			miEnabled = true;
 			miAuthorization();  //	miConnected
 			$("ldfile").hidden = false;
 			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
@@ -1012,7 +1013,7 @@ function getOtaJson(d, name) {
 
 function FirmwareUpgrade() {
 	if(cfg.hver != null) {
-		let fn = otafiles.custom[cfg.hver & 3];
+		let fn = otafiles.custom[cfg.hver & 0x0f];
 		addAlog("Load firmware file '"+fn+"'...");
 		ajax_file(fn, getFirmwareArray);
 	}
@@ -1020,7 +1021,7 @@ function FirmwareUpgrade() {
 
 function BackToOriginal() {
 	if(cfg.enable) {
-		let fn = otafiles.original[cfg.hver & 3];
+		let fn = otafiles.original[cfg.hver & 0x0f];
 		addAlog("Load firmware file '"+fn+"'...");
 		ajax_file(fn, getFirmwareArray);
 	}
@@ -1046,7 +1047,7 @@ function updateBegin() {
 		addLog("No file selected aborting");
 		return;
 	}
-	if (miEnabled) mainCharSend("1e0000", writeCharacteristicSpeed); // this makes the upload faster
+	if (miEnabled && writeCharacteristicSpeed != null) mainCharSend("1e0000", writeCharacteristicSpeed); // this makes the upload faster
 	setTimeout(function() {
 		otaCharSend("00ff").then(function(character) {
 			otaCharSend("01ff").then(function(character) {
@@ -1323,7 +1324,10 @@ function sendMAC() {
 function sendExt() {
 	if(ext.enable) {
 		ext.big_number = Math.round(10.0 * parseFloat($("extbignumb").value));
-		ext.small_number = parseInt($("extsmalnumb").value);
+		if((cfg.hver & 0x0f)  == 2)
+			ext.small_number = Math.round(10.0 * parseFloat($("extsmalnumb").value));
+		else
+			ext.small_number = parseInt($("extsmalnumb").value);
 		ext.vtime = parseInt($("extvtimed").value);
 		if(ext.vtime < 1) ext.vtime = 60;
 		else if(ext.vtime > 65535) ext.vtime = 65535;
@@ -1442,18 +1446,21 @@ function CustomConfig() {
   if(otafiles.loaded && fwname == '') {
 	if(otafiles.version)
 		is += ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>';
-	if(otafiles.original.length > (cfg.hver & 3))
-		is += ' <button type="button" onclick="BackToOriginal();">'+ otafiles.original[cfg.hver & 3] +'</button> ';
+	if(otafiles.original.length > (cfg.hver & 0x0f))
+		is += ' <button type="button" onclick="BackToOriginal();">'+ otafiles.original[cfg.hver & 0x0f] +'</button> ';
 	$("ldfrmw").innerHTML = is;
   }
   if(cfg.ver >= 0x10) {
 	is = 'Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button>';
-	if((cfg.hver & 7)  == 0)
+	if((cfg.hver & 0x0f)  == 0)
 		is += ' Test: [ <button type="button" onclick="lcd_clock();">Show clock on LCD</button> <button type="button" onclick="lcd_restore();">Repair LCD</button> ]';
 	is += '<br><br><input size="5" title="Big number: -99.5..1999.5" id="extbignumb" maxlength="5" value="123.4">';
 	is += ' <select id="exttmpsmb"><option value="0">&nbsp;&nbsp;</option><option value="1">°Г</option><option value="2">&nbsp;-</option><option value="3">°F</option><option value="4">&nbsp;_</option><option value="5">°C</option><option value="6" selected>&nbsp;=</option><option value="7">°E</option></select>';
 	is += ' <select id="extsmiley"><option value="0">&nbsp;&nbsp;&nbsp;</option><option value="1">&nbsp;^_^&nbsp;</option><option value="2">&nbsp;-&and;-&nbsp;</option><option value="3">&nbsp;&Delta;&#9651;&Delta;&nbsp;</option><option value="4">(&nbsp;&nbsp;&nbsp;)</option><option value="5">(^_^)</option><option value="6">(-&and;-)</option><option value="7" selected>(&Delta;&#9651;&Delta;)</option></select>';
-	is += '	<input size="5" title="Small number: -9..99" id="extsmalnumb" maxlength="2" value="99">';
+	if((cfg.hver & 0x0f)  == 2)
+		is += '	<input size="5" title="Small number: -99..999" id="extsmalnumb" maxlength="5" value="56.7">';
+	else
+		is += '	<input size="5" title="Small number: -9..99" id="extsmalnumb" maxlength="2" value="99">';
 	is += '&nbsp;%<input type="checkbox" id="extpersent">';
 	is += '	<input size="5" title="Validity time = Show time in sec: 1..65535" id="extvtimed" maxlength="5" value="600">';
 	is += '&nbsp;Battery:<input type="checkbox" id="extbattery">';
