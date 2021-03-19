@@ -1,6 +1,6 @@
 Web files for projects:
 
-![foto](https://github.com/pvvx/pvvx.github.io/SensorsTH.jpg)
+![foto](https://raw.githubusercontent.com/pvvx/pvvx.github.io/master/SensorsTH.jpg)
 
 [ATC_MiThermometer](https://pvvx.github.io/ATC_MiThermometer)
 
