@@ -22,7 +22,7 @@ function log(data) {
     document.getElementById("log").innerHTML += logString + "<br>";
 }
 function onButtonClick() {
-  var deviceOptions = { optionalServices: [0xfe95, 0x181a] };
+  var deviceOptions = {}; // optionalServices: [0xfe95, 0x181a, 0xf9ff] };
   deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz_#@!*';,.<>{}[]"
 	.split("").map((x) => ({namePrefix:x}));
   log('Requesting Bluetooth Scan...');
@@ -69,7 +69,6 @@ const tabid2name = [
   { id: 0x0863, name: "SJWS01LM"},
   { id: 0x07F6, name: "MJYD02YL"},
 ];
-
 function id2name(dev_id) {
 	let did = tabid2name.map(el => el.id); 
 	let i = did.indexOf(dev_id);
@@ -87,7 +86,7 @@ const logDataView = (labelOfDataSource, key, b) => {
 			let ctrl = b.getUint16(0, true);
 			let s = 'MiVer'+ (ctrl>>12);
 			let i = 2;
-			if((ctrl&0xf000) > 0x2000 && b.byteLength >= i + 3) {
+			if((ctrl&0xf000) >= 0x2000 && b.byteLength >= i + 3) {
 				let dev_id = b.getUint16(i, true);
 				let frcntr = b.getUint8(i+2);
 				i += 3;
@@ -226,7 +225,18 @@ const logDataView = (labelOfDataSource, key, b) => {
 			let s = 'MAC: '+hex(buf[0],2)+hex(buf[1],2)+hex(buf[2],2)+hex(buf[3],2)+hex(buf[4],2)+hex(buf[5],2);
 			s += ', Bat: '+bat+'%, Vbat: '+vbat+' mV, Temp: '+temp+'°C, Humi: '+humi+'%, Count: '+cnt;
 			log(s); }
+	} else if(key == '0000fff9-0000-1000-8000-00805f9b34fb') { // CGG1 "Goose"
+		// 0801 AE1610342D58 0104 1401 4601 02 01 58 
+		if(b.byteLength >= 16 && b.getUint16(0, true) == 0x0108 && b.getUint16(8, true) == 0x0401 && b.getUint16(14, true) == 0x0102) {
+			let temp = b.getInt16(10, true) / 10.0;
+			let humi = b.getInt16(12, true) / 10.0;
+			let bat = b.getUint8(16);
+			let s = 'MAC: '+hex(buf[2],2)+hex(buf[3],2)+hex(buf[4],2)+hex(buf[5],2)+hex(buf[6],2)+hex(buf[7],2);
+			s += ', Bat: '+bat+'%, Temp: '+temp+'°C, Humi: '+humi+'%';
+			log(s); 
+		}
 	}
+	
 };
 </script>
 </html>

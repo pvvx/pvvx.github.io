@@ -168,7 +168,7 @@ function catchAdvertisement(device) {
 			let ctrl = b.getUint16(0, true);
 			s = 'MiVer'+ (ctrl>>12);
 			let i = 2;
-			if((ctrl&0xf000) > 0x2000 && b.byteLength >= i + 3) {
+			if((ctrl&0xf000) >= 0x2000 && b.byteLength >= i + 3) {
 				let dev_id = b.getUint16(i, true);
 				let frcntr = b.getUint8(i+2);
 				i += 3;
@@ -305,7 +305,17 @@ function catchAdvertisement(device) {
 			s = 'MAC: '+hex(buf[0],2)+hex(buf[1],2)+hex(buf[2],2)+hex(buf[3],2)+hex(buf[4],2)+hex(buf[5],2);
 			s += ', Bat: '+bat+'%, Vbat: '+vbat+' mV, Temp: '+temp+'°C, Humi: '+humi+'%, Count: '+cnt;
 		}
-	} 
+	} else if(key == '0000fff9-0000-1000-8000-00805f9b34fb') { // CGG1 "Goose"
+		// 0801 AE1610342D58 0104 1401 4601 0201 58 
+		if(b.byteLength >= 16 && b.getUint16(0, true) == 0x0108 && b.getUint16(8, true) == 0x0401 && b.getUint16(14, true) == 0x0102) {
+			let temp = b.getInt16(10, true) / 10.0;
+			let humi = b.getInt16(12, true) / 10.0;
+			let bat = b.getUint8(16);
+			let s = 'MAC: '+hex(buf[2],2)+hex(buf[3],2)+hex(buf[4],2)+hex(buf[5],2)+hex(buf[6],2)+hex(buf[7],2);
+			s += ', Bat: '+bat+'%, Temp: '+temp+'°C, Humi: '+humi+'%';
+			log(s); 
+		}
+	}
 	addAlog(s);
 	$("MAC").innerHTML = s+'<hr>';
 	abortController.abort();
