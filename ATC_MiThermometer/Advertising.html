@@ -22,7 +22,7 @@ function log(data) {
     document.getElementById("log").innerHTML += logString + "<br>";
 }
 function onButtonClick() {
-  var deviceOptions = {}; // optionalServices: [0xfe95, 0x181a, 0xf9ff] };
+  var deviceOptions = { optionalServices: [0xfe95, 0x181a, 0xfff9] };
   deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz_#@!*';,.<>{}[]"
 	.split("").map((x) => ({namePrefix:x}));
   log('Requesting Bluetooth Scan...');
