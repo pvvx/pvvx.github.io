@@ -1615,10 +1615,11 @@ function CustomConfig() {
 			is += '<br><button type="button" onclick="sendCustomSetting(&quot;16&quot;);">Swap previous token + bindkey</button>';
 		}
 		is += '<br>';
-	} else if(cfg.ver >= 0x28) {
-		is +='Bind Key:<br><input size="40" maxlength="32" title="Bind Key must be 16 hex digits" type="text" id="cbind_key" value="?">';
-		is +=' <button type="button" title="Get current BindKey" onclick="getBKey();">Get BindKey</button>';
-		is +=' <button type="button" title="Set new BindKey" onclick="setBKey();">Set BindKey</button><br>';
+	}
+	if(cfg.ver >= 0x28) {
+		is +='EEP BindKey:<br><input size="40" maxlength="32" title="Bind Key must be 16 hex digits" type="text" id="cbind_key" value="?">';
+		is +=' <button type="button" title="Get EEP BindKey" onclick="getBKey();">Get EEP BindKey</button>';
+		is +=' <button type="button" title="Set new EEP BindKey" onclick="setBKey();">Set EEP BindKey</button><br>';
 	}
 	$("custcfg").innerHTML = is;
 	$("cfg_flg_adv_type").value = cfg.flg&3;
