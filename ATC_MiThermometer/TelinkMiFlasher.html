@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v2.8</title>
+<title>Telink Flasher v2.9</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -49,6 +49,7 @@ function resetVariables() {
 	mikeys.id = null;
 	mikeys.token = null;
 	mikeys.bindkey = null
+	mikeys.cbindkey = null
 	mikeys.cfg = null;
 	mikeys.delkeys = null;
 	ext.enable = false;
@@ -360,7 +361,7 @@ var buf11;
 var cnt_buf11 = 0;
 var cnt_delkeys = 0;
 var id_buf11 = 0x1000;
-var mikeys = {mac: null, id: null, token: null, bindkey: null, cfg: null, delkeys: null, restore: false};
+var mikeys = {mac: null, id: null, token: null, bindkey: null, cfg: null, delkeys: null, restore: false, cbindkey: null};
 var ext = {big_number: 0, small_number: 0, vtime: 180, flg: 0xc7, enable: false};
 
 function concatUint8ArrayArrays(a, b) { // a, b TypedArray of same type
@@ -382,7 +383,7 @@ function CustomBlkParse(value) {
 	if(len == 0) return;
 	len--;
 	let blkid = value.getUint8(0);
-	addClog("blk:"+bytesToHex(value.buffer));
+	//addClog("blk:"+bytesToHex(value.buffer));
 	if(blkid == 0x55 && len >= 9) {
 		cfg.ver = value.getUint8(1);
 		cfg.flg = value.getUint8(2);
@@ -512,6 +513,16 @@ function CustomBlkParse(value) {
 			else if(blkid == 0x14) {addClog("End keys"); CustomConfig();}
 			else addClog("End keys");
 			cnt_buf11 = 0;
+		}
+	} else if(blkid == 0x18 && len >= 2) { // Get/set beacon bkey in EEP
+		if(len >= 16) {
+			mikeys.cbindkey = value.buffer.slice(1);
+			let s = bytesToHex(mikeys.cbindkey,16);
+			addAlog("Read bindkey: "+ s);
+			if($("cbind_key"))
+				$("cbind_key").value = s;
+		} else {
+			addAlog("Error bindkey in EEP!");
 		}
 	} else if(blkid == 0x60 && len >= 6) {
 		let s = 'LCD data: '+bytesToHex(value.buffer.slice(1));
@@ -1456,6 +1467,28 @@ function sendGetMemo(cnt) {
 		addAlog('Send cmd GetMemo ok');
 	});
 }
+function getBKey() {
+		settingsCharacteristics.writeValue(new Uint8Array([0x18])).then(_ => {
+			addAlog('Get binkey from EEP...');
+		});
+}
+function setBKey() {
+	let bk = $("cbind_key").value;
+	if(bk.length == 32) {
+		let bkey = hexToBytes(bk);
+		if(bkey.length == 16) {
+			let blk = new Uint8Array(17);
+			blk.set(bkey,1);
+			blk[0] = 0x18;
+			addClog("Send bindkey to EEP...");
+			settingsCharacteristics.writeValue(blk).then(_ => {
+				addAlog("Send new bindkey: " + bytesToHex(blk.slice(1)));
+			});
+			return;
+		}
+	}
+	addLog("BindKey must be 16 hex digits!")
+}
 function CustomConfig() {
   let is = '';
   if(otafiles.loaded && fwname == '') {
@@ -1576,12 +1609,16 @@ function CustomConfig() {
 		is +='Mi Token:<br><input size="40" maxlength="24" type="text" id="mi_token" value="'+dump(mikeys.token,12)+'"><br>';
 		is +='Mi Bind Key:<br><input size="40" maxlength="32" type="text" id="mi_bind_key" value="'+dump(mikeys.bindkey,16)+'">';
 		is +=' <button type="button" title="Set new Mi Token and Bind keys" onclick="setNewTBKey();">Set new Token & Bind keys</button><br>';
-	}
-	if(mikeys.restore) {
-		is += '<br><button type="button" onclick="sendCustomSetting(&quot;16&quot;);">Swap previous token + bindkey</button>';
 		if(cfg.ver >= 0x21)
 			is +=' <button type="button" title="Erase all MiKeys" onclick="sendCustomSetting(&quot;17&quot;);">!Erase all Mi Keys!</button>';
-		is += '<br><br>';
+		if(mikeys.restore) {
+			is += '<br><button type="button" onclick="sendCustomSetting(&quot;16&quot;);">Swap previous token + bindkey</button>';
+		}
+		is += '<br>';
+	} else if(cfg.ver >= 0x28) {
+		is +='Bind Key:<br><input size="40" maxlength="32" title="Bind Key must be 16 hex digits" type="text" id="cbind_key" value="?">';
+		is +=' <button type="button" title="Get current BindKey" onclick="getBKey();">Get BindKey</button>';
+		is +=' <button type="button" title="Set new BindKey" onclick="setBKey();">Set BindKey</button><br>';
 	}
 	$("custcfg").innerHTML = is;
 	$("cfg_flg_adv_type").value = cfg.flg&3;
