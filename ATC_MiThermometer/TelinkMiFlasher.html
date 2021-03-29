@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v2.9</title>
+<title>Telink Flasher v2.9b</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -67,7 +67,7 @@ function resetVariables() {
 	writeCharacteristicSpeed = null;
 	$("ldfrmw").innerHTML ='';
 	$("custcfg").innerHTML = '';
-	$("tempHumiData").innerHTML = "Temp/Humi: waiting for data after connecting";
+	$("tempHumiData").innerHTML = "Temp/Humi: waiting notify for data after connecting";
 	$("percent").innerHTML = "Status: Disconnected";
 }
 
@@ -417,7 +417,7 @@ function CustomBlkParse(value) {
 		let count = value.getUint16(7, true);
 		let flg = 0;
 		if(len > 8) flg = value.getUint8(9);
-		let s = 'Vbat: '+vbat+' mV , Temp: '+temp+'°C, Humi: '+humi+'%, Count: '+count+', flg: '+hex(flg,2);
+		let s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, Count: '+count+', flg: '+hex(flg,2);
 		$("tempHumiData").innerHTML = s;
 	    addClog(s);
 	} else if(blkid == 0x22 && len >= 7) {
@@ -439,7 +439,7 @@ function CustomBlkParse(value) {
 			trg.hm_hst = value.getInt8(6) / 10.0;        // humi hysteresis
 			trg.flg = value.getInt8(7);
 		}
-		let s = 'Threshold Temp/Humi: '+trg.tmp_thr+'°C/'+trg.hm_thr+'%, Hysteresis T/H: '+trg.tmp_hst+'°/'+trg.hm_hst+'%, flg: 0x'+hex(trg.flg,2);
+		let s = 'Threshold Temp/Humi: '+trg.tmp_thr.toFixed(2)+'°C/'+trg.hm_thr.toFixed(2)+'%, Hysteresis T/H: '+trg.tmp_hst.toFixed(2)+'°/'+trg.hm_hst.toFixed(2)+'%, flg: 0x'+hex(trg.flg,2);
 	    addAlog(s); UpdTrg();
 	} else if(blkid >= 0x10 && blkid <= 0x14 && len >= 1) {
 		let lb = value.getUint8(1);
@@ -562,7 +562,7 @@ function CustomBlkParse(value) {
 		cmf.tmp_hi = value.getInt16(3, true); // temp hi
 		cmf.hm_lo = value.getUint16(5, true); // humi lo
 		cmf.hm_hi = value.getUint16(7, true); // humi lo
-		let s = 'Comfort Temp: '+(cmf.tmp_lo/100.0)+'..'+(cmf.tmp_hi/100.0)+'°C, Humi: '+(cmf.hm_lo/100.0)+'..'+(cmf.hm_hi/100.0)+'%';
+		let s = 'Comfort Temp: '+(cmf.tmp_lo/100.0).toFixed(2)+'..'+(cmf.tmp_hi/100.0).toFixed(2)+'°C, Humi: '+(cmf.hm_lo/100.0).toFixed(2)+'..'+(cmf.hm_hi/100.0).toFixed(2)+'%';
 		addAlog(s); UpdCmf();
 	} else if(blkid == 0x01 && len >= 1) {
 		dnm.name = new TextDecoder("utf-8").decode(value.buffer.slice(1));
@@ -1369,10 +1369,10 @@ function sendExt() {
 }
 function UpdCmf() {
 	if(cmf.enable && $("cmf_tmp_lo").value) {
-		$("cmf_tmp_lo").value =  cmf.tmp_lo/100.0;
-		$("cmf_tmp_hi").value =  cmf.tmp_hi/100.0;
-		$("cmf_hm_lo").value =  cmf.hm_lo/100.0;
-		$("cmf_hm_hi").value =  cmf.hm_hi/100.0;
+		$("cmf_tmp_lo").value =  (cmf.tmp_lo/100.0).toFixed(2);
+		$("cmf_tmp_hi").value =  (cmf.tmp_hi/100.0).toFixed(2);
+		$("cmf_hm_lo").value =  (cmf.hm_lo/100.0).toFixed(2);
+		$("cmf_hm_hi").value =  (cmf.hm_hi/100.0).toFixed(2);
 	}
 }
 function SendCmf() {
@@ -1389,10 +1389,10 @@ function SendCmf() {
 }
 function UpdTrg() {
 	if(trg.enable && $("trg_tmp_hst").value) {
-		$("trg_tmp_thr").value =  trg.tmp_thr;
-		$("trg_hm_thr").value =  trg.hm_thr;
-		$("trg_tmp_hst").value =  trg.tmp_hst;
-		$("trg_hm_hst").value =  trg.hm_hst;
+		$("trg_tmp_thr").value =  trg.tmp_thr.toFixed(2);
+		$("trg_hm_thr").value =  trg.hm_thr.toFixed(2);
+		$("trg_tmp_hst").value =  trg.tmp_hst.toFixed(2);
+		$("trg_hm_hst").value =  trg.hm_hst.toFixed(2);
 	}
 }
 function setNewTBKey() {
@@ -1636,9 +1636,9 @@ function CustomConfig() {
 		$("mi_beacon").checked = (cfg.flg2&0x08) != 0;
 	if(cfg.ver >= 0x20)
 		$("cfg_av_meas_mem").value = String(cfg.av_meas_mem);
-	$("cfg_tmp_off").value = String(cfg.temp_offset / 10.0);
-	$("cfg_hm_off").value = String(cfg.humi_offset / 10.0);
-	$("cfg_adv_int").value = String(cfg.advertising_interval * 62.5);
+	$("cfg_tmp_off").value = String((cfg.temp_offset / 10.0).toFixed(1));
+	$("cfg_hm_off").value = String((cfg.humi_offset / 10.0).toFixed(1));
+	$("cfg_adv_int").value = String((cfg.advertising_interval * 62.5).toFixed(1));
 	$("cfg_meas_int").value = String(cfg.measure_interval);
 	$("cfg_rf_tx").value = String(cfg.rf_tx_power);
 	$("cfg_con_lat").value = String((cfg.connect_latency + 1) * 20);
