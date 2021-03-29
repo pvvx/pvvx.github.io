@@ -1,5 +1,5 @@
 Name: Goose
-BT Address: 58:2d:34:1O:16:ae 
+BT Address: 58:2d:34:10:16:ae  582d341016ae 
 Number of Services: 5
 BT 4.2 Secure Connection: False
 Service Name: GenericAccess
@@ -10,6 +10,13 @@ Characteristic Name: PeripheralPreferredConnectionParameters - User Description:
 Characteristic Name: CentralAddressResolution - User Description: - Handle: 8 - Value: 01
 Service Name: GenericAttribute
 Service UUID: 00001801-0000-1000-8000-00805f9b34fb
+Service Name: Devicelnformation
+Service UUID: 0000180a-0000-1000-8000-00805f9b34fb
+Characteristic Name: ManufacturerNameString - User Description: - Handle: 30 - Value: Cleargrass Inc
+Characteristic Name: ModelNumberString - User Description: - Handle: 32 - Value: Goose_Release
+Characteristic Name: SerialNumberString - User Description: - Handle: 34 - Value: 95A2108A75ED
+Characteristic Name: HardwareRevisionString - User Description: - Handle: 36 - Value: 1.00
+Characteristic Name: FirmwareRevisionString - User Description: - Handle: 38 - Value: 1.50
 Service Name: 22210000-554a-4546-5542-46534450464d
 Service UUID: 22210000-554a-4546-5542-46534450464d
 Characteristic Name: 1 - User Description: - Handle: 12 - Value: 8C
@@ -20,10 +27,3 @@ Characteristic Name: 256 - User Description: - Handle: 22 - Value: C7
 Service Name: 65113
 Service UUID: 0000fe59-0000-1000-8000-00805f9b34fb
 Characteristic Name: 8ec90003-f315-4f60-9fb8-838830daea50 - User Description: - Handle: 26 - Value: NULL
-Service Name: Devicelnformation
-Service UUID: 0000180a-0000-1000-8000-00805f9b34fb
-Characteristic Name: ManufacturerNameString - User Description: - Handle: 30 - Value: Cleargrass Inc
-Characteristic Name: ModelNumberString - User Description: - Handle: 32 - Value: Goose_Release
-Characteristic Name: SerialNumberString - User Description: - Handle: 34 - Value: 95A2108A75ED
-Characteristic Name: HardwareRevisionString - User Description: - Handle: 36 - Value: 1.00
-Characteristic Name: FirmwareRevisionString - User Description: - Handle: 38 - Value: 1.50
