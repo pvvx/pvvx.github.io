@@ -1,0 +1,66 @@
+ST Address: e7:2e:O1:83:48:6e
+Number of Services: 8
+ST 4.2 Secure Connection: False
+Service Name: GenericAccess
+Service UUI D: 00001800-0000-1000-8000-0080519b34fb
+Characteristic Name: DeviceName - User Description: - Handle: 2 - Value: LYWSDO2
+Characteristic Name: Appearance - User Description: - Handle: 4 - Value: 00-00
+Service Name: GenericAttribute
+Service UUI D: 00001801-0000-1000-8000-00805f9b34fb
+Characteristic Name: ServiceChanged - User Description: - Handle: 7 - Value: 01-00-FF-FF
+Service Name: Devicelnformation
+Service UUI D: 0000180a—0000-1000-8000-00805f9b34fb
+Characteristic Name: ManufacturerNameString - User Description: - Handle: 11 - Value: miaomiaoce.com
+Characteristic Name: ModelNumberString - User Description: - Handle: 13 - Value: LYWSDO2
+Characteristic Name: SerialNumberString - User Description: - Handle: 15 - Value: F21OFFFF213DD9D25F
+Characteristic Name: HardwareRevisionString - User Description: - Handle: 17 - Value: F2_LN
+Characteristic Name: FirmwareRevisionString - User Description: - Handle: 19 - Value: 1.1.2_0085
+Characteristic Name: SoftwareRevisionString - User Description: - Handle: 21 - Value: 0085
+Characteristic Name: Systemld - User Description: - Handle: 23 - Value: 6E-48-83-0l-2E-E7
+Service Name: 65269
+Service UUID: 0000fef5-0000-1000-8000-00805f9b34fb
+Characteristic Name: 8082caa8-41a6-4021-91c6-56f9b954cc34 - User Description: - Handle: 26 - Value: NULL 
+Characteristic Name: 724249f0-5ec3-4b5f-8804-42345af08651 - User Description: - Handle: 28 - Value: NULL 
+Characteristic Name: 6c53db25-47a1-4Sfe-a022-7c92fb334fd4 - User Description: - Handle: 30 - Value: NULL 
+Characteristic Name: 9d84b9a3-000c-49d8-9183-855b673fda31 - User Description: - Handle: 32 - Value: NULL 
+Characteristic Name: 457871e8-d516-4cal-9116-57d0b17b9cb2 - User Description: - Handle: 34 - Value: NULL 
+Characteristic Name: 5f78df94-798c-46f5-990a-b3eb6a065c88 - User Description: - Handle: 36 - Value: 00   
+Characteristic Name: 64b4e8b5-0deS-401b-a21d-acc8db3b913a - User Description: - Handle: 39 - Value: 0D   
+Characteristic Name: 42c3dfdd-77be-4d9c-8454-8f875267fb3b - User Description: - Handle: 41 - Value: F4-00
+Characteristic Name: b7deleea-823d-43bb-a3af-c4903dfce23c - User Description: - Handle: 43 - Value: F7-00
+Service Name: 2b43ccc0-2506-415c-a16c-e4ccSfS2ef78
+Service UUID: 2b43ccc0-2506-415c-a16c-e4cc5fS2efl8
+Characteristic Name: 2b43cccl-2506-415c-al6c-e4cc5f52ef78 - User Description: Handle: 46 - Value: FE-FE-FE-FE-FE-FE 
+Characteristic Name: 2b43ccc2-2506-415c-al6c-e4cc5f52ef78 - User Description: Handle: 48 - Value: Read Not Permitted
+Characteristic Name: 2b43ccc3-2506-4l5c-al6c-e4cc5f52ef78 - User Description: Handle: 51 - Value: Read Not Permitted
+Characteristic Name: 2b43ccc4-2506-415c-al6c-e4cc5f52ef78 - User Description: Handle: 53 - Value: Read Not Permitted
+Characteristic Name: 2b43cccS-2506-4l5c-al6c-e4cc5f52ef78 - User Description: Handle: 55 - Value: Read Not Permitted
+Characteristic Name: 2b43ccc6-2506-4l5c-al6c-e4cc5f52ef78 - User Description: Handle: 58 - Value: Read Not Permitted
+Service Name: ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6
+Service UUID: ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6
+Characteristic Name: ebe0ccb7-7a0a-4b0c-8a1a-6ff2997da3a6 - User Description: - Handle: 61 - Value: E3-C4-53-60-08                                 
+Characteristic Name: ebe0ccb9-7a0a-4b0c-8a1a-6ff2997da3a6 - User Description: - Handle: 63 - Value: 02-00-00-00-03-00-00-00                        
+Characteristic Name: ebe0ccba-7a0a-4b0c-8a1a-6ff2997da3a6 - User Description: - Handle: 65 - Value: NULL                                           
+Characteristic Name: ebe0ccbb-7a0a-4b0c-8a1a-6ff2997da3a6 - User Description: - Handle: 67 - Value: 00-00-00-00-30-A3-53-60-35-0A-35-EB-08-35-00-00
+Characteristic Name: ebe0ccbc-7a0a-4b0c-8a1a-6ff2997da3a6 - User Description: - Handle: 69 - Value: NULL                                           
+Characteristic Name: ebe0ccbe-7a0a-4b0c-8a1a-6ff2997da3a6 - User Description: - Handle: 72 - Value: FF                                             
+Characteristic Name: ebe0cccl-7a0a-4b0c-8a1a-6ff2997da3a6 - User Description: - Handle: 74 - Value: NULL                                           
+Characteristic Name: ebe0ccc2-7a0a-4b0c-8a1a-6ff2997da3a6 - User Description: - Handle: 77 - Value: NULL                                           
+Characteristic Name: ebe0ccc3-7a0a-4b0c-8a1a-6ff2997da3a6 - User Description: - Handle: 79 - Value: 00-FF-00-FF-00-FF                              
+Characteristic Name: ebe0ccc4-7a0a-4b0c-8a1a-6ff2997da3a6 - User Description: - Handle: 81 - Value: 64                                             
+Characteristic Name: ebe0ccc8-7a0a-4b0c-8a1a-6ff2997da3a6 - User Description: - Handle: 83 - Value: Read Not Permitted                             
+Characteristic Name: ebe0ccd2-7a0a-4b0c-8a1a-6ff2997da3a6 - User Description: - Handle: 85 - Value: 00                                             
+Characteristic Name: ebe0ccd3-7a0a-4b0c-8a1a-6ff2997da3a6 - User Description: - Handle: 87 - Value: 00                                             
+Characteristic Name: ebe0ccd4-7a0a-4b0c-8a1a-6ff2997da3a6 - User Description: - Handle: 89 - Value: Read Not Permitted                             
+Service Name: 65173
+Service UUID: 0000fe95-0000-1000-8000-00805f9b34fb
+Characteristic Name: 1 - User Description: - Handle:  95 - Value: Read Not Permitted                                             
+Characteristic Name: 2 - User Description: - Handle:  98 - Value: 5B-04                                                          
+Characteristic Name: 4 - User Description: - Handle:  100 - Value: EF-36-68-6F-91-68-6D-0A-B2-33                                
+Characteristic Name: 5 - User Description: - Handle:  102 - Value: Read Not Permitted                                            
+Characteristic Name: 16 - User Description: - Handle: 105 - Value: Read Not Permitted                                            
+Characteristic Name: 19 - User Description: - Handle: 107 - Value: DE-18-89-41-A3-37-5D-3A-8A-06-1E-67-57-6E-92-6D-C7-1A-7F-A3
+Characteristic Name: 20 - User Description: - Handle: 109 - Value: 3C-48-34-B6-25-4D-D3-32-EA-F4-25-26                           
+Service Name: fafafa00-fafa-fafa-fafa-fafafafafafa
+Service UUID: fafafa00-fafa-fafa-fafa-fafafafafafa
+Characteristic Name: fafafa01-fafa-fafa-fafa-fafafafafafa - User Description: - Handle: 92 - Value: 00

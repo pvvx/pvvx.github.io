@@ -12,6 +12,8 @@ Web files for projects:
 
 [CGG1-old](https://pvvx.github.io/CGG1_old)
 
+[LYWSD02](https://pvvx.github.io/LYWSD02)
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
