@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v2.9b</title>
+<title>Telink Flasher v2.9c</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -514,7 +514,7 @@ function CustomBlkParse(value) {
 			else addClog("End keys");
 			cnt_buf11 = 0;
 		}
-	} else if(blkid == 0x18 && len >= 2) { // Get/set beacon bkey in EEP
+	} else if(blkid == 0x18 && len >= 1) { // Get/set beacon bkey in EEP
 		if(len >= 16) {
 			mikeys.cbindkey = value.buffer.slice(1);
 			let s = bytesToHex(mikeys.cbindkey,16);
@@ -522,7 +522,12 @@ function CustomBlkParse(value) {
 			if($("cbind_key"))
 				$("cbind_key").value = s;
 		} else {
-			addAlog("Error bindkey in EEP!");
+			if(len == 1 && value.getUint8(1) == 0xff)
+				addAlog("No bindkey in EEP!");
+			else
+				addAlog("Error read bindkey from EEP!");
+			if($("cbind_key"))
+				$("cbind_key").value = '?';
 		}
 	} else if(blkid == 0x60 && len >= 6) {
 		let s = 'LCD data: '+bytesToHex(value.buffer.slice(1));
@@ -576,37 +581,36 @@ function CustomBlkParse(value) {
 }
 
 function customAction() {
-	gattServer.getPrimaryService('00001f10-0000-1000-8000-00805f9b34fb')
-		.then(service => {
-			addClog("Found custom Main service");
-			ServiceMain = service;
-			return ServiceMain.getCharacteristic('00001f1f-0000-1000-8000-00805f9b34fb');
-		}).then(characteristic => {
-			addClog("Found custom read-write characteristic");
-			settingsCharacteristics = characteristic;
-			if(devidEnabled) settingsCharacteristics.startNotifications().
-				then(_ => {
-		            addClog("Start Notifications (0x1f1f)");
-					settingsCharacteristics.addEventListener('characteristicvaluechanged', event => CustomBlkParse(event.target.value));
-		            addClog("Read Characteristics (0x1f1f)");
-					settingsCharacteristics.readValue()
-					.then(value => {
-						$("ldfile").hidden = false;
-						addClog("Send cmd (3303): Query 3 measurements");
-						settingsCharacteristics.writeValue(new Uint8Array([0x33,0x03])).then(_ => {
-						  addClog('Send cmd ok');
-						})
-						.catch(error => addClog(error));
-					}).catch(error => { addClog(error);
-						addLog("Detected alternative Firmware? Use: https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html");
-						setStatus('Detected alternative Firmware? <a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html">TelinkOTA</a>');
-					 });
-		        }).catch(error => addClog(error));
-		    else {
-				addLog("Detected alternative Firmware? Use: https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html");
-				setStatus('Detected alternative Firmware? <a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html">TelinkOTA</a>');
-		    }
-		}).catch(handleError);
+	gattServer.getPrimaryService('00001f10-0000-1000-8000-00805f9b34fb').then(service => {
+		addClog("Found custom Main service");
+		ServiceMain = service;
+		return ServiceMain.getCharacteristic('00001f1f-0000-1000-8000-00805f9b34fb');
+	}).then(characteristic => {
+		settingsCharacteristics = characteristic;
+		addClog("Found custom read-write characteristic");
+		if(devidEnabled) {
+            addClog("Start Notifications (0x1f1f)");
+			settingsCharacteristics.startNotifications().then(characteristic => {
+	            addClog("Add EventListener (0x1f1f)");
+				settingsCharacteristics.addEventListener('characteristicvaluechanged', event => CustomBlkParse(event.target.value));
+	            addClog("Read Characteristics (0x1f1f)");
+				settingsCharacteristics.readValue().then(value => {
+					$("ldfile").hidden = false;
+					addClog("Send cmd (3303): Query 3 measurements");
+					settingsCharacteristics.writeValue(new Uint8Array([0x33,0x03])).then(_ => {
+					  addClog('Send cmd ok');
+					})
+					.catch(error => addClog(error));
+				}).catch(error => { addClog(error);
+					addLog("Detected alternative Firmware? Use: https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html");
+					setStatus('Detected alternative Firmware? <a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html">TelinkOTA</a>');
+				 });
+	        }).catch(error => addClog(error));
+	    } else {
+			addLog("Detected alternative Firmware? Use: https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html");
+			setStatus('Detected alternative Firmware? <a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html">TelinkOTA</a>');
+	    }
+	}).catch(handleError);
 }
 
 function miAuthorization() {
