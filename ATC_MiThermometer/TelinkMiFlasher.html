@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v2.9c</title>
+<title>Telink Flasher v3.0</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -1540,8 +1540,10 @@ function CustomConfig() {
 	is += 'Temperature offset: <input size="5" title="-12.7..12.7°, default 0" id="cfg_tmp_off" maxlength="5" value="0"> °';
 	is += ', Humidity offset: <input size="5" title="-12.7..12.7%, default 0" id="cfg_hm_off" maxlength="5" value="0"> %<br><br>';
 	is += 'Advertising type: <select id="cfg_flg_adv_type"><option value="0">Atc1441</option><option value="1">Custom</option><option value="2">Mi</option><option value="3" selected>All</option></select>';
+	if(cfg.ver >= 0x30)
+		is += ', AdFlags: <input title="Toggle support for third-party software written by unqualified authors" type="checkbox" id="adv_flags">';
 	if(cfg.ver >= 0x22)
-		is += ' Encrypted Mi beacon:<input type="checkbox" id="mi_beacon">';
+		is += ', Encrypted Mi beacon: <input title="Support for mijia bindkey encrypted beacon" type="checkbox" id="mi_beacon">';
 	is += '<br><br>Advertising interval: <input size="5" title="62.5 ms .. 10 000 ms, step: 62.5 ms, default 2500 ms" id="cfg_adv_int" maxlength="6" value="40"> ms, step: 62.5 ms<br><br>';
 	is += 'Measure interval: <input size="5" title="1..25 (62.5 ms .. 250 sec), default 4 (10 sec)" id="cfg_meas_int" maxlength="2" value="4"> x(Advertising interval)<br><br>';
 	is += 'Connect latency: <input size="5" title="0..4000 ms, default 2500 ms" id="cfg_con_lat" maxlength="4" value="2500"> ms, step 20 ms<br><br>';
@@ -1638,6 +1640,8 @@ function CustomConfig() {
 		$("cfg_flg2_memo").checked = (cfg.flg2&8) != 0;
 	if(cfg.ver >= 0x22)
 		$("mi_beacon").checked = (cfg.flg2&0x08) != 0;
+	if(cfg.ver >= 0x30)
+		$("adv_flags").checked = (cfg.flg2&0x10) != 0;
 	if(cfg.ver >= 0x20)
 		$("cfg_av_meas_mem").value = String(cfg.av_meas_mem);
 	$("cfg_tmp_off").value = String((cfg.temp_offset / 10.0).toFixed(1));
@@ -1669,6 +1673,8 @@ function SendCustomConfig() {
 		cfg.flg2 += (($("cfg_flg2_memo").checked) ? 8 : 0);
 	if(cfg.ver >= 0x22)
 		cfg.flg2 += (($("mi_beacon").checked) ? 0x08 : 0);
+	if(cfg.ver >= 0x30)
+		cfg.flg2 += (($("adv_flags").checked) ? 0x10 : 0);
 	if(cfg.ver >= 0x20)
 		cfg.av_meas_mem = parseInt($("cfg_av_meas_mem").value);
 	cfg.temp_offset = Math.round(10.0 * parseFloat($("cfg_tmp_off").value));
