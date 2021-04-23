@@ -1541,7 +1541,7 @@ function CustomConfig() {
 	is += ', Humidity offset: <input size="5" title="-12.7..12.7%, default 0" id="cfg_hm_off" maxlength="5" value="0"> %<br><br>';
 	is += 'Advertising type: <select id="cfg_flg_adv_type"><option value="0">Atc1441</option><option value="1">Custom</option><option value="2">Mi</option><option value="3" selected>All</option></select>';
 	if(cfg.ver >= 0x30)
-		is += ', AdFlags: <input title="Toggle support for third-party software written by unqualified authors" type="checkbox" id="adv_flags">';
+		is += ', AdFlags: <input title="Toggle support for third-party software" type="checkbox" id="adv_flags">';
 	if(cfg.ver >= 0x22)
 		is += ', Encrypted Mi beacon: <input title="Support for mijia bindkey encrypted beacon" type="checkbox" id="mi_beacon">';
 	is += '<br><br>Advertising interval: <input size="5" title="62.5 ms .. 10 000 ms, step: 62.5 ms, default 2500 ms" id="cfg_adv_int" maxlength="6" value="40"> ms, step: 62.5 ms<br><br>';
