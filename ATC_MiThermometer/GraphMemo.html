@@ -209,12 +209,29 @@ function convertArrayOfObjectsToCSV(value){
 	result = '';
 	//result += keys.join(columnDelimiter);
 	//result += lineDelimiter;
+	result = 'Time-Data=(A2/86400)+25569'+columnDelimiter+'Temp'+columnDelimiter+'Humi'+columnDelimiter+'Vbat'+lineDelimiter;
+/*
+	data.forEach(function(item){
+		ctr = 0;
+		keys.forEach(function(key){
+			if (ctr > 0) {
+				result += columnDelimiter;
+				result += item[key];
+			} else
+				result += item[key];
+			ctr++;
+		});
+		result += lineDelimiter;
+	});
+*/
 	data.reduceRight(function(a, i) {
 		ctr = 0;
 		keys.forEach(function(key){
-			if (ctr > 0)
+			if (ctr > 0) {
 				result += columnDelimiter;
-			result += i[key];
+				result += i[key];
+			} else
+				result += i[key];
 			ctr++;
 		});
 		result += lineDelimiter;
@@ -228,7 +245,7 @@ function download(data, filename, type) {
 		window.navigator.msSaveOrOpenBlob(file, filename);
 	} else { // ff, chrome
 		url = URL.createObjectURL(file);
-		var a = document.createElement("a");
+		let a = document.createElement("a");
 		a.href = url;
 		a.download = filename;
 		document.body.appendChild(a);

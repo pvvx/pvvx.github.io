@@ -195,19 +195,38 @@ function convertArrayOfObjectsToCSV(value){
 	lineDelimiter = value.lineDelimiter || '\n';
 	keys = Object.keys(data[1]);
 	result = '';
-	//result += keys.join(columnDelimiter);
-	//result += lineDelimiter;
+	result = 'Time-Data:(A2/86400000)+25569'+columnDelimiter+'T1'+columnDelimiter+'T2'+columnDelimiter+'H1'+columnDelimiter+'H2'+lineDelimiter;
+	data.forEach(function(item){
+		ctr = 0;
+		keys.forEach(function(key){
+			if (ctr > 0) {
+				result += columnDelimiter;
+				result += item[key][0];
+				result += columnDelimiter;
+				result += item[key][2];
+			} else
+				result += item[key].getTime();
+			ctr++;
+		});
+		result += lineDelimiter;
+	});
+/*
 	data.reduceRight(function(a, i) {
 		ctr = 0;
 		keys.forEach(function(key){
-			if (ctr > 0)
+			if (ctr > 0) {
 				result += columnDelimiter;
-			result += i[key];
+				result += i[key][0];
+				result += columnDelimiter;
+				result += i[key][2];
+			} else
+				result += i[key].getTime();
 			ctr++;
 		});
 		result += lineDelimiter;
 		return 1;
 	}, 1);
+*/
 	return result;
 }
 function download(data, filename, type) {

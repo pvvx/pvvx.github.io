@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v3.0</title>
+<title>Telink Flasher v3.1</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -11,7 +11,7 @@ var bluetoothDevice, gattServer, Theservice, writeCharacteristic;
 var ServiceMain, writeCharacteristicSpeed = null, nitifiyCharTemp, time_char, enc_main, enc_10, enc_19;
 //Firmware values
 var rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/";
-var otafiles = { loaded: false, version: 0x27, custom: ['ATC_Thermometer27.bin','MHO_C401_v27.bin', 'CGG1_v27.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin']};
+var otafiles = { loaded: false, version: 0x27, custom: ['ATC_Thermometer32.bin','MHO_C401_v32.bin', 'CGG1_v32.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin']};
 var firmwareArray = "",
 	startTime = 0,
 	blockCount = 0;
@@ -1543,7 +1543,7 @@ function CustomConfig() {
 	if(cfg.ver >= 0x30)
 		is += ', AdFlags: <input title="Toggle support for third-party software" type="checkbox" id="adv_flags">';
 	if(cfg.ver >= 0x22)
-		is += ', Encrypted Mi beacon: <input title="Support for mijia bindkey encrypted beacon" type="checkbox" id="mi_beacon">';
+		is += ', Encrypted beacon: <input title="Bindkey encrypted beacon" type="checkbox" id="mi_beacon">';
 	is += '<br><br>Advertising interval: <input size="5" title="62.5 ms .. 10 000 ms, step: 62.5 ms, default 2500 ms" id="cfg_adv_int" maxlength="6" value="40"> ms, step: 62.5 ms<br><br>';
 	is += 'Measure interval: <input size="5" title="1..25 (62.5 ms .. 250 sec), default 4 (10 sec)" id="cfg_meas_int" maxlength="2" value="4"> x(Advertising interval)<br><br>';
 	is += 'Connect latency: <input size="5" title="0..4000 ms, default 2500 ms" id="cfg_con_lat" maxlength="4" value="2500"> ms, step 20 ms<br><br>';
@@ -1575,7 +1575,7 @@ function CustomConfig() {
 			dnm.enable = true;
 		}
 	}
-	is += '<hr>Management GPIO_PA5 (mark "reset"):<br>';
+	is += '<hr>Management GPIO_TRG (mark "reset"):<br>';
 	if(cfg.ver >= 0x26) {
 		is += 'Temperature hysteresis: <input size="8" title="Step 0.01°, default -0.55°, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="trg_tmp_hst" maxlength="7" value="-0.55"> °';
 		is += ', Humidity hysteresis: <input size="8" title="Step 0.01%, default 0, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="trg_hm_hst" maxlength="7" value="0.0"> %<br>';
