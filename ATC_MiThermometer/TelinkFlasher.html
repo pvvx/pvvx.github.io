@@ -1400,6 +1400,7 @@ function UpdTrg() {
 		$("trg_hm_hst").value =  trg.hm_hst.toFixed(2);
 	}
 }
+
 function generateMiBindKeyByPW()
 {
 	let pw=document.getElementById("device_PW").value;
@@ -1408,6 +1409,7 @@ function generateMiBindKeyByPW()
 	.then (hash => output_field.value = hash.hashHex.toUpperCase())
 	
 }
+
 function setNewTBKey() {
 	let bk = $("mi_bind_key").value;
 	if(bk.length == 32) {
