@@ -20,7 +20,8 @@ Web files for projects:
 
 ![SCH](https://github.com/pvvx/UBIA/blob/master/DOCs/img/tBLETST_JDY10_sch.gif)
 
+---
 
-
+[ADV-repeater, ATC Temperatyre/Humidity Trigger](https://github.com/pvvx/AdScanerTrg)
 
 
