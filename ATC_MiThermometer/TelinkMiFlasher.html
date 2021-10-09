@@ -418,7 +418,7 @@ function CustomBlkParse(value) {
 		let count = value.getUint16(7, true);
 		let flg = 0;
 		if(len > 8) flg = value.getUint8(9);
-		let s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, Count: '+count+', flg: '+hex(flg,2);
+		let s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, Count: '+count+', flg: 0x'+hex(flg,2);
 		$("tempHumiData").innerHTML = s;
 	    addClog(s);
 	} else if(blkid == 0x22 && len >= 7) {
