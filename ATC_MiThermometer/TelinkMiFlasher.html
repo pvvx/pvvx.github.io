@@ -780,9 +780,9 @@ function miAuthorization() {
 					});
 					addLog("Connected");
 					if(bluetoothDevice.name == 'LYWSD03MMC') { 
-						if(dewHWstr == 'B1.4')	cfg.hver = 0;
-						else if(dewHWstr == 'B1.6') cfg.hver = 3;
-						else if(dewHWstr == 'B1.9') cfg.hver = 4;
+						if(devHWstr == 'B1.4')	cfg.hver = 0;
+						else if(devHWstr == 'B1.6') cfg.hver = 3;
+						else if(devHWstr == 'B1.9') cfg.hver = 4;
 						else {
 							cfg.hver = null;
 							$("ldfile").hidden = false;
@@ -794,7 +794,10 @@ function miAuthorization() {
 						cfg.hver = null;
 						$("ldfile").hidden = false;
 					}
-					setStatus("Connected, you can now Do the Activation to either get the Token or flash a new Firmware");
+					let s=bluetoothDevice.name;
+					if (devHWstr) s+=" HW:"+devHWstr+" ";
+					s+="Connected, you can now Do the Activation to either get the Token or flash a new Firmware"
+					setStatus(s);
 				});
 			});
 		}).catch(handleError);
@@ -855,6 +858,7 @@ function detectMi() {
 			addLog("Detected Mi Thermometer");
 			setStatus("Detected Mi Thermometer");
 			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
+			getHWVersion();
 			miAction();
 		} else if (customEnabled) {
 			addLog("Detected custom Firmware");
