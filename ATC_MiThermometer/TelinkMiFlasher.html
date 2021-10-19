@@ -835,7 +835,7 @@ function detectMi() {
 		}
 //		getHWVersion();
 		devHWstr = null;
-		if (devInfEnabled) gattServer.getPrimaryService(0x180a).then(service => { 
+/*		if (devInfEnabled) gattServer.getPrimaryService(0x180a).then(service => { 
 	 		addClog("Found Device Information Service");
 			return service.getCharacteristic(0x2a27); // Hardware Revision String 
 		}).then(characteristic => {
@@ -847,8 +847,8 @@ function detectMi() {
 			addClog(error);
 			devHWstr = 'Unknown';
 		});
-		addLog('Hardware Revision String: ' + devHWstr);
-		if (miEnabled) {
+		if (devHWstr) addLog('Hardware Revision String: ' + devHWstr);
+*/		if (miEnabled) {
 			addLog("Detected Mi Thermometer");
 			setStatus("Detected Mi Thermometer");
 			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
