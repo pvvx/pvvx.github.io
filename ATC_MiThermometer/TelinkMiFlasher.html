@@ -821,11 +821,9 @@ function doConnect() {
 }
 
 function getHWVersion() {
+	devHWstr = null;
 	if (devInfEnabled) gattServer.getPrimaryService(0x180a).then(service => { 
  		addClog("Found Device Information Service");
-//		addClog("Found Device Information service");
-//		devInfSer = service;
-//		return devInfSer.getCharacteristic(0x2a27); // Hardware Revision String 
 		return service.getCharacteristic(0x2a27); // Hardware Revision String 
 	}).then(characteristic => {
 		addClog("Get Hardware Revision String"); 
@@ -836,8 +834,7 @@ function getHWVersion() {
 	}).catch(error => {
 		addClog(error);
 		devHWstr = 'Unknown';
-	})  
-	else devHWstr = null;
+	})	
 }
 
 function detectMi() {
@@ -846,6 +843,7 @@ function detectMi() {
 		miEnabled = false;
 		customEnabled = false;
 		devidEnabled = false;
+		devInfEnabled = false;
 		for (var i = 0; i < services.length; i++) {
 			addClog("Services: " + services[i].uuid);
 			if (services[i].uuid == "ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6") miEnabled = true;
@@ -871,7 +869,7 @@ function detectMi() {
 			miAuthorization();  //	miConnected
 			$("ldfile").hidden = false;
 			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
-		}
+		};
 	}).catch(handleError);
 }
 
