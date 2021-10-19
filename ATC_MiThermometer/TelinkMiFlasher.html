@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v3.2</title>
+<title>Telink Flasher v3.2z</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -402,12 +402,11 @@ function CustomBlkParse(value) {
 		if(len >= 11) cfg.hver = value.getUint8(11); else cfg.hver = 0;
 		if(len >= 12) cfg.av_meas_mem = value.getUint8(12); else cfg.av_meas_mem = 0;
 		let s = 'Hardware Version: ';
-		if(((cfg.hver & 0x07) == 0)||((cfg.hver & 0x07) == 3)||((cfg.hver & 0x07) == 4)) { s +='LYWSD03MMC';
-			if(devHWstr) s += ' ' + devHWstr;
-		}
+		if(((cfg.hver & 0x07) == 0)||((cfg.hver & 0x07) == 3)||((cfg.hver & 0x07) == 4)) s +='LYWSD03MMC';
 		else if((cfg.hver & 0x07) == 1) s +='MHO-C401';
 		else if((cfg.hver & 0x07) == 2) s +='CGG1';
 		else s += 'Unknown'
+		if(devHWstr) s += ' ' + devHWstr;
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
 		setStatus(s);
 		addAlog(s);
@@ -854,23 +853,21 @@ function detectMi() {
 			if (services[i].uuid ==	"0000181a-0000-1000-8000-00805f9b34fb") devidEnabled = true;
 			if (services[i].uuid ==	"0000180a-0000-1000-8000-00805f9b34fb") devInfEnabled = true; // Device Information Service
 		}
+		getHWVersion();
 		if (miEnabled) {
 			addLog("Detected Mi Thermometer");
 			setStatus("Detected Mi Thermometer");
 			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
-			getHWVersion();
 			miAction();
 		} else if (customEnabled) {
 			addLog("Detected custom Firmware");
 			setStatus("Detected custom Firmware");
-			getHWVersion();
 			customAction();
 			$("custcfg").innerHTML = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
 		} else {
 			addLog("Detected Telink OTA service");
 			setStatus("Connected.")
 			miEnabled = true;
-			getHWVersion();
 			miAuthorization();  //	miConnected
 			$("ldfile").hidden = false;
 			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
