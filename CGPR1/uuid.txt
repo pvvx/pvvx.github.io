@@ -1,0 +1,39 @@
+Service Name: GenericAccess
+Service UUID: 00001800-0000-1000-8000-00805f9b34fb
+Characteristic Name: DeviceName - Characteristic Short UUID: 0x2A00 - User Description: - Handle: 2 - 0x00000002 - Value: Qingping Motion & Light
+Characteristic Name: Appearance - Characteristic Short UUID: 0x2A0l - User Description: - Handle: 4 - 0x00000004 - Value: 00-00
+Characteristic Name: PeripheralPreferredConnectionParameters - Characteristic Short UUID: 0x2A04 - User Description: - Handle: 6 - 0x00000006 - Value: 14-00-28-00-00-00-E8-03
+
+Service Name: GenericAttribute
+Service UUID: 00001801-0000-1000-8000-00805f9b34fb
+Characteristic Name: ServiceChanged - Characteristic Short UUID: 0x2A0S - User Description: - Handle: 9 - 0x00000009 - Value:
+
+Service Name: Devicelnformation
+Service UUID: 00001b0a-0000-1000-8000-00805f9b34fb
+Characteristic Name: ManufacturerNameString - Characteristic Short UUID: 0x2A29 - User Description: - Handle: 13 - 0x0000000D - Value: Qingping Technology (Beijing) Co., Ltd
+Characteristic Name: ModelNumberString - Characteristic Short UUID: 0x2A24 - User Description: - Handle: 15 - 0x0000000F - Value: CGPR1
+Characteristic Name: FirmwareRevisionString - Characteristic Short UUID: 0x2A26 - User Description: - Handle: 17 - 0x00000011 - Value: 2.2.8
+Characteristic Name: SerialNumberString - Characteristic Short UUID: 0x2A25 - User Description: - Handle: 19 - 0x00000013 - Value: 582D34605E00
+Characteristic Name: HardwareRevisionString - Characteristic Short UUID: 0x2A27 - User Description: - Handle: 21 - 0x00000015 - Value: 0001
+
+Service Name: 00010203-0405-0607-0809-0a0b0c0d1912
+Service UUID: 00010203-0405-0607-0809-0a0b0c0d1912
+Characteristic Name: 00010203-0405-0607-0809-0a0b0c0d2b12 - Characteristic Short UUID: - User Description: 0TA - Handle: 24 - 0x00000018 - Value: 00
+
+Service Name: 22210000-554a-4546-5542-46534450464d
+Service UUID: 22210000-554a-4546-5542-46534450464d
+Characteristic Name: 1 - Characteristic Short UUID: 0x1 - User Description: - Handle: 28 - 0x0000001C - Value:
+Characteristic Name: 2 - Characteristic Short UUID: 0x2 - User Description: - Handle: 30 - 0x0000001E - Value:
+Characteristic Name: 23 - Characteristic Short UUID: 0x17 - User Description: - Handle: 33 - 0x00000021 - Value:
+Characteristic Name: 24 - Characteristic Short UUID: 0x18 - User Description: - Handle: 35 - 0x00000023 - Value:
+Characteristic Name: 256 - Characteristic Short UUID: 0x100 - User Description: - Handle: 38 - 0x00000026 - Value: 05-03.00-05-00-00
+
+Service Name: 65173
+Service UU ID: 0000fe95-0000-1000-8000-00805f9b34fb
+Characteristic Name: 4 - Characteristic Short UUID: 0x4 - User Description: Version - Handle: 42 - 0x0000002A - Value: 1.1.1_0228
+Characteristic Name: 16 - Characteristic Short UUID: 0x10 - User Description: Authentication - Handle: 45 - 0x0000002D - Value:
+Characteristic Name: 23 - Characteristic Short UUID: 0x17 - User Description: ota_ctrl - Handle: 49 - 0x00000031 - Value:
+Characteristic Name: 24 - Characteristic Short UUID: 0x18 - User Description: ota_data - Handle: 53 - 0x00000035 - Value:
+Characteristic Name: 25 - Characteristic Short UUID: 0x19 - User Description: standard - Handle: 57 - 0x00000039 - Value:
+Characteristic Name: 00000101-0065-6c62-2e74-6f696d2e696d - Characteristic Short UUID: - User Description: STDI0_RX - Handle: 62 - 0x0000003E - Value:
+Characteristic Name: 00000102-0065-6c62-2e74-6f696d2e696d - Characteristic Short UUID: - User Description: STDI0_TX - Handle: 66 - 0x00000042 - Value:
