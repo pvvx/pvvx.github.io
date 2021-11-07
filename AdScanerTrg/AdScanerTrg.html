@@ -172,6 +172,7 @@ function connectDeviceAndCacheCharacteristics() {
 function myhandleChanged(event) {
 	let value = event.target.value.buffer ? event.target.value : new DataView(event.target.value);
 	if(value.byteLength > 11 && value.getUint8(8) == 0x16) {
+		// value.buffer: rssi, mac, adv msg
 		let s = hex(value.getUint16(5,true),4) + hex(value.getUint16(3,true),4) + hex(value.getUint16(1,true),4) + ', RSSI: ' + value.getInt8(0) + ',';
 	  	logDataView(s, value.getUint16(9,true), new DataView(event.target.value.buffer.slice(11)));
 	} // else console.log(value);
@@ -235,6 +236,7 @@ const tabid2name = [
   { id: 0x045C, name: "V_SK152"},
   { id: 0x0863, name: "SJWS01LM"},
   { id: 0x07F6, name: "MJYD02YL"},
+  { id: 0x0A83, name: "CGPR1"},
 ];
 function id2name(dev_id) {
 	let did = tabid2name.map(el => el.id); 
@@ -244,10 +246,10 @@ function id2name(dev_id) {
 }
 
 const logDataView = (labelOfDataSource, key, b) => {
-	let s = '', h = '0123456789ABCDEF';
+	let si = '', h = '0123456789ABCDEF';
 	let buf = new Uint8Array(b.buffer);
-	buf.forEach((v) => { s += h[v >> 4] + h[v & 15]; });
-	log(` ${labelOfDataSource} Data: ` + hex(key,2) + ':' + s);
+	buf.forEach((v) => { si += h[v >> 4] + h[v & 15]; });
+	log(` ${labelOfDataSource} Data: ` + hex(key,2) + ':' + si);
 	if(key == 0xfe95) { // mi
 		if(b.byteLength >= 2) { // custom mi
 			let ctrl = b.getUint16(0, true);
@@ -392,14 +394,55 @@ const logDataView = (labelOfDataSource, key, b) => {
 			let s = 'MAC: '+hex(buf[0],2)+hex(buf[1],2)+hex(buf[2],2)+hex(buf[3],2)+hex(buf[4],2)+hex(buf[5],2);
 			s += ', Bat: '+bat+'%, Vbat: '+vbat+' mV, Temp: '+temp+'°C, Humi: '+humi+'%, Count: '+cnt;
 			log(s); }
-	} else if(key == '0000fff9-0000-1000-8000-00805f9b34fb') { // CGG1 "Goose"
-		// 0801 AE1610342D58 0104 1401 4601 02 01 58 
-		if(b.byteLength >= 16 && b.getUint16(0, true) == 0x0108 && b.getUint16(8, true) == 0x0401 && b.getUint16(14, true) == 0x0102) {
-			let temp = b.getInt16(10, true) / 10.0;
-			let humi = b.getInt16(12, true) / 10.0;
-			let bat = b.getUint8(16);
+	} else if((key == 0xfdcd)||(key == 0xfff9)) {  // Qingping / ClearGrass
+		// CGG1 "Goose":  0801 AE1610342D58 0104 1401 4601 0201 58 
+		// CGPR1 0812 005E60342D58 0201 64 0F01 72 0904 08000000
+		// 	 0812 005E60342D58 0201 64 0F01 6E 0904 91140000
+		// 	 4812 005E60342D58 0804 01 911400 0F01 6F
+		//       4812 005E60342D58 1101 01 0F01 85
+		//	 4812 005E60342D58 1101 00 0F01 8C
+		let msg_length = b.byteLength;
+		if(msg_length >= 11 && (b.getUint8(0)&0x3f) == 0x08) {
+			let device_id = b.getUint8(1);
 			let s = 'MAC: '+hex(buf[2],2)+hex(buf[3],2)+hex(buf[4],2)+hex(buf[5],2)+hex(buf[6],2)+hex(buf[7],2);
-			s += ', Bat: '+bat+'%, Temp: '+temp+'°C, Humi: '+humi+'%';
+			if(device_id == 0x01) s+=' CGG1 "Goose"';
+			else if (device_id == 0x07) s+=' CGG1';
+			else if (device_id == 0x09) s+=' CGP1W';
+			else if (device_id == 0x0C) s+=' CGD1';
+			else if (device_id == 0x12) s+=' CGPR1';
+			//if((b.getUint8(0)&0x40)!=0) s+=', Event';
+			let xdata_point = 10;
+		        while (xdata_point < msg_length) {
+				let xdata_id = b.getUint8(xdata_point-2);
+				let xdata_size = b.getUint8(xdata_point-1);
+				if(xdata_point + xdata_size <= msg_length) {
+				 if((xdata_id == 0x01)&&(xdata_size == 4)) {
+					let temp = b.getInt16(xdata_point, true) / 10.0;
+					let humi = b.getInt16(xdata_point+2, true) / 10.0;
+					s += ', Temp: '+temp+'°C, Humi: '+humi+'%';
+				 } else if((xdata_id == 0x02)&&(xdata_size == 1)) {
+					s += ', Bat: '+b.getUint8(xdata_point)+'%';
+				 } else if((xdata_id == 0x07)&&(xdata_size == 2)) {
+					s += ', Pressure: '+(b.getInt16(xdata_point, true) / 100.0);
+				 } else if((xdata_id == 0x08)&&(xdata_size == 4)) {
+					s += ', Motion: '+ b.getUint8(xdata_point)+' & Light: '+(b.getUint16(xdata_point+1, true)+b.getUint8(xdata_point+3)*256);
+				 } else if((xdata_id == 0x09)&&(xdata_size == 4)) {
+					s += ', Light: '+(b.getUint32(xdata_point, true));
+				 } else if((xdata_id == 0x0F)&&(xdata_size == 1)) {
+					s += ', Count: '+b.getUint8(xdata_point);
+				 } else if((xdata_id == 0x11)&&(xdata_size == 1)) {
+					if(b.getUint8(xdata_point) == 0) s += ', Light Off';
+					else s += ', Light On';
+				 } else if (xdata_size == 1) {
+					s += ', id: 0x'+hex(xdata_id,2)+' - data: 0x'+hex(buf[xdata_point],2);
+				 } else if (xdata_size == 2) {
+					s += ', id: 0x'+hex(xdata_id,2)+' - data: 0x'+hex(buf[xdata_point],2)+hex(buf[xdata_point+1],2);
+				 } else if (xdata_size == 4) {
+					s += ', id: 0x'+hex(xdata_id,2)+' - data: 0x'+hex(buf[xdata_point],2)+hex(buf[xdata_point+1],2)+hex(buf[xdata_point+2],2)+hex(buf[xdata_point+3],2);
+				 }
+				} else break;
+				xdata_point = xdata_point + xdata_size + 2; 
+			}
 			log(s); 
 		}
 	}
