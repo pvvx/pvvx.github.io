@@ -14,6 +14,8 @@ Web files for projects:
 
 [LYWSD02](https://pvvx.github.io/LYWSD02)
 
+[CGPR1 Qingping Motion & Light](https://pvvx.github.io/CGPR1)
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
@@ -23,5 +25,6 @@ Web files for projects:
 ---
 
 [ADV-repeater, ATC Temperatyre/Humidity Trigger](https://github.com/pvvx/AdScanerTrg)
+
 
 
