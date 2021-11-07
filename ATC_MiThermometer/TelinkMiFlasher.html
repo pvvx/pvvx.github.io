@@ -409,8 +409,10 @@ function CustomBlkParse(value) {
 		if(devHWstr) s += ' ' + devHWstr;
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
 		setStatus(s);
-		if((cfg.hver & 0x80) == 0) s += ', Sensor: SHT4x';
-		else s += ', Sensor: SHTC3';
+		if(cfg.ver > 0x32) {
+			if((cfg.hver & 0x80) == 0) s += ', Sensor: SHT4x';
+			else s += ', Sensor: SHTC3';
+		}
 		addAlog(s);
 		s = 'Custom config: ['+cfg.flg+', '+cfg.flg2+', '+cfg.temp_offset+', '+cfg.humi_offset+', '+cfg.advertising_interval+', '+cfg.measure_interval+', '+cfg.rf_tx_power+', '+cfg.connect_latency+', '+cfg.lcd_tint+', '+cfg.hver+', '+cfg.av_meas_mem+']';
 		addAlog(s);
