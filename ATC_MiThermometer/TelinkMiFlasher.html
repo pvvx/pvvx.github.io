@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v3.2z</title>
+<title>Telink Flasher v3.3</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -11,7 +11,7 @@ var bluetoothDevice, gattServer, Theservice, writeCharacteristic;
 var ServiceMain, writeCharacteristicSpeed = null, nitifiyCharTemp, time_char, enc_main, enc_10, enc_19;
 //Firmware values
 var rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/";
-var otafiles = { loaded: false, version: 50, custom: ['ATC_B14V32.bin','MHO_C401_v32.bin', 'CGG1_v32.bin', 'ATC_B16V32.bin','ATC_B19V32.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_CGG1_v1.0.0_0130.bin','Original_OTA_CGG1_v1.0.0_0130.bin']};
+var otafiles = { loaded: false, version: 52, custom: ['ATC_V34.bin','MHO_C401_v34.bin', 'CGG1_v34.bin', 'ATC_V34.bin','ATC_V34.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_CGG1_v1.0.0_0130.bin','Original_OTA_CGG1_v1.0.0_0130.bin']};
 var firmwareArray = "",
 	startTime = 0,
 	blockCount = 0;
@@ -148,6 +148,7 @@ const tabid2name = [
   { id: 0x045C, name: "V_SK152"},
   { id: 0x0863, name: "SJWS01LM"},
   { id: 0x07F6, name: "MJYD02YL"},
+  { id: 0x0A83, name: "CGPR1"},
 ];
 
 function id2name(dev_id) {
@@ -408,6 +409,8 @@ function CustomBlkParse(value) {
 		if(devHWstr) s += ' ' + devHWstr;
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
 		setStatus(s);
+		if((cfg.hver & 0x80) == 0) s += ', Sensor: SHT4x';
+		else s += ', Sensor: SHTC3';
 		addAlog(s);
 		s = 'Custom config: ['+cfg.flg+', '+cfg.flg2+', '+cfg.temp_offset+', '+cfg.humi_offset+', '+cfg.advertising_interval+', '+cfg.measure_interval+', '+cfg.rf_tx_power+', '+cfg.connect_latency+', '+cfg.lcd_tint+', '+cfg.hver+', '+cfg.av_meas_mem+']';
 		addAlog(s);
