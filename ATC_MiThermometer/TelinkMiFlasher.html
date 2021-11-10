@@ -399,7 +399,8 @@ function CustomBlkParse(value) {
 		cfg.connect_latency = value.getUint8(9);
 		if(len >= 10) cfg.lcd_tint = value.getUint8(10);
 		else cfg.lcd_tint = 55;
-		if(len >= 11) cfg.hver = value.getUint8(11); else cfg.hver = 0;
+		if(len >= 11) cfg.hver = value.getUint8(11); 
+		else if(cfg.hver == null) cfg.hver = 7;
 		if(len >= 12) cfg.av_meas_mem = value.getUint8(12); else cfg.av_meas_mem = 0;
 		let s = 'Hardware Version: ';
 		if(((cfg.hver & 0x07) == 0)||((cfg.hver & 0x07) == 3)||((cfg.hver & 0x07) == 4)) s +='LYWSD03MMC';
@@ -409,7 +410,7 @@ function CustomBlkParse(value) {
 		if(devHWstr) s += ' ' + devHWstr;
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
 		setStatus(s);
-		if(cfg.ver > 0x32) {
+		if(cfg.ver > 0x33) {
 			if((cfg.hver & 0x80) == 0) s += ', Sensor: SHT4x';
 			else s += ', Sensor: SHTC3';
 		}
@@ -425,7 +426,7 @@ function CustomBlkParse(value) {
 		let count = value.getUint16(7, true);
 		let flg = 0;
 		if(len > 8) flg = value.getUint8(9);
-		let s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, Count: '+count+', flg: 0x'+hex(flg,2);
+		let s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, Count: '+count+', flg: 0x'+hex(flg,2)+':r'+(flg&1)+'/t'+((flg>>1)&1);
 		$("tempHumiData").innerHTML = s;
 	    addClog(s);
 	} else if(blkid == 0x22 && len >= 7) {
@@ -783,7 +784,7 @@ function miAuthorization() {
 					});
 					addLog("Connected");
 					if(bluetoothDevice.name == 'LYWSD03MMC') { 
-						if(devHWstr == 'B1.4')	cfg.hver = 0;
+						if(devHWstr == 'B1.4')	cfg.hver = 0x80;
 						else if(devHWstr == 'B1.6') cfg.hver = 3;
 						else if(devHWstr == 'B1.9') cfg.hver = 4;
 						else {

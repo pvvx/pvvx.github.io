@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html>
+  <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Advertising</title>
+  </head>
+  <body>
+	<div style="height: auto; width: auto; text-align: center;">
+	Web Experimental Features!<br>
+ 	#enable-experimental-web-platform-features (copy link:
+  	<a href=chrome://flags/#enable-experimental-web-platform-features>Chrome<a>,
+ 	<a href=opera://flags/#enable-experimental-web-platform-features>Opera<a>,
+  	<a href=edge://flags/#enable-experimental-web-platform-features>Edge<a>)<br>
+	<input type="button" id="butConnect" onclick="onButtonClick()" value="Connect">
+	TRG Device MAC: <input size="12" maxlength="12" type="text" id="trg_mac" title="Must be 6 hex MAC digits!">
+	<input type="button" id="butSendMAC" onclick="sendMAC()" disabled="true" value="Set TRG MAC">
+	<input type="button" id="butReadMAC" onclick="readMAC()" disabled="true" value="Read TRG MAC">
+	<input type="button" id="butNotify" onclick="StartNotify()" disabled="true" value="Start Scaner">
+	</div>
+	<hr>
+    <button type="button" onclick="clearLog();">Clear Log</button>
+	<div id="log"></div>
+  </body>
+<script type="text/javascript">
+// https://googlechrome.github.io/samples/web-bluetooth/read-characteristic-value-changed.html
+var bluetoothDevice;
+var myCharacteristic;
+var notify_on = 0;
+
+var $ = function(id) { return document.getElementById(id);}
+
+function clearLog() {
+	$("log").innerHTML = "";
+}
+
+function onButtonClick() {
+  $('butConnect').disabled = true;
+  return (bluetoothDevice ? Promise.resolve() : requestDevice())
+  .then(connectDeviceAndCacheCharacteristics)
+  .catch(error => {
+    log('Argh! ' + error);
+    $('butConnect').disabled = false;
+  });
+}
+
+function requestDevice() {
+  log('Requesting any Bluetooth Device...');
+  return navigator.bluetooth.requestDevice({
+   // filters: [...] <- Prefer filters to save energy & show relevant devices.
+	  filters: [{namePrefix: 'ADSC'}],
+      optionalServices: [0xffe0]})
+  .then(device => {
+    bluetoothDevice = device;
+    bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
+  });
+}
+
+function hexToBytes(hex) {
+	for (var bytes = [], c = 0; c < hex.length; c += 2)
+		bytes.push(parseInt(hex.substr(c, 2), 16));
+	return new Uint8Array(bytes);
+}
+
+function dump(ar, len) {
+	let s = '';
+	for(let i=0; i < len; i++) {
+		s += hex(ar[i],2);
+	}
+	return s;
+}
+
+function dump8(ar, len) {
+	let s = '';
+	for(let i=0; i < len; i++) {
+		s += hex(ar.getUint8(i),2);
+	}
+	return s;
+}
+
+function readMAC() {
+	if(myCharacteristic) {
+	    myCharacteristic.readValue().then(value => {
+			if(value.byteLength >= 10) {
+				$("trg_mac").value = hex(value.getUint16(8,true),4) + hex(value.getUint16(6,true),4) + hex(value.getUint16(4,true),4);
+				log("Data: "+dump8(value, 19));
+			}
+		})
+	}
+}
+
+function sendMAC() {
+	if(myCharacteristic) {
+		let el = $("trg_mac").value;
+		let len = el.length;
+		if(len == 12) {
+			let mac = hexToBytes(el);
+			len = mac.length;
+			if(len == 6) {
+				let blk = new Uint8Array(len);
+				blk[0] = mac[5];
+				blk[1] = mac[4];
+				blk[2] = mac[3];
+				blk[3] = mac[2];
+				blk[4] = mac[1];
+				blk[5] = mac[0];
+				log("Send New MAC ("+dump(blk, blk.length)+")...");
+				myCharacteristic.writeValue(blk).then(_ => {
+					log("Send New MAC: "+dump(mac, 6) +" ok");
+				});
+			}
+		}
+		log("Must be 6 hex MAC digits [+ 2 hex RandMAC digits]!")
+		return;
+	}
+}
+
+
+function StartNotify() {
+	if(myCharacteristic) {
+		if(!notify_on) {
+			myCharacteristic.startNotifications().then(_ => { 
+			$('butNotify').value = "Stop Scaner";
+			notify_on = 1;
+			log('Notifications started');})
+		} else {
+			$('butNotify').value = "Start Scaner"
+			myCharacteristic.stopNotifications().then(_ => { 
+			notify_on = 0;
+			log('Notifications stoped');})
+		}
+	}
+}
+
+function connectDeviceAndCacheCharacteristics() {
+
+  if (bluetoothDevice.gatt.connected && myCharacteristic) {
+    $('butConnect').disabled = false;
+    return Promise.resolve();
+  }
+  log('Connecting to GATT Server...');
+  return bluetoothDevice.gatt.connect()
+  .then(server => {
+    log('Getting Service...');
+    return server.getPrimaryService(0xffe0);
+  })
+  .then(service => {
+    log('Getting Characteristic...');
+    return service.getCharacteristic(0xffe1);
+  })
+  .then(characteristic => {
+    myCharacteristic = characteristic;
+    log('Read value...');
+    myCharacteristic.readValue().then(value => {
+		if(value.byteLength >= 10) {
+			$("trg_mac").value = hex(value.getUint16(8,true),4) + hex(value.getUint16(6,true),4) + hex(value.getUint16(4,true),4);
+			log("Data: "+dump8(value, 19));
+		}
+	    myCharacteristic.addEventListener('characteristicvaluechanged', myhandleChanged);
+		$('butSendMAC').disabled = false;
+		$('butReadMAC').disabled = false;
+		$('butNotify').disabled = false;
+		$('butConnect').value = 'Disconnect';
+		$('butConnect').onclick = function(){onResetButtonClick()};
+    	$('butConnect').disabled = false;
+	})
+  .catch(error => {
+    log('Argh! ' + error);
+    $('butConnect').disabled = false;
+  });
+  });
+}
+
+function myhandleChanged(event) {
+	let value = event.target.value.buffer ? event.target.value : new DataView(event.target.value);
+	if(value.byteLength > 11 && value.getUint8(8) == 0x16) {
+		// value.buffer: rssi, mac, adv msg
+		let s = hex(value.getUint16(5,true),4) + hex(value.getUint16(3,true),4) + hex(value.getUint16(1,true),4) + ', RSSI: ' + value.getInt8(0) + ',';
+	  	logDataView(s, value.getUint16(9,true), new DataView(event.target.value.buffer.slice(11)));
+	} // else console.log(value);
+}
+
+
+function onResetButtonClick() {
+  if (myCharacteristic) {
+    myCharacteristic.removeEventListener('characteristicvaluechanged',
+        myhandleChanged);
+    myCharacteristic = null;
+  }
+  // Note that it doesn't disconnect device.
+  bluetoothDevice = null;
+  notify_on = 0;
+  $('butNotify').disabled = true;
+  $('butNotify').value = "Start Scaner";
+  $('butSendMAC').disabled = true;
+  $('butReadMAC').disabled = true;
+  $('butConnect').value = 'Connect';
+  $('butConnect').disabled = false;
+  $('butConnect').onclick = function(){onButtonClick()};
+  log('Bluetooth Device disconnected');
+}
+
+function onDisconnected() {
+  onResetButtonClick();
+}
+
+
+function log(data) {
+    var time = new Date().toLocaleTimeString();
+    var logString = time + ": " + data;
+    document.getElementById("log").innerHTML += logString + "<br>";
+}
+
+/* Utils */
+function hex(number, len) {
+	var str = (number.toString(16)).toUpperCase();
+	while (str.length < len) str = '0' + str;
+	return str;
+}
+const tabid2name = [
+  { id: 0x01AA, name: "LYWSDCGQ"},
+  { id: 0x0347, name: "CGG1"},
+  { id: 0x0B48, name: "CGG1_ENCRYPTED"},
+  { id: 0x066F, name: "CGDK2"},
+  { id: 0x045B, name: "LYWSD02"},
+  { id: 0x055B, name: "LYWSD03MMC"},
+  { id: 0x0576, name: "CGD1"},
+  { id: 0x06d3, name: "MHO_C303"},
+  { id: 0x0387, name: "MHO_C401"},
+  { id: 0x02DF, name: "JQJCY01YM"},
+  { id: 0x0098, name: "HHCCJCY01"},
+  { id: 0x03BC, name: "GCLS002"},
+  { id: 0x015D, name: "HHCCPOT002"},
+  { id: 0x040A, name: "WX08ZM"},
+  { id: 0x098B, name: "MCCGQ02HL"},
+  { id: 0x0083, name: "YM_K1501"},
+  { id: 0x0113, name: "YM_K1501EU"},
+  { id: 0x045C, name: "V_SK152"},
+  { id: 0x0863, name: "SJWS01LM"},
+  { id: 0x07F6, name: "MJYD02YL"},
+  { id: 0x0A83, name: "CGPR1"},
+];
+function id2name(dev_id) {
+	let did = tabid2name.map(el => el.id); 
+	let i = did.indexOf(dev_id);
+	if(i != -1) return tabid2name[i].name;
+	return "?";
+}
+
+const logDataView = (labelOfDataSource, key, b) => {
+	let si = '', h = '0123456789ABCDEF';
+	let buf = new Uint8Array(b.buffer);
+	buf.forEach((v) => { si += h[v >> 4] + h[v & 15]; });
+	if(key == 0xfe95) { // mi
+		if(b.byteLength >= 2) { // custom mi
+			let ctrl = b.getUint16(0, true);
+			let s = 'MiVer'+ (ctrl>>12);
+			let i = 2;
+			if((ctrl&0xf000) >= 0x2000 && b.byteLength >= i + 3) {
+				let dev_id = b.getUint16(i, true);
+				let frcntr = b.getUint8(i+2);
+				i += 3;
+				s += ', DevID: 0x'+ hex(dev_id, 4);
+				s += "-" + id2name(dev_id);
+				s += ', FnCnt: '+ frcntr;
+				s += ', CtrID: 0x'+ hex(ctrl, 4);
+				if(ctrl & 0x100)
+					s +=' Registered and bound';
+				else
+					s +=' Not bound';
+				if(ctrl & 0x200)
+					s +=', Request APP to register and bind';
+				switch((ctrl>>10)&3) {
+					case 0:
+						s +=', Old version certification';
+						break;
+					case 1:
+						s +=', Safety certification';
+						break;
+					case 2:
+						s +=', Standard certification';
+						break;
+					//case 3:
+					//	s +=' reserved';
+					//	break;
+				}
+				if(ctrl & 0x200)
+					s +=', Request APP to register and bind';
+				if((ctrl & 0x10) && b.byteLength >= i + 6) {
+					s += ', MAC: '+hex(buf[i+5],2)+hex(buf[i+4],2)+hex(buf[i+3],2)+hex(buf[i+2],2)+hex(buf[i+1],2)+hex(buf[i],2);
+					i += 6;
+				}
+				if((ctrl & 0x20) && b.byteLength >= i + 1) {
+					let cap = b.getUint8(i);
+					i += 1;
+					s +=', Capability: 0x'+ hex(cap,2);
+					switch((cap>>3) & 3) {
+						case 0:
+							s +=' - no binding';
+							break;							
+						case 1:
+							s +=' - front binding';
+							break;							
+						case 2:
+							s +=' - back binding';
+							break;							
+						case 3:
+							s +=' - Combo';
+							break;							
+					}
+					if(cap & 0x20 && b.byteLength >= i + 2) {
+						s +=', IO: 0x'+ hex(b.getUint16(i, true), 4);
+						i += 2;
+					}
+				}
+				if((ctrl & 0x40)) {
+					if(b.byteLength >= i + 4) {
+						if(ctrl & 8) {
+							s += ', Data encrypted';
+						} else {
+							let data_id = b.getUint16(i, true);
+							let data_len = b.getUint8(i+2);
+							i += 3;
+							if(b.byteLength >= i + data_len) switch(data_id) {
+								case 0x1006:
+									if(data_len == 2) {
+										let humi = b.getInt16(i, true) / 10.0;
+										s += ', Humi: '+humi+'%';
+									}
+									break;
+								case 0x1004:
+									if(data_len == 2) {
+										let temp = b.getInt16(i, true) / 10.0;
+										s += ', Temp: '+temp+'°C';
+									}
+									break;
+								case 0x100a:
+									if(data_len == 1) {
+										s += ', Bat: '+ b.getUint8(i) + '%';
+										if(b.byteLength >= i + 3 && b.getUint8(i+1) == 2) {
+											let Vbat = b.getUint16(i+2, true);
+											s += ', Vbat: '+ Vbat + ' mV';
+											i += 3;
+										}
+									}
+									break;
+								case 0x100d:
+									if(data_len == 4 && b.byteLength >= i + 3) {
+										let temp = b.getInt16(i, true) / 10.0;
+										let humi = b.getInt16(i+2, true) / 10.0;
+										s += ', Temp: '+temp+'°C Humi: '+humi+'%';
+									}
+									break;
+								default:
+									s += ', DataID: 0x'+hex(data_id,4);
+									let data_value = 0;
+									if(data_len == 1)
+										s += ' Value: 0x'+hex(b.getUint8(i),2);
+									else if(data_len == 2)
+										s += ' Value: 0x'+hex(b.getUint16(i, true),4);
+									else if(data_len == 4)
+										s += ' Value: 0x'+hex(b.getUint32(i, true), 8);
+									else 
+										s += ' DataLen: ' + data_len;
+									break;
+							}
+							i += data_len;
+						}
+					}
+				}
+				if(ctrl & 0x80)
+					s +=', Mesh Data';
+				log(` ${labelOfDataSource} Data: ` + hex(key,2) + ':' + si + ' ' + s);
+//				log(s);
+			}
+		}
+/*	} else if(key == 0x181a) {
+		if(b.byteLength >= 15) { // pvvx
+			// 70 58 56 38 C1 A4 69 0A 60 09 25 0B 48 70 04
+			let temp = b.getInt16(6, true) / 100.0;
+			let humi = b.getInt16(8, true) / 100.0;
+			let vbat = b.getUint16(10, true);
+			let bat = b.getUint8(12);
+			let cnt = b.getUint8(13);
+			let flg = b.getUint8(14);
+			let s = 'MAC: '+hex(buf[5],2)+hex(buf[4],2)+hex(buf[3],2)+hex(buf[2],2)+hex(buf[1],2)+hex(buf[0],2);
+			s += ', Bat: '+bat+'%, Vbat: '+vbat+' mV , Temp: '+temp+'°C, Humi: '+humi+'%, Count: '+cnt+', Flg: 0x'+hex(flg,2)+' rds('+(flg&1)+')/trg('+((flg>>1)&1)+')';
+			log(s); }
+		else if(b.byteLength == 13) { // atc1441
+			// A4 C1 38 56 58 70 01 0A 18 48 0B 25 70
+			let temp = b.getInt16(6, false) / 10.0;
+			let humi = b.getUint8(8);
+			let bat = b.getUint8(9);
+			let vbat = b.getUint16(10, false);
+			let cnt = b.getUint8(12);
+			let s = 'MAC: '+hex(buf[0],2)+hex(buf[1],2)+hex(buf[2],2)+hex(buf[3],2)+hex(buf[4],2)+hex(buf[5],2);
+			s += ', Bat: '+bat+'%, Vbat: '+vbat+' mV, Temp: '+temp+'°C, Humi: '+humi+'%, Count: '+cnt;
+			log(s); } */
+	} else if((key == 0xfdcd)||(key == 0xfff9)) {  // Qingping / ClearGrass
+		// CGG1 "Goose":  0801 AE1610342D58 0104 1401 4601 0201 58 
+		// CGPR1 0812 005E60342D58 0201 64 0F01 72 0904 08000000
+		// 	 0812 005E60342D58 0201 64 0F01 6E 0904 91140000
+		// 	 4812 005E60342D58 0804 01 911400 0F01 6F
+		//       4812 005E60342D58 1101 01 0F01 85
+		//	 4812 005E60342D58 1101 00 0F01 8C
+		let msg_length = b.byteLength;
+		if(msg_length >= 11 && (b.getUint8(0)&0x3f) == 0x08) {
+			let device_id = b.getUint8(1);
+			let s = 'MAC: '+hex(buf[2],2)+hex(buf[3],2)+hex(buf[4],2)+hex(buf[5],2)+hex(buf[6],2)+hex(buf[7],2);
+			if(device_id == 0x01) s+=' CGG1 "Goose"';
+			else if (device_id == 0x07) s+=' CGG1';
+			else if (device_id == 0x09) s+=' CGP1W';
+			else if (device_id == 0x0C) s+=' CGD1';
+			else if (device_id == 0x12) s+=' CGPR1';
+			//if((b.getUint8(0)&0x40)!=0) s+=', Event';
+			let xdata_point = 10;
+		        while (xdata_point < msg_length) {
+				let xdata_id = b.getUint8(xdata_point-2);
+				let xdata_size = b.getUint8(xdata_point-1);
+				if(xdata_point + xdata_size <= msg_length) {
+				 if((xdata_id == 0x01)&&(xdata_size == 4)) {
+					let temp = b.getInt16(xdata_point, true) / 10.0;
+					let humi = b.getInt16(xdata_point+2, true) / 10.0;
+					s += ', Temp: '+temp+'°C, Humi: '+humi+'%';
+				 } else if((xdata_id == 0x02)&&(xdata_size == 1)) {
+					s += ', Bat: '+b.getUint8(xdata_point)+'%';
+				 } else if((xdata_id == 0x07)&&(xdata_size == 2)) {
+					s += ', Pressure: '+(b.getInt16(xdata_point, true) / 100.0);
+				 } else if((xdata_id == 0x08)&&(xdata_size == 4)) {
+					s += ', Motion: '+ b.getUint8(xdata_point)+' & Light: '+(b.getUint16(xdata_point+1, true)+b.getUint8(xdata_point+3)*256);
+				 } else if((xdata_id == 0x09)&&(xdata_size == 4)) {
+					s += ', Light: '+(b.getUint32(xdata_point, true));
+				 } else if((xdata_id == 0x0F)&&(xdata_size == 1)) {
+					s += ', Count: '+b.getUint8(xdata_point);
+				 } else if((xdata_id == 0x11)&&(xdata_size == 1)) {
+					if(b.getUint8(xdata_point) == 0) s += ', Light Off';
+					else s += ', Light On';
+				 } else if (xdata_size == 1) {
+					s += ', id: 0x'+hex(xdata_id,2)+' - data: 0x'+hex(buf[xdata_point],2);
+				 } else if (xdata_size == 2) {
+					s += ', id: 0x'+hex(xdata_id,2)+' - data: 0x'+hex(buf[xdata_point],2)+hex(buf[xdata_point+1],2);
+				 } else if (xdata_size == 4) {
+					s += ', id: 0x'+hex(xdata_id,2)+' - data: 0x'+hex(buf[xdata_point],2)+hex(buf[xdata_point+1],2)+hex(buf[xdata_point+2],2)+hex(buf[xdata_point+3],2);
+				 }
+				} else break;
+				xdata_point = xdata_point + xdata_size + 2; 
+			}
+			log(` ${labelOfDataSource} Data: ` + hex(key,2) + ':' + si + ' ' + s);
+//			log(s); 
+		}
+	}
+	
+};
+</script>
+</html>
