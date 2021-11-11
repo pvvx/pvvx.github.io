@@ -249,7 +249,6 @@ const logDataView = (labelOfDataSource, key, b) => {
 	let si = '', h = '0123456789ABCDEF';
 	let buf = new Uint8Array(b.buffer);
 	buf.forEach((v) => { si += h[v >> 4] + h[v & 15]; });
-	log(` ${labelOfDataSource} Data: ` + hex(key,2) + ':' + si);
 	if(key == 0xfe95) { // mi
 		if(b.byteLength >= 2) { // custom mi
 			let ctrl = b.getUint16(0, true);
@@ -369,7 +368,7 @@ const logDataView = (labelOfDataSource, key, b) => {
 				}
 				if(ctrl & 0x80)
 					s +=', Mesh Data';
-				log(s);
+				log(` ${labelOfDataSource} Data: ` + hex(key,2) + ':' + si + ' ' + s);
 			}
 		}
 	} else if(key == 0x181a) {
@@ -383,7 +382,7 @@ const logDataView = (labelOfDataSource, key, b) => {
 			let flg = b.getUint8(14);
 			let s = 'MAC: '+hex(buf[5],2)+hex(buf[4],2)+hex(buf[3],2)+hex(buf[2],2)+hex(buf[1],2)+hex(buf[0],2);
 			s += ', Bat: '+bat+'%, Vbat: '+vbat+' mV , Temp: '+temp+'°C, Humi: '+humi+'%, Count: '+cnt+', Flg: 0x'+hex(flg,2)+' rds('+(flg&1)+')/trg('+((flg>>1)&1)+')';
-			log(s); }
+			log(` ${labelOfDataSource} Data: ` + hex(key,2) + ':' + si + ' ' + s);}
 		else if(b.byteLength == 13) { // atc1441
 			// A4 C1 38 56 58 70 01 0A 18 48 0B 25 70
 			let temp = b.getInt16(6, false) / 10.0;
@@ -393,7 +392,7 @@ const logDataView = (labelOfDataSource, key, b) => {
 			let cnt = b.getUint8(12);
 			let s = 'MAC: '+hex(buf[0],2)+hex(buf[1],2)+hex(buf[2],2)+hex(buf[3],2)+hex(buf[4],2)+hex(buf[5],2);
 			s += ', Bat: '+bat+'%, Vbat: '+vbat+' mV, Temp: '+temp+'°C, Humi: '+humi+'%, Count: '+cnt;
-			log(s); }
+			log(` ${labelOfDataSource} Data: ` + hex(key,2) + ':' + si + ' ' + s);}
 	} else if((key == 0xfdcd)||(key == 0xfff9)) {  // Qingping / ClearGrass
 		// CGG1 "Goose":  0801 AE1610342D58 0104 1401 4601 0201 58 
 		// CGPR1 0812 005E60342D58 0201 64 0F01 72 0904 08000000
@@ -443,7 +442,7 @@ const logDataView = (labelOfDataSource, key, b) => {
 				} else break;
 				xdata_point = xdata_point + xdata_size + 2; 
 			}
-			log(s); 
+			log(` ${labelOfDataSource} Data: ` + hex(key,2) + ':' + si + ' ' + s);
 		}
 	}
 	
