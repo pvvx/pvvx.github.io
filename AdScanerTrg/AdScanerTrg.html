@@ -4,26 +4,47 @@
   <title>Advertising</title>
   </head>
   <body>
-	<div style="height: auto; width: auto; text-align: center;">
+	<div style="height: auto; width: auto; text-align: left;">
 	Web Experimental Features!<br>
  	#enable-experimental-web-platform-features (copy link:
   	<a href=chrome://flags/#enable-experimental-web-platform-features>Chrome<a>,
  	<a href=opera://flags/#enable-experimental-web-platform-features>Opera<a>,
-  	<a href=edge://flags/#enable-experimental-web-platform-features>Edge<a>)<br>
-	<input type="button" id="butConnect" onclick="onButtonClick()" value="Connect">
-	TRG Device MAC: <input size="12" maxlength="12" type="text" id="trg_mac" title="Must be 6 hex MAC digits!">
-	<input type="button" id="butSendMAC" onclick="sendMAC()" disabled="true" value="Set TRG MAC">
-	<input type="button" id="butReadMAC" onclick="readMAC()" disabled="true" value="Read TRG MAC">
-	<input type="button" id="butNotify" onclick="StartNotify()" disabled="true" value="Start Scaner">
-	</div>
+  	<a href=edge://flags/#enable-experimental-web-platform-features>Edge<a>)<br><hr></div>
+	<input type="button" id="butConnect" onclick="onButtonClick()" value="Connect"><br><hr>
+	SensorDevice1 MAC: <input size="12" maxlength="12" type="text" id="dev_mac1" title="Must be 6 hex MAC digits!">
+	<input type="button" id="butReadMAC1" onclick="readMAC(0)" disabled="true" value="Read">
+	<input type="button" id="butSendMAC1" onclick="sendMAC(0)" disabled="true" value="Set"><br>
+	SensorDevice2 MAC: <input size="12" maxlength="12" type="text" id="dev_mac2" title="Must be 6 hex MAC digits!">
+	<input type="button" id="butReadMAC2" onclick="readMAC(1)" disabled="true" value="Read">
+	<input type="button" id="butSendMAC2" onclick="sendMAC(1)" disabled="true" value="Set"><br><hr>
+	<div id="cur_temp">Current Temperature: ?</div>
+	Temperature threshold: <input size="8" title="-40.00..80.00°C, default 21.00°C" id="cfg_tmp_thr" maxlength="6" value="21.00"> °<br>
+	Temperature hysteresis: <input size="8" title="Step 0.01°, default -0.55°, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="cfg_tmp_hst" maxlength="7" value="-0.55"> °<br><br>
+	<div id="cur_humi">Current Humidity: ?</div>
+	Humidity threshold: <input size="8" title="0..99.00%, default 50.00%" id="cfg_hm_thr" maxlength="6" value="50.00"> %<br>
+	Humidity hysteresis: <input size="8" title="Step 0.01%, default 0, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="cfg_hm_hst" maxlength="7" value="0.0"> %<br><br>
+	<div id="cur_lumi">Current Illumination: ?</div>
+	Illumination threshold: <input size="8" title="0..20000, default 500" id="cfg_lm_thr" maxlength="6" value="500"> <br>
+	Illumination hysteresis: <input size="8" title="Step 1, default 0, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="cfg_lm_hst" maxlength="7" value="0"><br><br>
+	<div id="cur_mtim">Current Timer: ?</div>
+	Motion Timer: <input size="8" title="0..65535 sec, Step 1 sec, default 0, =0 off, if more than zero - activation on excess" id="cfg_m_tim" maxlength="5" value="0"> sec<br>
+	Weak signal activation<input type="checkbox" id="cfg_m_low"><br><br>
+	<div id="cur_outs">OUT_RG ?</div><br>
+	<input type="button" id="butGetCfg" disabled="true" onclick="getCfg()" value="Get Config">
+	<input type="button" id="butSetCfg" disabled="true" onclick="setCfg()" value="Set Config"><br>
+<!--	<input type="button" id="butGetInfo" disabled="true" onclick="getInfo()" value="Get Info"><br> -->
 	<hr>
-    <button type="button" onclick="clearLog();">Clear Log</button>
+    <button type="button" onclick="clearLog();">Clear Log</button> <input type="button" id="butNotify" onclick="StartNotify()" disabled="true" value="Start Scaner">
 	<div id="log"></div>
   </body>
 <script type="text/javascript">
-// https://googlechrome.github.io/samples/web-bluetooth/read-characteristic-value-changed.html
+var cfg = {tmp_thr:0,tmp_hst:0,hm_thr:0,hm_hst:0,hm_thr:0,hm_hst:0,m_tim:0,flg:0};
+var info = {temp:0,humi:0,lumi:0,mtimer:0,motion:0,jlight:0,flg:0};
+
 var bluetoothDevice;
-var myCharacteristic;
+var devServer;
+var advCharacteristic;
+var cfgCharacteristic;
 var notify_on = 0;
 
 var $ = function(id) { return document.getElementById(id);}
@@ -47,7 +68,7 @@ function requestDevice() {
   return navigator.bluetooth.requestDevice({
    // filters: [...] <- Prefer filters to save energy & show relevant devices.
 	  filters: [{namePrefix: 'ADSC'}],
-      optionalServices: [0xffe0]})
+      optionalServices: [0xffe0,0x1f10]})
   .then(device => {
     bluetoothDevice = device;
     bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
@@ -76,54 +97,112 @@ function dump8(ar, len) {
 	return s;
 }
 
-function readMAC() {
-	if(myCharacteristic) {
-	    myCharacteristic.readValue().then(value => {
-			if(value.byteLength >= 10) {
-				$("trg_mac").value = hex(value.getUint16(8,true),4) + hex(value.getUint16(6,true),4) + hex(value.getUint16(4,true),4);
-				log("Data: "+dump8(value, 19));
-			}
+
+
+function updateCfg() {
+	cfg.tmp_thr = Math.round(100.0 * parseFloat($("cfg_tmp_thr").value));
+	cfg.tmp_hst = Math.round(100.0 * parseFloat($("cfg_tmp_hst").value));
+	cfg.hm_thr = Math.round(100.0 * parseFloat($("cfg_hm_thr").value));
+	cfg.hm_hst = Math.round(100.0 * parseFloat($("cfg_hm_hst").value));
+	cfg.lm_thr = Math.round(parseFloat($("cfg_lm_thr").value));
+	cfg.lm_hst = Math.round(parseFloat($("cfg_lm_hst").value));
+	cfg.m_tim = Math.round(parseFloat($("cfg_m_tim").value));
+	cfg.flg = $("cfg_m_low").checked & 1;
+}
+function showConfig() {
+	$("cfg_tmp_thr").value =  cfg.tmp_thr.toFixed(2);
+	$("cfg_tmp_hst").value =  cfg.tmp_hst.toFixed(2);
+	$("cfg_hm_thr").value =   cfg.hm_thr.toFixed(2);
+	$("cfg_hm_hst").value =   cfg.hm_hst.toFixed(2);
+	$("cfg_lm_thr").value =   cfg.lm_thr.toFixed(0);
+	$("cfg_lm_hst").value =   cfg.lm_hst.toFixed(0);
+	$("cfg_m_tim").value =   cfg.m_tim.toFixed(0);
+	$("cfg_m_low").checked = cfg.flg & 1;
+}
+
+function showInfo() {
+	$("cur_temp").innerHTML = "Current Temperature: "+((info.temp > 0.0)? "+":"")+info.temp.toFixed(2)+"C°, Trigger: "+ ((info.flg&8)?"On":"Off")+", OUT_TH: "+((info.flg&2)?"On":"Off");
+	$("cur_humi").innerHTML = "Current Humidity: "+info.humi.toFixed(2)+"%, Trigger: "+ ((info.flg&16)?"On":"Off") + ", OUT_TH: "+((info.flg&2)?"On":"Off");
+	$("cur_lumi").innerHTML = "Current Illumination: "+info.lumi.toFixed(0)+ ", Trigger: "+ ((info.flg&32)?"On":"Off")+ ", OUT_LM: "+((info.flg&4)?"On":"Off");
+	$("cur_mtim").innerHTML = "Current Timer: "+info.mtimer.toFixed(0);
+	$("cur_outs").innerHTML = "OUT_RS: "+((info.flg&1)?"On":"Off");
+}
+
+
+
+function getCfg() {
+	if(cfgCharacteristic) {
+		cfgCharacteristic.writeValue(new Uint8Array([0x55])).then(_ => {
+    		log('Read Config');
+	/*	cfgCharacteristic.writeValue(new Uint8Array([0x40])).then(_ => {
+		cfgCharacteristic.writeValue(new Uint8Array([0x41])).then(_ => {
+		    log('Read Config...');
+		})
+		})*/
 		})
 	}
 }
 
-function sendMAC() {
-	if(myCharacteristic) {
-		let el = $("trg_mac").value;
+function setCfg() {
+	if(cfgCharacteristic) {
+		updateCfg();
+		cfgCharacteristic.writeValue(new Uint8Array([0x55,
+			cfg.tmp_thr&0xff, (cfg.tmp_thr>>8)&0xff,
+			cfg.tmp_hst&0xff, (cfg.tmp_hst>>8)&0xff,
+			cfg.hm_thr&0xff, (cfg.hm_thr>>8)&0xff,
+			cfg.hm_hst&0xff, (cfg.hm_hst>>8)&0xff,
+			cfg.lm_thr&0xff, (cfg.lm_thr>>8)&0xff,
+			cfg.lm_hst&0xff, (cfg.lm_hst>>8)&0xff,
+			cfg.m_tim&0xff, (cfg.m_tim>>8)&0xff,
+			cfg.flg&0xff])).then(_ => {
+    				log('Set Config');
+			});
+	}
+}
+
+function getInfo() {
+	if(cfgCharacteristic)
+		cfgCharacteristic.writeValue(new Uint8Array([0x00]));
+}
+
+function readMAC(mid) {
+	if(cfgCharacteristic) {
+		cfgCharacteristic.writeValue(new Uint8Array([0x40+mid])).then(_ => {
+    			log('Read MAC'+(mid+1));
+		});
+	}
+}
+
+function sendMAC(mid) {
+	if(cfgCharacteristic) {
+		let el = $("dev_mac"+(mid+1)).value;
 		let len = el.length;
 		if(len == 12) {
 			let mac = hexToBytes(el);
 			len = mac.length;
-			if(len == 6) {
-				let blk = new Uint8Array(len);
-				blk[0] = mac[5];
-				blk[1] = mac[4];
-				blk[2] = mac[3];
-				blk[3] = mac[2];
-				blk[4] = mac[1];
-				blk[5] = mac[0];
-				log("Send New MAC ("+dump(blk, blk.length)+")...");
-				myCharacteristic.writeValue(blk).then(_ => {
-					log("Send New MAC: "+dump(mac, 6) +" ok");
-				});
-			}
-		}
-		log("Must be 6 hex MAC digits [+ 2 hex RandMAC digits]!")
+			if(len == 6)  {
+				cfgCharacteristic.writeValue(new Uint8Array([0x40+mid, mac[5], mac[4], mac[3], mac[2], mac[1], mac[0]])).then(_ => {
+    				log('Set MAC'+(mid+1)+': '+dump(mac,6));
+			});
+			} else
+				log("Must be 6 hex MAC digits!")
+		} else
+			log("Must be 6 hex MAC digits!")
 		return;
 	}
 }
 
 
 function StartNotify() {
-	if(myCharacteristic) {
+	if(advCharacteristic) {
 		if(!notify_on) {
-			myCharacteristic.startNotifications().then(_ => { 
+			advCharacteristic.startNotifications().then(_ => { 
 			$('butNotify').value = "Stop Scaner";
 			notify_on = 1;
 			log('Notifications started');})
 		} else {
 			$('butNotify').value = "Start Scaner"
-			myCharacteristic.stopNotifications().then(_ => { 
+			advCharacteristic.stopNotifications().then(_ => { 
 			notify_on = 0;
 			log('Notifications stoped');})
 		}
@@ -132,70 +211,146 @@ function StartNotify() {
 
 function connectDeviceAndCacheCharacteristics() {
 
-  if (bluetoothDevice.gatt.connected && myCharacteristic) {
+  if (bluetoothDevice.gatt.connected && advCharacteristic) {
     $('butConnect').disabled = false;
     return Promise.resolve();
   }
   log('Connecting to GATT Server...');
   return bluetoothDevice.gatt.connect()
   .then(server => {
-    log('Getting Service...');
-    return server.getPrimaryService(0xffe0);
+    devServer = server;
+    log('Getting ADV Service...');
+    return devServer.getPrimaryService(0x1f10);
   })
   .then(service => {
-    log('Getting Characteristic...');
+    log('Getting ADV Characteristic...');
+    return service.getCharacteristic(0x1f11);
+  })
+  .then(characteristic => {
+	advCharacteristic = characteristic;
+	advCharacteristic.addEventListener('characteristicvaluechanged', advhandleChanged);
+    	log('Getting CFG Service...');
+	return devServer.getPrimaryService(0xffe0);
+  })
+  .then(service => {
+    log('Getting CFG Characteristic...');
     return service.getCharacteristic(0xffe1);
   })
   .then(characteristic => {
-    myCharacteristic = characteristic;
-    log('Read value...');
-    myCharacteristic.readValue().then(value => {
-		if(value.byteLength >= 10) {
-			$("trg_mac").value = hex(value.getUint16(8,true),4) + hex(value.getUint16(6,true),4) + hex(value.getUint16(4,true),4);
-			log("Data: "+dump8(value, 19));
-		}
-	    myCharacteristic.addEventListener('characteristicvaluechanged', myhandleChanged);
-		$('butSendMAC').disabled = false;
-		$('butReadMAC').disabled = false;
-		$('butNotify').disabled = false;
-		$('butConnect').value = 'Disconnect';
-		$('butConnect').onclick = function(){onResetButtonClick()};
+	cfgCharacteristic = characteristic;
+    log('Start Notify CFG Characteristic...');
+    cfgCharacteristic.addEventListener('characteristicvaluechanged', cfghandleChanged);
+    return cfgCharacteristic.startNotifications();
+  })
+  .then(_ => {
+    log('Read Config...');
+    return cfgCharacteristic.writeValue(new Uint8Array([0x40]))})
+  .then(_ => {
+    return cfgCharacteristic.writeValue(new Uint8Array([0x41]))})
+  .then(_ => {
+    return cfgCharacteristic.writeValue(new Uint8Array([0x55]))})
+  .then(_ => {
+    return cfgCharacteristic.writeValue(new Uint8Array([0x00]))})
+  .then(_ => {
+	$('butSendMAC1').disabled = false;
+	$('butReadMAC1').disabled = false;
+	$('butSendMAC2').disabled = false;
+	$('butReadMAC2').disabled = false;
+	$('butSetCfg').disabled = false;
+	$('butGetCfg').disabled = false;
+	$('butNotify').disabled = false;
+	$('butConnect').value = 'Disconnect';
+	$('butConnect').onclick = function(){onResetButtonClick()};
     	$('butConnect').disabled = false;
-	})
+    	log('BLE Device Connected');
+  })
   .catch(error => {
     log('Argh! ' + error);
     $('butConnect').disabled = false;
   });
-  });
 }
 
-function myhandleChanged(event) {
+function cfghandleChanged(event) {
+	let value = event.target.value.buffer ? event.target.value : new DataView(event.target.value);
+	let len = value.byteLength;
+	console.log("blk:"+dump8(value,len));
+	if(len == 0) return;
+	let blkid = value.getUint8(0);
+	if(blkid == 0x55 && len > 15) {
+		cfg.tmp_thr = value.getInt16(1, true) / 100.0; // temp threshold
+		cfg.tmp_hst = value.getInt16(3, true) / 100.0; // temp hysteresis
+		cfg.hm_thr = value.getInt16(5, true)  / 100.0; // humi threshold 
+		cfg.hm_hst = value.getInt16(7, true)  / 100.0; // humi hysteresis
+		cfg.lm_thr = value.getInt16(9, true); // illu threshold 
+		cfg.lm_hst = value.getInt16(11, true); // illu hysteresis
+		cfg.m_tim = value.getUint16(13, true);
+		cfg.flg = value.getUint8(15);
+                showConfig();
+	} else if(blkid == 0x00 && len > 11) {
+		info.temp = value.getInt16(1, true) / 100.0; // temp 
+		info.humi = value.getInt16(3, true)  / 100.0; // humi
+		info.lumi = value.getInt16(5, true); // light
+		info.mtimer = value.getUint16(7, true)
+		info.motion = value.getUint8(9);
+		info.jlight = value.getUint8(10);
+		info.flg = value.getUint8(11);
+		console.log("Info# Temp: "+info.temp.toFixed(2)+
+		", Humi: "+info.humi.toFixed(2)+
+		", Lumi: " +info.lumi.toFixed(0)+
+		", MTimer: " +info.mtimer+
+		", HiMotion: " +info.motion+
+		", JLight: "+info.light+
+		", Flg: 0x"+hex(info.flg,2)+
+		" # ReedSwitchOut: "+(info.flg&1)+
+		", TempHumiOut: "+((info.flg>>1)&1)+
+		", LightMotionOut: "+((info.flg>>2)&1)+
+		", TempEvent: "+((info.flg>>3)&1)+
+		", HumiEvent: "+((info.flg>>4)&1)+
+		", LightEvent: "+((info.flg>>5)&1));
+		showInfo();
+	} else if(blkid == 0x40 && len > 6) {
+		$("dev_mac1").value = hex(value.getUint16(5,true),4) + hex(value.getUint16(3,true),4) + hex(value.getUint16(1,true),4);
+	} else if(blkid == 0x41 && len > 6) {
+		$("dev_mac2").value = hex(value.getUint16(5,true),4) + hex(value.getUint16(3,true),4) + hex(value.getUint16(1,true),4);
+	} else
+		log("blk?:"+dump8(value,len));
+}
+
+function advhandleChanged(event) {
 	let value = event.target.value.buffer ? event.target.value : new DataView(event.target.value);
 	if(value.byteLength > 11 && value.getUint8(8) == 0x16) {
 		// value.buffer: rssi, mac, adv msg
 		let s = hex(value.getUint16(5,true),4) + hex(value.getUint16(3,true),4) + hex(value.getUint16(1,true),4) + ', RSSI: ' + value.getInt8(0) + ',';
-	  	logDataView(s, value.getUint16(9,true), new DataView(event.target.value.buffer.slice(11)));
-	} // else console.log(value);
+	  	advDataView(s, value.getUint16(9,true), new DataView(event.target.value.buffer.slice(11)));
+	} // else log("Read?: "+dump8(value, value.byteLength));
+
 }
 
-
 function onResetButtonClick() {
-  if (myCharacteristic) {
-    myCharacteristic.removeEventListener('characteristicvaluechanged',
-        myhandleChanged);
-    myCharacteristic = null;
+  if (advCharacteristic) {
+    advCharacteristic.removeEventListener('characteristicvaluechanged', advhandleChanged);
+    advCharacteristic = null;
+  }
+  if (cfgCharacteristic) {
+    cfgCharacteristic.removeEventListener('characteristicvaluechanged', advhandleChanged);
+    cfgCharacteristic = null;
   }
   // Note that it doesn't disconnect device.
   bluetoothDevice = null;
+  devServer = null;
   notify_on = 0;
   $('butNotify').disabled = true;
   $('butNotify').value = "Start Scaner";
-  $('butSendMAC').disabled = true;
-  $('butReadMAC').disabled = true;
+  $('butSendMAC1').disabled = true;
+  $('butReadMAC1').disabled = true;
+  $('butSendMAC2').disabled = true;
+  $('butReadMAC2').disabled = true;
+  $('butSetCfg').disabled = true;
+  $('butGetCfg').disabled = true;
   $('butConnect').value = 'Connect';
   $('butConnect').disabled = false;
   $('butConnect').onclick = function(){onButtonClick()};
-  log('Bluetooth Device disconnected');
+  log('BLE Device Disconnected');
 }
 
 function onDisconnected() {
@@ -209,7 +364,6 @@ function log(data) {
     document.getElementById("log").innerHTML += logString + "<br>";
 }
 
-/* Utils */
 function hex(number, len) {
 	var str = (number.toString(16)).toUpperCase();
 	while (str.length < len) str = '0' + str;
@@ -245,7 +399,7 @@ function id2name(dev_id) {
 	return "?";
 }
 
-const logDataView = (labelOfDataSource, key, b) => {
+const advDataView = (labelOfDataSource, key, b) => {
 	let si = '', h = '0123456789ABCDEF';
 	let buf = new Uint8Array(b.buffer);
 	buf.forEach((v) => { si += h[v >> 4] + h[v & 15]; });
