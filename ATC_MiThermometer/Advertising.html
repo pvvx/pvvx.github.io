@@ -22,7 +22,7 @@ function log(data) {
     document.getElementById("log").innerHTML += logString + "<br>";
 }
 function onButtonClick() {
-  var deviceOptions = { optionalServices: [0xfe95, 0x181a, 0xfff9] };
+  var deviceOptions = { optionalServices: [0xfe95, 0x181a, 0xfdcd, 0xfff9, 0x1f11] };
   deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz_#@!*';,.<>{}[]"
 	.split("").map((x) => ({namePrefix:x}));
   log('Requesting Bluetooth Scan...');
@@ -284,6 +284,30 @@ const logDataView = (labelOfDataSource, key, b) => {
 				} else break;
 				xdata_point = xdata_point + xdata_size + 2; 
 			}
+			log(s); 
+		}
+	} else if(key == '00001f11-0000-1000-8000-00805f9b34fb') {  // AdScanerTrg
+		if(b.byteLength > 10) {
+			let temp = b.getInt16(0, true) / 100.0; // temp 
+			let humi = b.getInt16(2, true)  / 100.0; // humi
+			let lumi = b.getInt16(4, true); // light
+			let mtimer = b.getUint16(6, true)
+			let motion = b.getUint8(8);
+			let jlight = b.getUint8(9);
+			let flg = b.getUint8(10);
+			let s = ("Info# Temp: "+temp.toFixed(2)+
+			", Humi: "+humi.toFixed(2)+
+			", Lumi: " +lumi.toFixed(0)+
+			", MTimer: " +mtimer+
+			", HiMotion: " +motion+
+			", JLight: "+jlight+
+			", Flg: 0x"+hex(flg,2)+
+			" # ReedSwitchOut: "+(flg&1)+
+			", TempHumiOut: "+((flg>>1)&1)+
+			", LightMotionOut: "+((flg>>2)&1)+
+			", TempEvent: "+((flg>>3)&1)+
+			", HumiEvent: "+((flg>>4)&1)+
+			", LightEvent: "+((flg>>5)&1));
 			log(s); 
 		}
 	}
