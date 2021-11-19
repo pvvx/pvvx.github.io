@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v3.3</title>
+<title>Telink Flasher v3.3c</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -22,7 +22,7 @@ var fwname = '';
 var state = 0,
 	connectTrys = 0;
 //Custom firmware
-var customEnabled;
+var customEnabled, devTest = false;
 var settingsCharacteristics = null;
 // Custom config
 var cfg = {enable: false, ver: 0, hver: 0, flg: 0, flg2: 0, temp_offset: 0, humi_offset: 0, advertising_interval: 32, measure_interval: 5, rf_tx_power: 191, connect_latency: 99, lcd_tint: 55, av_meas_mem: 60, step_time: 16000000};
@@ -96,7 +96,7 @@ function onDisconnected() {
 
 function connect() {
 	var deviceOptions = {
-		optionalServices: ['00010203-0405-0607-0809-0a0b0c0d1912', 'ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6', 0x180a, 0xfe95, 0x1f10, 0x181a],
+		optionalServices: ['00010203-0405-0607-0809-0a0b0c0d1912', 'ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6', 0x180a, 0xfe95, 0x1f10, 0x1f11, 0x181a, 0xfff9, 0xfdcd, 0xffe0],
 		acceptAllDevices: true };
 	const hideUnknown = $('hideUnknown').checked;
 	const namePrefix = $('namePrefix').value;
@@ -319,6 +319,78 @@ function catchAdvertisement(device) {
 			s += ', Bat: '+bat+'%, Temp: '+temp+'°C, Humi: '+humi+'%';
 			log(s); 
 		}
+	} else if(key == '0000fdcd-0000-1000-8000-00805f9b34fb') {  // Qingping / ClearGrass
+		// CGPR1 0812 005E60342D58 0201 64 0F01 72 0904 08000000
+		// 	 0812 005E60342D58 0201 64 0F01 6E 0904 91140000
+		// 	 4812 005E60342D58 0804 01 911400 0F01 6F
+		//       4812 005E60342D58 1101 01 0F01 85
+		//	 4812 005E60342D58 1101 00 0F01 8C
+		let msg_length = b.byteLength;
+		if(msg_length >= 11 && (b.getUint8(0)&0x3f) == 0x08) {
+			let device_id = b.getUint8(1);
+			s = 'MAC: '+hex(buf[2],2)+hex(buf[3],2)+hex(buf[4],2)+hex(buf[5],2)+hex(buf[6],2)+hex(buf[7],2);
+			if(device_id == 0x01) s+=' CGG1 "Goose"';
+			else if (device_id == 0x07) s+=' CGG1';
+			else if (device_id == 0x09) s+=' CGP1W';
+			else if (device_id == 0x0C) s+=' CGD1';
+			else if (device_id == 0x12) s+=' CGPR1';
+			//if((b.getUint8(0)&0x40)!=0) s+=', Event';
+			let xdata_point = 10;
+		        while (xdata_point < msg_length) {
+				let xdata_id = b.getUint8(xdata_point-2);
+				let xdata_size = b.getUint8(xdata_point-1);
+				if(xdata_point + xdata_size <= msg_length) {
+				 if((xdata_id == 0x01)&&(xdata_size == 4)) {
+					let temp = b.getInt16(xdata_point, true) / 10.0;
+					let humi = b.getInt16(xdata_point+2, true) / 10.0;
+					s += ', Temp: '+temp+'°C, Humi: '+humi+'%';
+				 } else if((xdata_id == 0x02)&&(xdata_size == 1)) {
+					s += ', Bat: '+b.getUint8(xdata_point)+'%';
+				 } else if((xdata_id == 0x07)&&(xdata_size == 2)) {
+					s += ', Pressure: '+(b.getInt16(xdata_point, true) / 100.0);
+				 } else if((xdata_id == 0x08)&&(xdata_size == 4)) {
+					s += ', Motion: '+ b.getUint8(xdata_point)+' & Light: '+(b.getUint16(xdata_point+1, true)+b.getUint8(xdata_point+3)*256);
+				 } else if((xdata_id == 0x09)&&(xdata_size == 4)) {
+					s += ', Light: '+(b.getUint32(xdata_point, true));
+				 } else if((xdata_id == 0x0F)&&(xdata_size == 1)) {
+					s += ', Count: '+b.getUint8(xdata_point);
+				 } else if((xdata_id == 0x11)&&(xdata_size == 1)) {
+					if(b.getUint8(xdata_point) == 0) s += ', Light Off';
+					else s += ', Light On';
+				 } else if (xdata_size == 1) {
+					s += ', id: 0x'+hex(xdata_id,2)+' - data: 0x'+hex(buf[xdata_point],2);
+				 } else if (xdata_size == 2) {
+					s += ', id: 0x'+hex(xdata_id,2)+' - data: 0x'+hex(buf[xdata_point],2)+hex(buf[xdata_point+1],2);
+				 } else if (xdata_size == 4) {
+					s += ', id: 0x'+hex(xdata_id,2)+' - data: 0x'+hex(buf[xdata_point],2)+hex(buf[xdata_point+1],2)+hex(buf[xdata_point+2],2)+hex(buf[xdata_point+3],2);
+				 }
+				} else break;
+				xdata_point = xdata_point + xdata_size + 2; 
+			}
+		}
+	} else if(key == '00001f11-0000-1000-8000-00805f9b34fb') {  // AdScanerTrg
+		if(b.byteLength > 10) {
+			let temp = b.getInt16(0, true) / 100.0; // temp 
+			let humi = b.getInt16(2, true)  / 100.0; // humi
+			let lumi = b.getInt16(4, true); // light
+			let mtimer = b.getUint16(6, true)
+			let motion = b.getUint8(8);
+			let jlight = b.getUint8(9);
+			let flg = b.getUint8(10);
+			s = ("AdScanerTrg# Temp: "+temp.toFixed(2)+
+			", Humi: "+humi.toFixed(2)+
+			", Lumi: " +lumi.toFixed(0)+
+			", MTimer: " +mtimer+
+			", HiMotion: " +motion+
+			", JLight: "+jlight+
+			", Flg: 0x"+hex(flg,2)+
+			" # ReedSwitchOut: "+(flg&1)+
+			", TempHumiOut: "+((flg>>1)&1)+
+			", LightMotionOut: "+((flg>>2)&1)+
+			", TempEvent: "+((flg>>3)&1)+
+			", HumiEvent: "+((flg>>4)&1)+
+			", LightEvent: "+((flg>>5)&1));
+		}
 	}
 	addAlog(s);
 	$("MAC").innerHTML = s+'<hr>';
@@ -386,7 +458,11 @@ function CustomBlkParse(value) {
 	if(len == 0) return;
 	len--;
 	let blkid = value.getUint8(0);
-	//addClog("blk:"+bytesToHex(value.buffer));
+	if(devTest) {
+		let s = 'Custom (0xffe1) Notifications id: 0x'+hex(blkid,2)+' ['+bytesToHex(value.buffer.slice(1))+']';
+		addAlog(s);
+		return;
+	}
 	if(blkid == 0x55 && len >= 9) {
 		cfg.ver = value.getUint8(1);
 		cfg.flg = value.getUint8(2);
@@ -591,34 +667,53 @@ function CustomBlkParse(value) {
 
 function customAction() {
 	gattServer.getPrimaryService('00001f10-0000-1000-8000-00805f9b34fb').then(service => {
-		addClog("Found custom Main service");
+		addClog("Found custom Main service (0x1f10)");
 		ServiceMain = service;
 		return ServiceMain.getCharacteristic('00001f1f-0000-1000-8000-00805f9b34fb');
 	}).then(characteristic => {
 		settingsCharacteristics = characteristic;
-		addClog("Found custom read-write characteristic");
+		addClog("Found custom read-write characteristic (0x1f1f)");
 		if(devidEnabled) {
 			addClog("Start Notifications (0x1f1f)");
-			settingsCharacteristics.startNotifications().then(characteristic => {
-			addClog("Add EventListener (0x1f1f)");
-			settingsCharacteristics.addEventListener('characteristicvaluechanged', event => CustomBlkParse(event.target.value));
-			addClog("Read Characteristics (0x1f1f)");
-			settingsCharacteristics.readValue().then(value => {
+			settingsCharacteristics.startNotifications()
+			.then(characteristic => {
+				addClog("Add EventListener (0x1f1f)");
+				settingsCharacteristics.addEventListener('characteristicvaluechanged', event => CustomBlkParse(event.target.value));
+				addClog("Read Characteristics (0x1f1f)");
+				settingsCharacteristics.readValue()
+				.then(value => {
 					$("ldfile").hidden = false;
 					addClog("Send cmd (3303): Query 3 measurements");
-					settingsCharacteristics.writeValue(new Uint8Array([0x33,0x03])).then(_ => {
-					  addClog('Send cmd ok');
-					})
+					settingsCharacteristics.writeValue(new Uint8Array([0x33,0x03]))
+					.then(_ => {addClog('Send cmd ok');})
 					.catch(error => addClog(error));
 				}).catch(error => { addClog(error);
 					addLog("Detected alternative Firmware? Use: https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html");
 					setStatus('Detected alternative Firmware? <a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html">TelinkOTA</a>');
-				 });
-	        }).catch(error => addClog(error));
-	    } else {
+				});
+			}).catch(error => addClog(error));
+		} else {
 			addLog("Detected alternative Firmware? Use: https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html");
 			setStatus('Detected alternative Firmware? <a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html">TelinkOTA</a>');
-	    }
+	    	}
+	}).catch(handleError);
+}
+
+function getTestCharacteristic() {
+	gattServer.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb').then(service => {
+		addClog("Found custom Main service (0xffe0)");
+		ServiceMain = service;
+		return ServiceMain.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
+	}).then(characteristic => {
+		settingsCharacteristics = characteristic;
+		addClog("Found custom read-write characteristic (0xffe1)");
+		addClog("Start Notifications (0xffe1)");
+		settingsCharacteristics.startNotifications().then(characteristic => {
+			addClog("Add EventListener (0xffe1)");
+			settingsCharacteristics.addEventListener('characteristicvaluechanged', event => CustomBlkParse(event.target.value));
+			addLog("Detected alternative Firmware? Use: https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html");
+			setStatus('Detected alternative Firmware? <a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html">TelinkOTA</a>');
+		});
 	}).catch(handleError);
 }
 
@@ -784,7 +879,7 @@ function miAuthorization() {
 					});
 					addLog("Connected");
 					if(bluetoothDevice.name == 'LYWSD03MMC') { 
-						if(devHWstr == 'B1.4')	cfg.hver = 0x80;
+						if(devHWstr == 'B1.4' || devHWstr == 'B1.7') cfg.hver = 0x80;
 						else if(devHWstr == 'B1.6') cfg.hver = 3;
 						else if(devHWstr == 'B1.9') cfg.hver = 4;
 						else {
@@ -849,12 +944,14 @@ function detectMi() {
 		miEnabled = false;
 		customEnabled = false;
 		devidEnabled = false;
+		devTest = false;
 		let devInfEnabled = false;
 		for (var i = 0; i < services.length; i++) {
 			addClog("Services: " + services[i].uuid);
 			if (services[i].uuid == "ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6") miEnabled = true;
 			if (services[i].uuid == "00001f10-0000-1000-8000-00805f9b34fb") customEnabled = true;
 			if (services[i].uuid ==	"0000181a-0000-1000-8000-00805f9b34fb") devidEnabled = true;
+			if (services[i].uuid ==	"0000ffe0-0000-1000-8000-00805f9b34fb") devTest = true;
 			if (services[i].uuid ==	"0000180a-0000-1000-8000-00805f9b34fb") devInfEnabled = true; // Device Information Service
 		}
 		getHWVersion(devInfEnabled).then(hwstr => {
@@ -866,10 +963,17 @@ function detectMi() {
 			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
 			miAction();
 		} else if (customEnabled) {
-			addLog("Detected custom Firmware");
-			setStatus("Detected custom Firmware");
-			customAction();
-			$("custcfg").innerHTML = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
+			let s = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
+			if (devTest) {
+				addLog("Detected Test device");
+				getTestCharacteristic();	
+				s += '<a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html">TelinkOTA</a><br>';
+			} else {
+				addLog("Detected custom Firmware");
+				setStatus("Detected custom Firmware");
+				customAction();
+			}
+			$("custcfg").innerHTML = s;
 		} else {
 			addLog("Detected Telink OTA service");
 			setStatus("Connected.")
