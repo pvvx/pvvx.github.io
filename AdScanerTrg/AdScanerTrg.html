@@ -10,7 +10,7 @@
  	#enable-experimental-web-platform-features (copy link:
   	<a href=chrome://flags/#enable-experimental-web-platform-features>Chrome</a>,
  	<a href=opera://flags/#enable-experimental-web-platform-features>Opera</a>,
-  	<a href=edge://flags/#enable-experimental-web-platform-features>Edge</a>)<br><hr></div>
+  	<a href=edge://flags/#enable-experimental-web-platform-features>Edge</a>)<br><hr>
 	<input type="button" id="butConnect" onclick="onButtonClick()" value="Connect"><br><hr>
 	SensorDevice1 MAC: <input size="12" maxlength="12" type="text" id="dev_mac1" title="Must be 6 hex MAC digits!">
 	<input type="button" id="butReadMAC1" onclick="readMAC(0)" disabled="true" value="Read">
@@ -37,6 +37,7 @@
 	<hr>
     <button type="button" onclick="clearLog();">Clear Log</button> <input type="button" id="butNotify" onclick="StartNotify()" disabled="true" value="Start Scaner">
 	<div id="log"></div>
+	</div>
   </body>
 <script type="text/javascript">
 var cfg = {tmp_thr:0,tmp_hst:0,hm_thr:0,hm_hst:0,hm_thr:0,hm_hst:0,m_tim:0,flg:0};
