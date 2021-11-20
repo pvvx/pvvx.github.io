@@ -1,44 +1,8 @@
 <!DOCTYPE html>
 <html>
   <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>AdScanerTrg v1.0</title>
+  <title>AdScanerTrg v1.1</title>
   </head>
-  <body>
-	<div>
-	<big><big>TLSR8266 AdScanerTrg</big></big> <a href="https://github.com/pvvx/AdScanerTrg">&#9432;</a><br>
-	Web Experimental Features!<br>
- 	#enable-experimental-web-platform-features (copy link:
-  	<a href=chrome://flags/#enable-experimental-web-platform-features>Chrome</a>,
- 	<a href=opera://flags/#enable-experimental-web-platform-features>Opera</a>,
-  	<a href=edge://flags/#enable-experimental-web-platform-features>Edge</a>)<br><hr>
-	<input type="button" id="butConnect" onclick="onButtonClick()" value="Connect"><br><hr>
-	SensorDevice1 MAC: <input size="12" maxlength="12" type="text" id="dev_mac1" title="Must be 6 hex MAC digits!">
-	<input type="button" id="butReadMAC1" onclick="readMAC(0)" disabled="true" value="Read">
-	<input type="button" id="butSendMAC1" onclick="sendMAC(0)" disabled="true" value="Set"><br>
-	SensorDevice2 MAC: <input size="12" maxlength="12" type="text" id="dev_mac2" title="Must be 6 hex MAC digits!">
-	<input type="button" id="butReadMAC2" onclick="readMAC(1)" disabled="true" value="Read">
-	<input type="button" id="butSendMAC2" onclick="sendMAC(1)" disabled="true" value="Set"><br><hr>
-	<div id="cur_temp">Current Temperature: ?</div>
-	Temperature threshold: <input size="8" title="-40.00..80.00°C, default 21.00°C" id="cfg_tmp_thr" maxlength="6" value="21.00"> °<br>
-	Temperature hysteresis: <input size="8" title="Step 0.01°, default -0.55°, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="cfg_tmp_hst" maxlength="7" value="-0.55"> °<br><br>
-	<div id="cur_humi">Current Humidity: ?</div>
-	Humidity threshold: <input size="8" title="0..99.00%, default 50.00%" id="cfg_hm_thr" maxlength="6" value="50.00"> %<br>
-	Humidity hysteresis: <input size="8" title="Step 0.01%, default 0, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="cfg_hm_hst" maxlength="7" value="0.0"> %<br><br>
-	<div id="cur_lumi">Current Illumination: ?</div>
-	Illumination threshold: <input size="8" title="0..20000, default 500" id="cfg_lm_thr" maxlength="6" value="500"> <br>
-	Illumination hysteresis: <input size="8" title="Step 1, default 0, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="cfg_lm_hst" maxlength="7" value="0"><br><br>
-	<div id="cur_mtim">Current Timer: ?</div>
-	Motion Timer: <input size="8" title="0..65535 sec, Step 1 sec, default 0, =0 off, if more than zero - activation on excess" id="cfg_m_tim" maxlength="5" value="0"> sec<br>
-	Weak signal activation<input type="checkbox" id="cfg_m_low"><br><br>
-	<div id="cur_outs">OUT_RG ?</div><br>
-	<input type="button" id="butGetCfg" disabled="true" onclick="getCfg()" value="Get Config">
-	<input type="button" id="butSetCfg" disabled="true" onclick="setCfg()" value="Set Config"><br>
-<!--	<input type="button" id="butGetInfo" disabled="true" onclick="getInfo()" value="Get Info"><br> -->
-	<hr>
-    <button type="button" onclick="clearLog();">Clear Log</button> <input type="button" id="butNotify" onclick="StartNotify()" disabled="true" value="Start Scaner">
-	<div id="log"></div>
-	</div>
-  </body>
 <script type="text/javascript">
 var cfg = {tmp_thr:0,tmp_hst:0,hm_thr:0,hm_hst:0,hm_thr:0,hm_hst:0,m_tim:0,flg:0};
 var info = {temp:0,humi:0,lumi:0,mtimer:0,motion:0,jlight:0,flg:0};
@@ -329,16 +293,13 @@ function advhandleChanged(event) {
 }
 
 function onResetButtonClick() {
-  if (advCharacteristic) {
-    advCharacteristic.removeEventListener('characteristicvaluechanged', advhandleChanged);
-    advCharacteristic = null;
+  if(bluetoothDevice && bluetoothDevice.gatt.connected) {
+   bluetoothDevice.gatt.disconnect();
+   log('BLE Device Disconnected');
   }
-  if (cfgCharacteristic) {
-    cfgCharacteristic.removeEventListener('characteristicvaluechanged', advhandleChanged);
-    cfgCharacteristic = null;
-  }
-  // Note that it doesn't disconnect device.
   bluetoothDevice = null;
+  advCharacteristic = null;
+  cfgCharacteristic = null;
   devServer = null;
   notify_on = 0;
   $('butNotify').disabled = true;
@@ -352,7 +313,6 @@ function onResetButtonClick() {
   $('butConnect').value = 'Connect';
   $('butConnect').disabled = false;
   $('butConnect').onclick = function(){onButtonClick()};
-  log('BLE Device Disconnected');
 }
 
 function onDisconnected() {
@@ -604,4 +564,38 @@ const advDataView = (labelOfDataSource, key, b) => {
 	
 };
 </script>
+  <body>
+	<big><big>TLSR8266 AdScanerTrg</big></big> <a href="https://github.com/pvvx/AdScanerTrg">&#9432;</a><br>
+	Web Experimental Features!<br>
+ 	#enable-experimental-web-platform-features (copy link:
+  	<a href=chrome://flags/#enable-experimental-web-platform-features>Chrome</a>,
+ 	<a href=opera://flags/#enable-experimental-web-platform-features>Opera</a>,
+  	<a href=edge://flags/#enable-experimental-web-platform-features>Edge</a>)<br><hr>
+	<input type="button" id="butConnect" onclick="onButtonClick()" value="Connect"><br><hr>
+	SensorDevice1 MAC: <input size="12" maxlength="12" type="text" id="dev_mac1" title="Must be 6 hex MAC digits!">
+	<input type="button" id="butReadMAC1" onclick="readMAC(0)" disabled="true" value="Read">
+	<input type="button" id="butSendMAC1" onclick="sendMAC(0)" disabled="true" value="Set"><br>
+	SensorDevice2 MAC: <input size="12" maxlength="12" type="text" id="dev_mac2" title="Must be 6 hex MAC digits!">
+	<input type="button" id="butReadMAC2" onclick="readMAC(1)" disabled="true" value="Read">
+	<input type="button" id="butSendMAC2" onclick="sendMAC(1)" disabled="true" value="Set"><br><hr>
+	<div id="cur_temp">Current Temperature: ?</div>
+	Temperature threshold: <input size="8" title="-40.00..80.00°C, default 21.00°C" id="cfg_tmp_thr" maxlength="6" value="21.00"> °<br>
+	Temperature hysteresis: <input size="8" title="Step 0.01°, default -0.55°, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="cfg_tmp_hst" maxlength="7" value="-0.55"> °<br><br>
+	<div id="cur_humi">Current Humidity: ?</div>
+	Humidity threshold: <input size="8" title="0..99.00%, default 50.00%" id="cfg_hm_thr" maxlength="6" value="50.00"> %<br>
+	Humidity hysteresis: <input size="8" title="Step 0.01%, default 0, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="cfg_hm_hst" maxlength="7" value="0.0"> %<br><br>
+	<div id="cur_lumi">Current Illumination: ?</div>
+	Illumination threshold: <input size="8" title="0..20000, default 500" id="cfg_lm_thr" maxlength="6" value="500"> <br>
+	Illumination hysteresis: <input size="8" title="Step 1, default 0, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="cfg_lm_hst" maxlength="7" value="0"><br><br>
+	<div id="cur_mtim">Current Timer: ?</div>
+	Motion Timer: <input size="8" title="0..65535 sec, Step 1 sec, default 0, =0 off, if more than zero - activation on excess" id="cfg_m_tim" maxlength="5" value="0"> sec<br>
+	Weak signal activation<input type="checkbox" id="cfg_m_low"><br><br>
+	<div id="cur_outs">OUT_RG ?</div><br>
+	<input type="button" id="butGetCfg" disabled="true" onclick="getCfg()" value="Get Config">
+	<input type="button" id="butSetCfg" disabled="true" onclick="setCfg()" value="Set Config"><br>
+<!--	<input type="button" id="butGetInfo" disabled="true" onclick="getInfo()" value="Get Info"><br> -->
+	<hr>
+    <button type="button" onclick="clearLog();">Clear Log</button> <input type="button" id="butNotify" onclick="StartNotify()" disabled="true" value="Start Scaner">
+	<div id="log"></div>
+  </body>
 </html>
