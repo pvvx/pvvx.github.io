@@ -1,4 +1,4 @@
-BLE ADV-repeater, ATC Temperatyre/Humidity Trigger
+BLE ADV-repeater, Temperatyre/Humidity/Ligth/Motion Trigger
 
 * Implementation on E104-BT05-TB and ESP01Relay:
  
