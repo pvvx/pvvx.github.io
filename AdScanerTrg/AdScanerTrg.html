@@ -34,7 +34,7 @@ function requestDevice() {
   log('Requesting any Bluetooth Device...');
   return navigator.bluetooth.requestDevice({
    // filters: [...] <- Prefer filters to save energy & show relevant devices.
-	  filters: [{namePrefix: 'ADSC'}],
+	  filters: [{namePrefix:'BLE'}, {namePrefix:'ADS'}],
       optionalServices: [0xffe0,0x1f10]})
   .then(device => {
     bluetoothDevice = device;
@@ -566,7 +566,7 @@ const advDataView = (labelOfDataSource, key, b) => {
 };
 </script>
   <body>
-	<big><big>TLSR8266 AdScanerTrg</big></big> <a href="https://github.com/pvvx/AdScanerTrg">&#9432;</a><br>
+	<big><big>AdScanerTrg</big></big> <a href="https://github.com/pvvx/AdScanerTrg">&#9432;</a><br>
 	Web Experimental Features!<br>
  	#enable-experimental-web-platform-features (copy link:
   	<a href=chrome://flags/#enable-experimental-web-platform-features>Chrome</a>,
