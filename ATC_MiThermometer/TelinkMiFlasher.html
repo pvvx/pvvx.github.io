@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v3.3c</title>
+<title>Telink Flasher v3.3d</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -11,7 +11,7 @@ var bluetoothDevice, gattServer, Theservice, writeCharacteristic;
 var ServiceMain, writeCharacteristicSpeed = null, nitifiyCharTemp, time_char, enc_main, enc_10, enc_19;
 //Firmware values
 var rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/";
-var otafiles = { loaded: false, version: 52, custom: ['ATC_V34.bin','MHO_C401_v34.bin', 'CGG1_v34.bin', 'ATC_V34.bin','ATC_V34.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_CGG1_v1.0.0_0130.bin','Original_OTA_CGG1_v1.0.0_0130.bin']};
+var otafiles = { loaded: false, version: 52, custom: ['ATC_V34d.bin','MHO_C401_v34.bin', 'CGG1_v34.bin', 'ATC_V34d.bin','ATC_V34d.bin','ATC_V34d.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_CGG1_v1.0.0_0130.bin','Original_OTA_CGG1_v1.0.0_0130.bin','Original_OTA_CGG1_v1.0.0_0130.bin']};
 var firmwareArray = "",
 	startTime = 0,
 	blockCount = 0;
@@ -479,9 +479,10 @@ function CustomBlkParse(value) {
 		else if(cfg.hver == null) cfg.hver = 7;
 		if(len >= 12) cfg.av_meas_mem = value.getUint8(12); else cfg.av_meas_mem = 0;
 		let s = 'Hardware Version: ';
-		if(((cfg.hver & 0x07) == 0)||((cfg.hver & 0x07) == 3)||((cfg.hver & 0x07) == 4)) s +='LYWSD03MMC';
-		else if((cfg.hver & 0x07) == 1) s +='MHO-C401';
-		else if((cfg.hver & 0x07) == 2) s +='CGG1';
+		let hw_id = cfg.hver & 0x07;
+		if((hw_id == 0)||(hw_id == 3)||(hw_id == 4)||(hw_id == 5)) s +='LYWSD03MMC';
+		else if(hw_id == 1) s +='MHO-C401';
+		else if(hw_id == 2) s +='CGG1';
 		else s += 'Unknown'
 		if(devHWstr) s += ' ' + devHWstr;
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
@@ -879,9 +880,10 @@ function miAuthorization() {
 					});
 					addLog("Connected");
 					if(bluetoothDevice.name == 'LYWSD03MMC') { 
-						if(devHWstr == 'B1.4' || devHWstr == 'B1.7') cfg.hver = 0x80;
+						if(devHWstr == 'B1.4') cfg.hver = 0x80;
 						else if(devHWstr == 'B1.6') cfg.hver = 3;
 						else if(devHWstr == 'B1.9') cfg.hver = 4;
+						else if(devHWstr == 'B1.7') cfg.hver = 5;
 						else {
 							cfg.hver = null;
 							$("ldfile").hidden = false;
