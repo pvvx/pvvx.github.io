@@ -2,7 +2,7 @@
 <html>
   <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AdScanerTrg v1.1</title>
+  <title>AdScanerTrg v1.2</title>
   </head>
 <script type="text/javascript">
 var cfg = {tmp_thr:0,tmp_hst:0,hm_thr:0,hm_hst:0,hm_thr:0,hm_hst:0,m_tim:0,flg:0};
@@ -74,7 +74,6 @@ function updateCfg() {
 	cfg.lm_thr = Math.round(parseFloat($("cfg_lm_thr").value));
 	cfg.lm_hst = Math.round(parseFloat($("cfg_lm_hst").value));
 	cfg.m_tim = Math.round(parseFloat($("cfg_m_tim").value));
-	cfg.flg = $("cfg_m_low").checked & 1;
 }
 function showConfig() {
 	$("cfg_tmp_thr").value =  cfg.tmp_thr.toFixed(2);
@@ -84,7 +83,6 @@ function showConfig() {
 	$("cfg_lm_thr").value =   cfg.lm_thr.toFixed(0);
 	$("cfg_lm_hst").value =   cfg.lm_hst.toFixed(0);
 	$("cfg_m_tim").value =   cfg.m_tim.toFixed(0);
-	$("cfg_m_low").checked = cfg.flg & 1;
 }
 
 function showInfo() {
@@ -121,7 +119,7 @@ function setCfg() {
 			cfg.lm_thr&0xff, (cfg.lm_thr>>8)&0xff,
 			cfg.lm_hst&0xff, (cfg.lm_hst>>8)&0xff,
 			cfg.m_tim&0xff, (cfg.m_tim>>8)&0xff,
-			cfg.flg&0xff])).then(_ => {
+			cfg.flg&0xfe])).then(_ => {
     				log('Set Config');
 			});
 	}
@@ -589,8 +587,7 @@ const advDataView = (labelOfDataSource, key, b) => {
 	Illumination threshold: <input size="8" title="0..20000, default 500" id="cfg_lm_thr" maxlength="6" value="500"> <br>
 	Illumination hysteresis: <input size="8" title="Step 1, default 0, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="cfg_lm_hst" maxlength="7" value="0"><br><br>
 	<div id="cur_mtim">Current Timer: ?</div>
-	Motion Timer: <input size="8" title="0..65535 sec, Step 1 sec, default 0, =0 off, if more than zero - activation on excess" id="cfg_m_tim" maxlength="5" value="0"> sec<br>
-	Weak signal activation<input type="checkbox" id="cfg_m_low"><br><br>
+	Motion Timer: <input size="8" title="0..65535 sec, Step 1 sec, default 0, =0 off, if more than zero - activation on excess" id="cfg_m_tim" maxlength="5" value="0"> sec<br><br>
 	<div id="cur_outs">OUT_RG ?</div><br>
 	<input type="button" id="butGetCfg" disabled="true" onclick="getCfg()" value="Get Config">
 	<input type="button" id="butSetCfg" disabled="true" onclick="setCfg()" value="Set Config"><br>
