@@ -32,7 +32,7 @@ function handleError(error) {
         addLog("Reconnect " + connectTrys + " from " + 5);
         doConnect();
     } else {
-        addLog("Something went wrong, to many reconnect's");
+        addLog("Something went wrong, too many reconnects");
         connectTrys = 0;
     }
 }
