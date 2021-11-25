@@ -85,6 +85,15 @@ function handleError(error) {
 	}
 }
 
+function disconnect() {
+	if (bluetoothDevice != null) bluetoothDevice.gatt.disconnect();
+	$("MAC").innerHTML = '';
+	$("ldfile").hidden = true;
+	cfg.hver = null;
+	devHWstr = null;
+	resetVariables();
+}
+
 function onDisconnected() {
 	addLog('Disconnected.');
 	$("MAC").innerHTML = '';
@@ -1868,6 +1877,7 @@ function SendCustomConfig() {
 <big><big>Telink Flasher for Mi Thermostat</big></big> <a href="https://github.com/atc1441/ATC_MiThermometer">©</a> <a href="https://github.com/pvvx/ATC_MiThermometer">&#9432;</a><br>
 <!-- Copyright: Aaron Christophel / Atc1441  <a href="https://atcnetz.de">https://ATCnetz.de</a><br> -->
   <button type="button" onclick="connect();">Connect</button> Get Advertising MAC:<input type="checkbox" title="Web Experimental Features!" id="advmac">
+  <button type="button" onclick="disconnect();">Disconnect</button>
   <button type="button" onclick="reConnect();">Reconnect</button><br>
   <label for="hideUnknown">Hide unknown</label>
   <input type="checkbox" id="hideUnknown" checked><br>
