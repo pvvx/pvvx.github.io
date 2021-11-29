@@ -111,7 +111,7 @@ function connect() {
 	const namePrefix = $('namePrefix').value;
 	if (hideUnknown) {
 		deviceOptions.acceptAllDevices = false;
-		deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz_#@!*';,.<>{}[]"
+		deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz_#@!*0123456789';,.<>{}[]"
 			.split("")
 			.map((x) => ({ namePrefix: x }));
 	}
