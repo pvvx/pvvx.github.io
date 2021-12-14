@@ -277,7 +277,7 @@ function connectDeviceAndCacheCharacteristics() {
   .then(_ => {
     return cfgCharacteristic.writeValue(new Uint8Array([0x00]))})
   .then(_ => {
-	if(sw_version > 20)
+	if(sw_version >= 20)
 	   return cfgCharacteristic.writeValue(new Uint8Array([0x18]))
     	   .then(_ => { return cfgCharacteristic.writeValue(new Uint8Array([0x19]))});
 	else return;		
@@ -287,7 +287,7 @@ function connectDeviceAndCacheCharacteristics() {
 	$('butReadMAC1').disabled = false;
 	$('butSendMAC2').disabled = false;
 	$('butReadMAC2').disabled = false;
-	if(sw_version > 20) {
+	if(sw_version >= 20) {
 	$('butReadBkey1').disabled = false;
 	$('butReadBkey2').disabled = false;
 	$('butSendBkey1').disabled = false;

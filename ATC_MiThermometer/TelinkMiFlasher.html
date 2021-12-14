@@ -40,7 +40,7 @@ var miEnabled = false,
 var mi_random_key, mi_random_key_recv, mi_device_info_recv, mi_device_info_send, device_known_id, expected_device_infos, is_logged_in = false;
 //Activation values
 var keypair, is_activated, own_public_key, device_public_key, shared_key, derived_key, mi_write_did;
-var device_new_id = "00626c742e332e31323976" + makeRandomID(6) + "415443";
+var device_new_id = "00626c742e332e31323976" + makeRandomID(6) + "415443"; // 0+"blt.3.129v"+rand[6]+"ATC"
 var $ = function(id) { return document.getElementById(id);}
 function resetVariables() {
 	busy = false;
@@ -771,9 +771,9 @@ function miAuthorization() {
 						var value = bytesToHex(event.target.value.buffer);
 						addClog("Enc_19: " + value);
 						if (mode_activation == 1) {
-							if (value == "000000000100") { // BLE_UUID_STDIO_SRV  00000100-0065-6c62-2e74-6f696d2e696d
+							if (value == "000000000100") {
 								is_activated = false;
-								mainCharSend("00000101", enc_19);  // BLE_UUID_STDIO_RX, 102 - BLE_UUID_STDIO_TX 
+								mainCharSend("00000101", enc_19);
 							} else if (value == "000000000200") {
 								is_activated = true;
 								mainCharSend("00000101", enc_19);
