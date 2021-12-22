@@ -1,0 +1,59 @@
+BT Address: 2c:11:65:25:83:d0
+Number of Services: 7
+Number of service changed events: 7
+Number of Advertisement Services: 0
+BT 4.2 Secure Connection: False
+Device Connected: True
+
+Service Name: GenericAttribute
+Service UUID: 00001801-0000-1000-8000-00805f9b34fb
+Characteristic Name: ServiceChanged - Characteristic Short UUID: 0x2A05 - Handle: 2 - 0x00000002 - Value: Read Not Permitted
+
+Service Name: GenericAccess
+Service UUID: 00001800-0000-1000-8000-00805f9b34fb
+Characteristic Name: DeviceName - Handle: 6 - 0x00000006 - Value: XMWSDJO4MMC
+
+Service Name: 65173
+Service UUID: 0000fe95-0000-1000-8000-00805f9b34fb
+Characteristic Name: 4 - Characteristic Short UUID: 0x4 - Value: 2.0.1_0028
+Characteristic Name: 16 - Characteristic Short UUID: 0x10 - Value: Read Not Permitted
+Characteristic Name: 23 - Characteristic Short UUID: 0x17 - Value: Read Not Permitted
+Characteristic Name: 24 - Characteristic Short UUID: 0x18 - Value: Read Not Permitted
+Characteristic Name: 25 - Characteristic Short UUID: 0x19 - Value: Read Not Permitted
+Characteristic Name: 26 - Characteristic Short UUID: 0x1A - Value: Read Not Permitted
+Characteristic Name: 27 - Characteristic Short UUID: 0x1B - Value: Read Not Permitted
+
+Service Name: 00000100-0065-6c62-2e74-6f696d2e696d
+Service UUID: 00000100-0065-6c62-2e74-6f696d2e696d
+Characteristic Name: 00000101-0065-6c62-2e74-6f696d2e696d - Handle: 30 - 0x0000001E - Value: Read Not Permitted
+Characteristic Name: 00000102-0065-6c62-2e74-6f696d2e696d - Handle: 32 - 0x00000020 - Value: Read Not Permitted
+
+Service Name: ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6
+Service UUID: ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6
+
+Characteristic Name: ebe0ccd2-7a0a-4b0c-8a1a-6ff2997da3a6 - Handle: 36 - 0x00000024 - Value: 00
+Characteristic Name: ebe0ccb7-7a0a-4b0c-8a1a-6ff2997da3a6 - Handle: 38 - 0x00000026 - Value: K
+Characteristic Name: ebe0ccb9-7a0a-4b0c-8a1a-6ff2997da3a6 - Handle: 40 - 0x00000028 - Value: 00-00-00-00-01-00-00-00-00-00-00-00
+Characteristic Name: ebe0ccba-7a0a-4b0c-8a1a-6ff2997da3a6 - Handle: 42 - 0x0000002A - Value: FF-FF-FF-FF
+Characteristic Name: ebe0ccbb-7a0a-4b0c-8a1a-6ff2997da3a6 - Handle: 44 - Ox0000002C - Value: 00-00-00-00-00-00-00-00-E9-00-1F-02-E7-00-1A-02
+Characteristic Name: ebe0ccbc-7a0a-4b0c-8a1a-6ff2997da3a6 - Handle: 46 - Ox0000002E - Value: Read Not Permitted
+Characteristic Name: ebe0ccbe-7a0a-4b0c-8a1a-6ff2997da3a6 - Handle: 49 - 0x00000031 - Value: 00
+Characteristic Name: ebe0ccc1-7a0a-4b0c-8a1a-6ff2997da3a6 - Handle: 51 - 0x00000033 - Value: E7-00-48-01-B4-0C
+Characteristic Name: ebe0ccc4-7a0a-4b0c-8a1a-6ff2997da3a6 - Handle: 54 - 0x00000036 - Value: 64
+Characteristic Name: ebe0ccc8-7a0a-4b0c-8a1a-6ff2997da3a6 - Handle: 56 - 0x00000038 - Value: Read Not Permitted
+Characteristic Name: ebe0ccd1-7a0a-4b0c-8a1a-6ff2997da3a6 - Handle: 58 - Ox0000003A - Value: Read Not Permitted
+Characteristic Name: ebe0ccd7-7a0a-4b0c-8a1a-6ff2997da3a6 - Handle: 60 - Ox0000003C - Value: 0E-01-BE-00-52-03-C8-00
+Characteristic Name: ebe0ccd8-7a0a-4b0c-8a1a-6ff2997da3a6 - Handle: 62 - Ox0000003E - Value: Read Not Permitted
+Characteristic Name: ebe0cce3-7a0a-4b0c-8a1a-6ff2997da3a6 - Handle: 64 - 0x00000040 - Value: 00
+
+Service Name: Devicelnformation
+Service UUID: 0000180a-0000-1000-8000-00805f9b34fb
+Characteristic Name: ModelNumberString - Characteristic Short UUID: 0x2A24 - Handle: 67 - 0x00000043 - Value: XMWSDJO4MMC
+Characteristic Name: FirmwareRevisionString - Characteristic Short UUID: 0x2A26 - Handle: 69 - 0x00000045 - Value: 2.0.1_0025
+Characteristic Name: HardwareRevisionString - Characteristic Short UUID: 0x2A27 - Handle: 71 - 0x00000047 - Value: va1.0
+Characteristic Name: ManufacturerNameString - Characteristic Short UUID: 0x2A29 - Handle: 73 - 0x00000049 - Value: miaomiaoce.com
+Characteristic Name: ebe02a2b-7a0a-4b0c-8a1a-6ff2997da3a6 - Handle: 75 - 0x00000048 - Value: 01-00-00-00-00-00-00-00-00-00-00-00
+
+Service Name: fafafa00-fafa-fafa-fafa-fafafafafafa
+Service UUID: fafafa00-fafa-fafa-fafa-fafafafafafa
+Characteristic Name: fafafa01-fafa-fafa-fafa-fafafafafafa -  Handle: 78 - 0x0000004E - Value: Read Not Permitted

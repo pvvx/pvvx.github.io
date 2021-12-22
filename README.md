@@ -16,6 +16,8 @@ Web files for projects:
 
 [CGPR1 Qingping Motion & Light](https://pvvx.github.io/CGPR1)
 
+[XMWSDJ04MMC](https://pvvx.github.io/XMWSDJ04MMC)
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
