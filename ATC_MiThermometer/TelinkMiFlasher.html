@@ -452,36 +452,37 @@ function CGPR1_Action() {
 		}).then(characteristic => {
 			cus018Chr = characteristic;
 			addClog('Found 0x0018 characteristic');
-			cus018Chr.startNotifications().then(() => {
-				cus018Chr.addEventListener('characteristicvaluechanged', event => {
-					let value = event.target.value;
-					addClog("CustNotify018: " + bytesToHex(event.target.value.buffer));
-					let cid = value.getUint16(0, true);
-					if(cid == 0x0202) {
+			return cus018Chr.addEventListener('characteristicvaluechanged', event => {
+				let value = event.target.value;
+				addClog("CustNotify018: " + bytesToHex(event.target.value.buffer));
+				let cid = value.getUint16(0, true);
+				if(cid == 0x0202) {
 						addLog("Battery: "+ value.getUint8(2) + "%");
-					} else if(cid == 0x0405) {
-						let adc = value.getUint32(2, true);
-						addLog("Level: " + adc);
-					} else if(cid == 0x0305) {
-						let mt = value.getUint8(2);
-						let lx = value.getUint16(3, true) + (value.getUint8(5) << 16);
-						addLog("Event: " + mt + ", Illumination: "+ lx + " lx");
-					} else if(cid == 0x1305) {
-						let tm = value.getUint32(2, true);
-						addLog("Timer: "+ tm + " ms (" + (tm/1000) + " sec)");
-						$("mtimer").value = tm.toString(10);
-					} else if(cid == 0xff04) {
-						let cmd = value.getUint8(2);
-						let err = value.getUint8(3);
-						if(err == 0) {
-							if(cmd == 0x10)	addLog("Set timer - ok");
-							else if(cmd == 0x0e) addLog("Clear - ok (Mode Qingping)");
-							else addLog("Command " + cmd.toString(16) + " - ok");
-						} else addLog("Command " + cmd.toString(16) + " - Error " + err.toString(16));
-					} else 
-						addLog("CustNotify018: " + bytesToHex(event.target.value.buffer));
-				});
+				} else if(cid == 0x0405) {
+					let adc = value.getUint32(2, true);
+					addLog("Level: " + adc);
+				} else if(cid == 0x0305) {
+					let mt = value.getUint8(2);
+					let lx = value.getUint16(3, true) + (value.getUint8(5) << 16);
+					addLog("Event: " + mt + ", Illumination: "+ lx + " lx");
+				} else if(cid == 0x1305) {
+					let tm = value.getUint32(2, true);
+					addLog("Timer: "+ tm + " ms (" + (tm/1000) + " sec)");
+					$("mtimer").value = tm.toString(10);
+				} else if(cid == 0xff04) {
+					let cmd = value.getUint8(2);
+					let err = value.getUint8(3);
+					if(err == 0) {
+						if(cmd == 0x10)	addLog("Set timer - ok");
+						else if(cmd == 0x0e) addLog("Clear - ok (Mode Qingping)");
+						else addLog("Command " + cmd.toString(16) + " - ok");
+					} else addLog("Command " + cmd.toString(16) + " - Error " + err.toString(16));
+				} else 
+					addLog("CustNotify018: " + bytesToHex(event.target.value.buffer));
 			});
+		}).then(_ => {
+			return cus018Chr.startNotifications();
+		}).then(_ => {
 			return cusService.getCharacteristic(0x0100);
 		}).then(characteristic => {
 			cus100Chr = characteristic;
