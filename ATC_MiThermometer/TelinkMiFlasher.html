@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v3.4</title>
+<title>Telink Flasher v3.4a</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -439,7 +439,7 @@ function setMTimer() {
 }
 function CGPR1_Action() {
 	addLog("Detected Qingping CGPR1 device");
-	$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>  <button type="button" onclick="sendLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br> <button type="button" onclick="sendCmdClear();">Clear all settings and reset device (into Qingping mode)</button><br><br>MTimer: <input type="text" id="mtimer" value="?"> ms <button type="button" onclick="getMTimer();">Get</button> <button type="button" onclick="setMTimer();">Set</button><br>';
+	$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>  <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br> <button type="button" onclick="sendCmdClear();">Clear all settings and reset device (into Qingping mode)</button><br><br>MTimer: <input type="text" id="mtimer" value="?"> ms <button type="button" onclick="getMTimer();">Get</button> <button type="button" onclick="setMTimer();">Set</button><br>';
 	gattServer.getPrimaryService("22210000-554a-4546-5542-46534450464d")
 		.then(service => {
 			addClog("Found Custom service");
@@ -908,15 +908,14 @@ function miAuthorization() {
 								});
 							} else if (value == "010001000000") mainCharSend("00000100", enc_19).then(function(character) {
 								mainCharSend("15000000", enc_10).then(function(character) {
-									mainCharSend("000000030400", enc_19);
-									state = 1;
+										mainCharSend("000000030400", enc_19);
+										state = 1;
+									}).catch(function(err) {
+										updateFail(err);
+									});
 								}).catch(function(err) {
 									updateFail(err);
 								});
-							}).catch(function(err) {
-								updateFail(err);
-							});
-
 							else if ((state == 1) && (value == "00000101")) {
 								state = 2;
 								mainCharSend("0100" + own_public_key.substring((36 * 0) + 2, (36 * 0) + 36 + 2), enc_19).then(function(character) {
@@ -1097,7 +1096,7 @@ function detectMi() {
 		if (miEnabled) {
 			addLog("Detected Mi device");
 			setStatus("Detected Mi device");
-			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="sendLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
+			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
 			miAction();
 		} else if (customEnabled) {
 			let s = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
@@ -1118,7 +1117,7 @@ function detectMi() {
 			miEnabled = true;
 			miAuthorization();  //	miConnected
 			$("ldfile").hidden = false;
-			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>  <button type="button" onclick="sendLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
+			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>  <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
 		}}).catch(handleError);
 }
 
@@ -1145,18 +1144,6 @@ function startDFU() {
 		return;
 	}
 	updateBegin();
-}
-
-function sendBLEdata(data) {
-	addLog(data);
-}
-
-function send10(data) {
-	mainCharSend(data, enc_10);
-}
-
-function send19(data) {
-	mainCharSend(data, enc_19);
 }
 
 function sendRegister() {
@@ -1516,7 +1503,17 @@ function do_login_generate() {
 	mi_device_info_send = sjcl.codec.hex.fromBits(new sjcl.misc.hmac(sjcl.codec.hex.toBits(derived_key.substring(32, 64))).mac(sjcl.codec.hex.toBits(bytesToHex(salt))));
 	mainCharSend("00000100", enc_19);
 }
-
+function keyMiLogin() {
+	let tk = $("mi_token").value;
+	let bk = $("mi_bind_key").value;
+	if(tk.length == 24) {
+		if(bk.length == 32)
+			sendLogin();
+		else
+			addLog("Bind Key must be 16 hex digits!")
+	} else
+		addLog("Mi Token must be 12 hex digits!")
+}
 const lcd_digcode = [0xf5,0x05,0xd3,0x97,0x27,0xb6,0xf6,0x15,0xf7,0xb7];
 function lcd_clock() {
 	let date = new Date();
