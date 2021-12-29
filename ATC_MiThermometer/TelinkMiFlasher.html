@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v3.3d</title>
+<title>Telink Flasher v3.4</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -33,8 +33,11 @@ var dnm = {enable: false, name: ""};
 var pincode = {enable: false, value: 0};
 //Mi values
 var miEnabled = false,
+	otaEnabled = false,
+	EnabledCGPR1 = false,
+	devInfEnabled = false,
 	miConnected = false,
-	devidEnabled = false,
+	devIdEnabled = false,
 	mode_activation;
 //Login values
 var mi_random_key, mi_random_key_recv, mi_device_info_recv, mi_device_info_send, device_known_id, expected_device_infos, is_logged_in = false;
@@ -74,15 +77,19 @@ function resetVariables() {
 }
 
 function handleError(error) {
-	addLog(error);
-	resetVariables();
-	if (connectTrys < 5) {
-		connectTrys++;
-		addLog("Reconnect " + connectTrys + " from " + 5);
-		doConnect();
+	if (connectTrys == 1000) {
+		disconnect();	
 	} else {
-		addLog("Something went wrong, too many reconnects");
-		connectTrys = 0;
+		addLog(error);
+		resetVariables();
+		if (connectTrys < 5) {
+			connectTrys++;
+			addLog("Reconnect " + connectTrys + " from " + 5);
+			doConnect();
+		} else {
+			addLog("Something went wrong, too many reconnects");
+			connectTrys = 0;
+		}
 	}
 }
 
@@ -106,7 +113,7 @@ function onDisconnected() {
 
 function connect() {
 	var deviceOptions = {
-		optionalServices: ['00010203-0405-0607-0809-0a0b0c0d1912', 'ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6', 0x180a, 0xfe95, 0x1f10, 0x1f11, 0x181a, 0xfff9, 0xfdcd, 0xffe0],
+		optionalServices: ['00010203-0405-0607-0809-0a0b0c0d1912', 'ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6', '22210000-554a-4546-5542-46534450464d', 0x180a, 0xfe95, 0x1f10, 0x1f11, 0x181a, 0xfff9, 0xfdcd, 0xffe0],
 		acceptAllDevices: true };
 	const hideUnknown = $('hideUnknown').checked;
 	const namePrefix = $('namePrefix').value;
@@ -124,7 +131,7 @@ function connect() {
 	addClog(deviceOptions)
 	if (bluetoothDevice != null) bluetoothDevice.gatt.disconnect();
 	resetVariables();
-	addLog("Searching for devices");
+	addAlog("Searching for devices");
 	connectTrys = 0;
 	navigator.bluetooth.requestDevice(deviceOptions).then(device => {
 		bluetoothDevice = device;
@@ -132,8 +139,9 @@ function connect() {
 	        catchAdvertisement(device);
 		bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
 		addLog("Connecting to: " + bluetoothDevice.name);
+		setStatus("Connecting to: " + bluetoothDevice.name + " ...");
 		if(!$("advmac").checked)
-	    	doConnect();
+		    	doConnect();
 	}).catch(handleError);
 }
 
@@ -414,7 +422,88 @@ function catchAdvertisement(device) {
 	addClog('Error: ' + error);
   });
 }
-
+var cusService, cus017Chr, cus018Chr, cus100Chr;
+function sendCmdClear() {
+	cus017Chr.writeValue(new Uint8Array([0x01,0x0e]))
+	.then(() => { disconnect(); });
+}
+function getMTimer() {
+	cus017Chr.writeValue(new Uint8Array([0x01,0x13]));
+}
+function setMTimer() {
+	let t = parseInt($("mtimer").value);
+	if(t > 100) {
+		cus017Chr.writeValue(new Uint8Array([0x05,0x10,t&0xff,(t>>8)&0xff,(t>>16)&0xff,(t>>24)&0xff]))
+		.then(() => { cus017Chr.writeValue(new Uint8Array([0x01,0x13])); });
+	}
+}
+function CGPR1_Action() {
+	addLog("Detected Qingping CGPR1 device");
+	$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>  <button type="button" onclick="sendLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br> <button type="button" onclick="sendCmdClear();">Clear all settings and reset device (into Qingping mode)</button><br><br>MTimer: <input type="text" id="mtimer" value="?"> ms <button type="button" onclick="getMTimer();">Get</button> <button type="button" onclick="setMTimer();">Set</button><br>';
+	gattServer.getPrimaryService("22210000-554a-4546-5542-46534450464d")
+		.then(service => {
+			addClog("Found Custom service");
+			cusService = service;
+			return cusService.getCharacteristic(0x0017);
+		}).then(characteristic => {
+			cus017Chr = characteristic;
+			addClog('Found 0x0017 characteristic');
+			return cusService.getCharacteristic(0x0018);
+		}).then(characteristic => {
+			cus018Chr = characteristic;
+			addClog('Found 0x0018 characteristic');
+			cus018Chr.startNotifications().then(() => {
+				cus018Chr.addEventListener('characteristicvaluechanged', event => {
+					let value = event.target.value;
+					addClog("CustNotify018: " + bytesToHex(event.target.value.buffer));
+					let cid = value.getUint16(0, true);
+					if(cid == 0x0202) {
+						addLog("Battery: "+ value.getUint8(2) + "%");
+					} else if(cid == 0x0405) {
+						let adc = value.getUint32(2, true);
+						addLog("Level: " + adc);
+					} else if(cid == 0x0305) {
+						let mt = value.getUint8(2);
+						let lx = value.getUint16(3, true) + (value.getUint8(5) << 16);
+						addLog("Event: " + mt + ", Illumination: "+ lx + " lx");
+					} else if(cid == 0x1305) {
+						let tm = value.getUint32(2, true);
+						addLog("Timer: "+ tm + " ms (" + (tm/1000) + " sec)");
+						$("mtimer").value = tm.toString(10);
+					} else if(cid == 0xff04) {
+						let cmd = value.getUint8(2);
+						let err = value.getUint8(3);
+						if(err == 0) {
+							if(cmd == 0x10)	addLog("Set timer - ok");
+							else if(cmd == 0x0e) addLog("Clear - ok (Mode Qingping)");
+							else addLog("Command " + cmd.toString(16) + " - ok");
+						} else addLog("Command " + cmd.toString(16) + " - Error " + err.toString(16));
+					} else 
+						addLog("CustNotify018: " + bytesToHex(event.target.value.buffer));
+				});
+			});
+			return cusService.getCharacteristic(0x0100);
+		}).then(characteristic => {
+			cus100Chr = characteristic;
+			addClog('Found 0x0100 characteristic');
+			return cus100Chr.startNotifications().then(() => {
+				cus100Chr.addEventListener('characteristicvaluechanged', event => {
+					let value = event.target.value;
+					if(value.getUint16(0, true) == 0x0305) {
+						let mt = value.getUint8(2);
+						let lx = value.getUint16(3, true) + (value.getUint8(5) << 16);
+						let tempString = "MotionT: " + mt + ", Illumination: "+ lx + " lx";
+						$("tempHumiData").innerHTML = '<hr>'+tempString;
+						addClog(tempString);
+					} else 
+						addClog("CustNotify100: "+bytesToHex(event.target.value.buffer));
+				});
+				cus017Chr.writeValue(new Uint8Array([0x01,0x02]))
+				.then(() => { cus017Chr.writeValue(new Uint8Array([0x01,0x13])); });
+				miAuthorization();
+			});
+		}).catch(handleError);
+}
 function miAction() {
 	gattServer.getPrimaryService('ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6')
 		.then(service => {
@@ -684,7 +773,7 @@ function customAction() {
 	}).then(characteristic => {
 		settingsCharacteristics = characteristic;
 		addClog("Found custom read-write characteristic (0x1f1f)");
-		if(devidEnabled) {
+		if(devIdEnabled) {
 			addClog("Start Notifications (0x1f1f)");
 			settingsCharacteristics.startNotifications()
 			.then(characteristic => {
@@ -746,23 +835,47 @@ function miAuthorization() {
 				enc_10.addEventListener('characteristicvaluechanged', event => {
 					var value = bytesToHex(event.target.value.buffer);
 					addClog("Enc_10: " + value);
-					if (value == "12000000") {
-						addLog("Activation Failed!");
-					} else if (value == "11000000") {
-						addLog("Activation successfull");
+					if (value == "11000000") { // REG_SUCCESS
+						addLog("Registration successfull");
 						sendLogin();
-					}
-					if (value == "23000000") {
-						addLog("Login Failed!");
-					} else if (value == "21000000") {
+					} else if (value == "12000000") { // REG_FAILED
+						addLog("Registration failed!");
+					} else if (value == "13000000") { // REG_VERIFY_SUCC
+						addLog("Registration verify successfull");
+					} else if (value == "14000000") { // REG_VERIFY_FAIL
+						addLog("Registration verify failed!");
+					} else if (value == "21000000") { // LOG_SUCCESS
 						is_logged_in = true;
 						addLog("Login successfull");
 						$("ldfile").hidden = false;
 						if(otafiles.loaded && otafiles.version) {
 							if(cfg.hver != null)
 								$("ldfrmw").innerHTML = ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>  <button type="button" onclick="BackToOriginal();">'+ otafiles.original[cfg.hver & 0x07] +'</button>';
-							$("log").innerHTML += '<a href="https://pvvx.github.io/ATC_MiThermometer/GraphMemoOriginal.html">GraphMemoOriginal</a><br>';
 						}
+					} else if (value == "22000000") { // LOG_INVALID_LTMK
+						addLog("Login invalid LMTK!");
+					} else if (value == "23000000") { // LOG_FAILED
+						addLog("Login Failed!");
+					} else	if (value == "e0000000") { // ERR_NOT_REGISTERED
+						addLog("Error: Not registered!");
+					} else	if (value == "e1000000") { // ERR_REGISTERED
+						addLog("Error: Registered!");
+					} else	if (value == "e2000000") { // ERR_REPEAT_LOGIN
+						is_logged_in = true;
+						$("ldfile").hidden = false;
+						addLog("Error: Repeat login!");
+						if(otafiles.loaded && otafiles.version) {
+							if(cfg.hver != null)
+								$("ldfrmw").innerHTML = ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>  <button type="button" onclick="BackToOriginal();">'+ otafiles.original[cfg.hver & 0x07] +'</button>';
+						}
+					} else	if (value == "e3000000") { // ERR_INVALID_OOB
+						addLog("Error: Invalid OOB!");
+					}
+					if (value == "12000000") {
+						addLog("Activation Failed!");
+					} else if (value == "11000000") {
+						addLog("Activation successfull");
+						sendLogin();
 					}
 				});
 			}).then(characteristic => {
@@ -919,7 +1032,33 @@ function doConnect() {
 	bluetoothDevice.gatt.connect().then(server => {
 		addClog("Found GATT server");
 		gattServer = server;
-		return gattServer.getPrimaryService('00010203-0405-0607-0809-0a0b0c0d1912');
+		return gattServer.getPrimaryServices();
+	}).then(services => {
+		//["00010203-0405-0607-0809-0a0b0c0d1912", "ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6", 0x180a, 0xfe95, 0x1f10, 0x181a]
+		miEnabled = false;
+		otaEnabled = false;
+		customEnabled = false;
+		devIdEnabled = false;
+		devTest = false;
+		devInfEnabled = false;
+		EnabledCGPR1 = false;
+		for (var i = 0; i < services.length; i++) {
+			addClog("Services: " + services[i].uuid);
+			if (services[i].uuid == "00010203-0405-0607-0809-0a0b0c0d1912") otaEnabled = true;
+			else if (services[i].uuid == "22210000-554a-4546-5542-46534450464d") EnabledCGPR1 = true;
+			else if (services[i].uuid == "ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6") miEnabled = true;
+			else if (services[i].uuid == "00001f10-0000-1000-8000-00805f9b34fb") customEnabled = true;
+			else if (services[i].uuid == "0000181a-0000-1000-8000-00805f9b34fb") devIdEnabled = true;
+			else if (services[i].uuid == "0000ffe0-0000-1000-8000-00805f9b34fb") devTest = true;
+			else if (services[i].uuid == "0000180a-0000-1000-8000-00805f9b34fb") devInfEnabled = true; // Device Information Service
+		}
+		if(otaEnabled)
+			return gattServer.getPrimaryService('00010203-0405-0607-0809-0a0b0c0d1912');
+		else {
+			addAlog("Not found Telink OTA service!");
+		}
+		connectTrys = 1000;
+		return resolve(null);
 	}).then(service => {
 		addClog("Found Telink OTA service");
 		Theservice = service;
@@ -937,7 +1076,8 @@ function getHWVersion(devInfEnabled) {
  		addClog("Found Device Information Service");
 		return service.getCharacteristic(0x2a27); // Hardware Revision String 
 	}).then(characteristic => {
-		addClog("Get Hardware Revision String"); 
+		addClog("Get Hardware Revision String");
+		setStatus("Get Hardware Revision String...");
 		return characteristic.readValue();
 	}).then(value => {
 		let hw = new TextDecoder("utf-8").decode(value);
@@ -951,33 +1091,19 @@ function getHWVersion(devInfEnabled) {
  })
 }
 function detectMi() {
-	gattServer.getPrimaryServices().then(services => {
-		//["00010203-0405-0607-0809-0a0b0c0d1912", "ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6", 0x180a, 0xfe95, 0x1f10, 0x181a]
-		miEnabled = false;
-		customEnabled = false;
-		devidEnabled = false;
-		devTest = false;
-		let devInfEnabled = false;
-		for (var i = 0; i < services.length; i++) {
-			addClog("Services: " + services[i].uuid);
-			if (services[i].uuid == "ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6") miEnabled = true;
-			if (services[i].uuid == "00001f10-0000-1000-8000-00805f9b34fb") customEnabled = true;
-			if (services[i].uuid ==	"0000181a-0000-1000-8000-00805f9b34fb") devidEnabled = true;
-			if (services[i].uuid ==	"0000ffe0-0000-1000-8000-00805f9b34fb") devTest = true;
-			if (services[i].uuid ==	"0000180a-0000-1000-8000-00805f9b34fb") devInfEnabled = true; // Device Information Service
-		}
-		getHWVersion(devInfEnabled).then(hwstr => {
+	getHWVersion(devInfEnabled).then(hwstr => {
 		devHWstr = hwstr;
 		if (devHWstr) addLog('Hardware Revision String: ' + devHWstr);
 		if (miEnabled) {
-			addLog("Detected Mi Thermometer");
-			setStatus("Detected Mi Thermometer");
-			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
+			addLog("Detected Mi device");
+			setStatus("Detected Mi device");
+			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="sendLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
 			miAction();
 		} else if (customEnabled) {
 			let s = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
 			if (devTest) {
 				addLog("Detected Test device");
+				setStatus("Detected Test device");
 				getTestCharacteristic();	
 				s += '<a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html">TelinkOTA</a><br>';
 			} else {
@@ -986,15 +1112,14 @@ function detectMi() {
 				customAction();
 			}
 			$("custcfg").innerHTML = s;
-		} else {
-			addLog("Detected Telink OTA service");
+		} else if(EnabledCGPR1) CGPR1_Action();
+		else {
 			setStatus("Connected.")
 			miEnabled = true;
 			miAuthorization();  //	miConnected
 			$("ldfile").hidden = false;
-			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
-		}});
-	}).catch(handleError);
+			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>  <button type="button" onclick="sendLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
+		}}).catch(handleError);
 }
 
 function reConnect() {
@@ -1006,7 +1131,10 @@ function reConnect() {
 }
 
 function skipActivation() {
-	$("custcfg").innerHTML = '';
+	if(EnabledCGPR1)
+		$("custcfg").innerHTML = '<button type="button" onclick="sendCmdClear();">Clear all settings and reset device (into Qingping mode)</button><br><br>MTimer: <input type="text" id="mtimer" value="?"> ms <button type="button" onclick="getMTimer();">Get</button> <button type="button" onclick="setMTimer();">Set</button><br>';
+	else
+		$("custcfg").innerHTML = '';
 	is_logged_in = true;
 }
 
@@ -1044,6 +1172,7 @@ function sendRegister() {
 }
 
 function sendLogin() {
+	addLog("Send Login, please wait...");
 	mi_random_key = bytesToHex(window.crypto.getRandomValues(new Uint8Array(16)));
 	state = 0;
 	mode_activation = 0;
