@@ -16,10 +16,10 @@ Characteristic Name: DeviceName - Handle: 6 - 0x06 - Value: XMWSDJO4MMC
 Service Name: 65173 - 0xfe95
 Service UUID: 0000fe95-0000-1000-8000-00805f9b34fb
 Characteristic Name: 04 - Characteristic Short UUID: 0x04 - Handle: 09 - 0x09 - Value: 2.0.1_0028
-Characteristic Name: 16 - Characteristic Short UUID: 0x10 - Handle: 11 - 0x0B - Value: Read Not Permitted -> A4, 24000000 -> e0000000
+Characteristic Name: 16 - Characteristic Short UUID: 0x10 - Handle: 11 - 0x0B - Value: Read Not Permitted 
 Characteristic Name: 23 - Characteristic Short UUID: 0x17 - Handle: 14 - 0x0E - Value: Read Not Permitted 
 Characteristic Name: 24 - Characteristic Short UUID: 0x18 - Handle: 17 - 0x11 - Value: Read Not Permitted
-Characteristic Name: 25 - Characteristic Short UUID: 0x19 - Handle: 20 - 0x14 - Value: Read Not Permitted <- 00 00 04 00 06 f2 -> 00 00 05 00 06 f2, (2400000) <- 00 00 0b 01 00
+Characteristic Name: 25 - Characteristic Short UUID: 0x19 - Handle: 20 - 0x14 - Value: Read Not Permitted 
 Characteristic Name: 26 - Characteristic Short UUID: 0x1A - Handle: 23 - 0x17 - Value: Read Not Permitted
 Characteristic Name: 27 - Characteristic Short UUID: 0x1B - Handle: 26 - 0x1A - Value: Read Not Permitted
 
