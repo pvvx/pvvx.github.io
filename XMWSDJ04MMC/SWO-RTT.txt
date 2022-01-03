@@ -1,0 +1,318 @@
+[I] ../app/main.c:  
+[I] ../app/main.c: Compiled Aug 27 2021 16:03:00
+[I] ../app/main.c: system clock 38400000 Hz
+[I] : adc irq results = 3276
+[I] : history data test No.8,status = 0
+[I] : BUSY_IN != 0
+[I] : BUSY_IN != 0
+[I] ../app/main.c: system stack 2.13.6-65534, heap 5304 bytes
+[D] mi srv: mijia libs   : 2.0.1
+[D] mi srv: auth mode    : 2
+[D] mi srv: have msc     : 0
+[D] mi srv: product ID   : 4611
+[D] mi srv: mi service init ... srv 32, char 48
+[I] mi srv: mi service init succ.
+[I] mi srv:  version : 10
+[I] mi srv:  ctrl point : 12, auth : 21
+[I] mi srv:  ota ctrl point : 15, ota data : 18
+[I] mi srv:  spec rd : 24, spec wr : 27
+[I] mi srv:  sysinfo : 0
+[D] stdio: stdio service init ... srv 32, char 48
+[I] stdio: stdio service init succ.
+[I] stdio: char value handle list
+ rx : 0
+ tx : 0
+[I] std auth: Found the KEYINFO.
+[I] MIBEACON: mibeacon_init: is_newone=0
+[I] MIBEACON: period_obj_adv_timer create
+[D] MIBEACON: obj_adv_timer create OK
+[I] : screen LUT_nDU_4S :21/50
+[D] : Ble endtime : 41
+[I] : screen LUT_nDU_4S :22/50
+[D] : Ble endtime : 40
+[I] : screen LUT_nDU_4S :23/50
+[D] : Ble endtime : 39
+[I] : screen LUT_nDU_4S :24/50
+[D] : Ble endtime : 38
+[I] : screen LUT_nDU_4S :25/50
+[D] : Ble endtime : 37
+[I] : screen LUT_nDU_4S :26/50
+[D] : Ble endtime : 36
+[I] : screen LUT_nDU_4S :27/50
+[D] : Ble endtime : 35
+[I] : screen LUT_nDU_4S :28/50
+[D] : Ble endtime : 34
+[I] : screen LUT_nDU_4S :29/50
+[D] : Ble endtime : 33
+[I] : screen LUT_nDU_4S :30/50
+[D] : Ble endtime : 32
+[I] : screen LUT_nDU_4S :31/50
+[D] : Ble endtime : 31
+[I] : screen LUT_nDU_4S :32/50
+[D] : Ble endtime : 30
+[I] : screen LUT_nDU_4S :33/50
+[D] : Ble endtime : 29
+[I] : screen LUT_nDU_4S :34/50
+[D] : Ble endtime : 28
+[I] : screen LUT_nDU_4S :35/50
+[D] : Ble endtime : 27
+[I] : screen LUT_nDU_4S :36/50
+[D] : Ble endtime : 26
+[I] : screen LUT_nDU_4S :37/50
+[D] : Ble endtime : 25
+[I] : screen LUT_nDU_4S :38/50
+[D] : Ble endtime : 24
+[I] : screen LUT_nDU_4S :39/50
+[D] : Ble endtime : 23
+[I] : screen LUT_nDU_4S :40/50
+[D] : Ble endtime : 22
+[I] : screen LUT_nDU_4S :41/50
+[D] : Ble endtime : 21
+[I] : screen LUT_nDU_4S :42/50
+[D] : Ble endtime : 20
+[I] : screen LUT_nDU_4S :43/50
+[D] : Ble endtime : 19
+[I] : screen LUT_nDU_4S :44/50
+[D] : Ble endtime : 18
+[I] : screen LUT_nDU_4S :45/50
+[D] : Ble endtime : 17
+[I] : screen LUT_nDU_4S :46/50
+[D] : Ble endtime : 16
+[I] : screen LUT_nDU_4S :47/50
+[D] : Ble endtime : 15
+[I] : screen LUT_nDU_4S :48/50
+[D] : Ble endtime : 14
+[I] : screen LUT_nDU_4S :49/50
+[D] : Ble endtime : 13
+[I] : screen LUT_nDU_4S :0/50
+[D] : Ble endtime : 12
+[D] : Ble endtime : 11
+[D] : temp humi start time : 1689173
+08 4C 
+[E] MIBEACON: mibeacon object queue .
+[I] : history data test No.10,status = 0
+[D] : humi miio_ble_property_changed : 237,times : 574
+01 4C 
+[E] MIBEACON: mibeacon object queue .
+[I] : history data test No.9,status = 0
+[D] : temp miio_ble_property_changed : 241,times : 475
+[I] MIBEACON: send mibeacon obj 0x4C08
+[I] : screen LUT_nDU_4S :1/50
+[D] : Ble endtime : 10
+[I] MIBEACON: send mibeacon obj 0x4C01
+[I] : screen LUT_nDU_4S :2/50
+[I] : screen LUT_nDU_4S :3/50
+[D] : Ble endtime : 9
+[I] MIBEACON: no more mibeacon obj.
+[I] MIBEACON: no more mibeacon obj.
+[I] : screen LUT_nDU_4S :4/50
+[D] : Ble endtime : 8
+[I] : screen LUT_nDU_4S :5/50
+[D] : Ble endtime : 7
+[I] : screen LUT_nDU_4S :6/50
+[D] : Ble endtime : 6
+[I] : screen LUT_nDU_4S :7/50
+[D] : Ble endtime : 5
+[I] : screen LUT_nDU_4S :8/50
+[D] : Ble endtime : 4
+[I] : screen LUT_nDU_4S :9/50
+[D] : Ble endtime : 3
+[I] : screen LUT_nDU_4S :10/50
+[D] : Ble endtime : 2
+[I] : screen LUT_nDU_4S :11/50
+[D] : Ble endtime : 1
+[I] : screen LUT_nDU_4S :12/50
+[D] : Ble endtime stop
+[D] : Ble endtime : 0
+[I] : screen LUT_nDU_4S :13/50
+[D] : miio_ble_set_adv_timeout 1 min
+[I] : screen LUT_nDU_4S :14/50
+[D] : Ble endtime : 59
+[I] : screen LUT_nDU_4S :15/50
+[D] : Ble endtime : 58
+[W] mi srv: Connected Peer MAC:
+13 71 DA 7D 1A 00 
+[I] mi srv: default interval min: 30 ms, max: 30 ms
+[D] : spec_data_trans_init OK
+[I] ../app/main.c: gecko_evt_le_connection_parameters_id connection : 1
+[I] ../app/main.c: interval = 24,latency = 0,timeout = 90
+[I] : screen LUT_nDU_4S :16/50
+[D] : Ble endtime : 57
+[D] : Ble endtime : 56
+[D] : Ble endtime : 55
+[D] : Ble endtime : 54
+[I] : screen LUT_nDU_4S :17/50
+[I] : current_stu : 1
+[I] : gattdb_temp_humi characteristic TempHumiNotify_Status : 1,temp = 240,humi = 241
+[I] : comfortable_temphumi : 270,190,850,200
+[I] : screen LUT_nDU_4S :18/50
+[D] : Ble endtime : 53
+[D] : Ble endtime : 52
+[W] std auth: OPCODE 0x000000A4
+[I] : process_server_write len = 4,12
+[W] std auth: OPERATION 0x000000A4 completed.
+[W] std auth: OPCODE 0x00000024
+[I] : process_server_write len = 4,12
+[I] std auth: app_random received @ schd_ticks 9
+[I] std auth: dev_random sent @ schd_ticks 14
+[I] std auth: dev_confirmation sent @ schd_ticks 20
+[I] std auth: app_confirmation received @ schd_ticks 27
+[I] std auth: ADMIN LOGIN SUCCESS: 27
+[I] ../app/main.c: USER CUSTOM CALLBACK RECV EVT ID 3
+[W] std auth: OPERATION 0x00000024 completed.
+[D] : Ble endtime : 51
+[D] : Ble endtime : 50
+[D] : Ble endtime : 49
+[D] : Ble endtime : 48
+[D] : Ble endtime : 47
+[D] : Ble endtime : 46
+[D] : Ble endtime : 45
+[D] : Ble endtime : 44
+[D] : Ble endtime : 43
+[D] : Ble endtime : 42
+[W] mi srv: Disconnect reason 2.
+[D] MIBEACON: m_adv_interval_ms = 200
+[I] ../app/main.c: gecko_evt_le_connection_closed_id reason : 531
+[I] : screen LUT_nDU_4S :19/50
+[D] : Ble endtime : 41
+[I] : screen LUT_nDU_4S :20/50
+[D] : Ble endtime : 40
+[I] : screen LUT_nDU_4S :21/50
+[D] : Ble endtime : 39
+[I] : screen LUT_nDU_4S :22/50
+[D] : Ble endtime : 38
+[I] : screen LUT_nDU_4S :23/50
+[I] : screen LUT_nDU_4S :24/50
+[D] : Ble endtime : 37
+[I] : screen LUT_nDU_4S :25/50
+[D] : Ble endtime : 36
+[I] : screen LUT_nDU_4S :26/50
+[D] : Ble endtime : 35
+[I] : screen LUT_nDU_4S :27/50
+[D] : Ble endtime : 34
+[I] : screen LUT_nDU_4S :28/50
+[D] : Ble endtime : 33
+[I] : screen LUT_nDU_4S :29/50
+[I] : screen LUT_nDU_4S :30/50
+[D] : Ble endtime : 32
+[I] : screen LUT_nDU_4S :31/50
+[D] : Ble endtime : 31
+[I] : screen LUT_nDU_4S :32/50
+[D] : Ble endtime : 30
+[I] : screen LUT_nDU_4S :33/50
+[D] : Ble endtime : 29
+[I] : screen LUT_nDU_4S :34/50
+[D] : Ble endtime : 28
+[I] : screen LUT_nDU_4S :35/50
+[D] : Ble endtime : 27
+[I] : screen LUT_nDU_4S :36/50
+[D] : Ble endtime : 26
+[I] : screen LUT_nDU_4S :37/50
+[D] : Ble endtime : 25
+[I] : screen LUT_nDU_4S :38/50
+[D] : Ble endtime : 24
+[I] : screen LUT_nDU_4S :39/50
+[D] : Ble endtime : 23
+[I] : screen LUT_nDU_4S :40/50
+[D] : Ble endtime : 22
+[I] : screen LUT_nDU_4S :41/50
+[D] : Ble endtime : 21
+[I] : screen LUT_nDU_4S :42/50
+[I] : screen LUT_nDU_4S :43/50
+[D] : Ble endtime : 20
+[I] : screen LUT_nDU_4S :44/50
+[D] : Ble endtime : 19
+[I] : screen LUT_nDU_4S :45/50
+[D] : Ble endtime : 18
+[D] : temp humi start time : 3655469
+08 4C 
+[E] MIBEACON: mibeacon object queue .
+[I] : history data test No.10,status = 0
+[D] : humi miio_ble_property_changed : 269,times : 575
+[I] MIBEACON: send mibeacon obj 0x4C08
+[I] : screen LUT_nDU_4S :46/50
+[D] : Ble endtime : 17
+[I] MIBEACON: no more mibeacon obj.
+[I] MIBEACON: no more mibeacon obj.
+[I] : screen LUT_nDU_4S :47/50
+[D] : Ble endtime : 16
+[I] : screen LUT_nDU_4S :48/50
+[D] : Ble endtime : 15
+[I] : screen LUT_nDU_4S :49/50
+[D] : Ble endtime : 14
+[I] : screen LUT_nDU_4S :0/50
+[D] : Ble endtime : 13
+[D] : Ble endtime : 12
+[I] : screen LUT_nDU_4S :1/50
+[D] : Ble endtime : 11
+[I] : screen LUT_nDU_4S :2/50
+[I] : screen LUT_nDU_4S :3/50
+[D] : Ble endtime : 10
+[I] : screen LUT_nDU_4S :4/50
+[D] : Ble endtime : 9
+[I] : screen LUT_nDU_4S :5/50
+[D] : Ble endtime : 8
+[I] : screen LUT_nDU_4S :6/50
+[D] : Ble endtime : 7
+[I] : screen LUT_nDU_4S :7/50
+[D] : Ble endtime : 6
+[I] : screen LUT_nDU_4S :8/50
+[D] : Ble endtime : 5
+[I] : screen LUT_nDU_4S :9/50
+[D] : Ble endtime : 4
+[I] : screen LUT_nDU_4S :10/50
+[D] : Ble endtime : 3
+[I] : screen LUT_nDU_4S :11/50
+[I] : screen LUT_nDU_4S :12/50
+[D] : Ble endtime : 2
+[I] : screen LUT_nDU_4S :13/50
+[D] : Ble endtime : 1
+[I] : screen LUT_nDU_4S :14/50
+[D] : Ble endtime stop
+[D] : Ble endtime : 0
+[I] : screen LUT_nDU_4S :15/50
+[I] : screen LUT_nDU_4S :16/50
+[I] : screen LUT_nDU_4S :17/50
+[D] : temp humi start time : 5621783
+08 4C 
+[E] MIBEACON: mibeacon object queue .
+[I] : history data test No.10,status = 0
+[D] : humi miio_ble_property_changed : 243,times : 576
+[I] : screen LUT_nDU_4S :18/50
+[I] MIBEACON: send mibeacon obj 0x4C08
+[I] MIBEACON: no more mibeacon obj.
+[I] MIBEACON: no more mibeacon obj.
+[I] MIBEACON: stop advertising.
+[I] : screen LUT_nDU_4S :19/50
+[I] : screen LUT_nDU_4S :20/50
+[D] : temp humi start time : 7588103
+[I] : screen LUT_nDU_4S :21/50
+[D] : temp humi start time : 9554423
+[I] : adc irq results = 3212
+[I] : history data test No.1,status = 0
+[D] : RECORD_RTCTIMER_DATA_TIMER tick_num : 158100
+[I] : screen LUT_nDU_4S :22/50
+[I] : screen LUT_nDU_4S :23/50
+[D] : temp humi start time : 11520743
+01 4C 
+[E] MIBEACON: mibeacon object queue .
+[I] : history data test No.9,status = 0
+[D] : temp miio_ble_property_changed : 241,times : 476
+[I] MIBEACON: send mibeacon obj 0x4C01
+[I] MIBEACON: no more mibeacon obj.
+[I] MIBEACON: no more mibeacon obj.
+[I] MIBEACON: stop advertising.
+[I] : screen LUT_nDU_4S :24/50
+[D] : temp humi start time : 13487063
+[I] : screen LUT_nDU_4S :25/50
+[I] : screen LUT_nDU_4S :26/50
+[D] : temp humi start time : 15453383
+08 4C 
+[E] MIBEACON: mibeacon object queue .
+[I] : history data test No.10,status = 0
+[D] : humi miio_ble_property_changed : 241,times : 577
+[I] MIBEACON: send mibeacon obj 0x4C08
+[I] MIBEACON: no more mibeacon obj.
+[I] MIBEACON: no more mibeacon obj.
+[I] MIBEACON: stop advertising.
+...
