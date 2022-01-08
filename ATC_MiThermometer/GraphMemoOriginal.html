@@ -126,12 +126,14 @@
   <title>Temperature and Humidity</title>
   </head>
   <body>
+	<h1>Temperature and Humidity</h1>
+	<hr>
 	<div style="height: auto; width: auto; text-align: center;">
-	<div id="div_v"	style="height:400px;"></div>
-		<input type="button" id="butConnect" value="Connect">
-		<input type="button" id="butSave" value="Save data.csv"><br>
+		<input type="button" id="butConnect" value="Connect" class="ok">	
+		<input type="button" id="butSave" value="Save data to .csv file">
 		<span id='info'>?</span>
-	<div id='labdiv' style=></div>
+		<div id="div_v"></div>
+		<div id='labdiv'></div>
 	</div>
   </body>
 <script type="text/javascript">
@@ -145,8 +147,12 @@ var start_data = false;
 function log(data) {$('info').innerHTML=data} // {console.log(data);}
 var devcnn = 0;
 function ShowConnect() {
-	if(devcnn==0) $("butConnect").value = "Connect"
-	else $("butConnect").value = "Disconnect";
+	if(devcnn==0)  {
+		$("butConnect").value = "Connect";
+		$("butConnect").classList.remove("danger");} 
+	else {
+		$("butConnect").value = "Disconnect " +  deviceCache?.name; 
+		$("butConnect").classList.add("danger");}
 	$("butConnect").disabled = false;
 }
 $("butConnect").onclick =  function() {
@@ -165,7 +171,7 @@ function ShowGrf() {
 			$("div_v"),
 		    datau,
 			{
-				title: 'Temperature and Humidity',
+				title: 'Data for: ' + deviceCache?.name,
 				showRangeSelector: true,
 				showRoller: true,
 				rollPeriod: 7,

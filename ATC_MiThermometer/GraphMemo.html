@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+  <link rel="stylesheet" href="styles.css">
 <style type="text/css">
 /**
  * Default styles for the dygraphs charting library.
@@ -125,15 +126,22 @@
   <title>Memo Temperature, Humidity and Battery voltage</title>
   </head>
   <body>
+	<h1>Memo Temperature, Humidity and Battery voltage</h1>
+	<hr>
 	<div style="height: auto; width: auto; text-align: center;">
-	<div id="div_v"	style="height:400px;"></div>
-		<input type="button" id="butConnect" value="Connect">
-		<input type="button" id="butSave" value="Save data.csv">
-		Set device time<input type="checkbox" id="setDevTime" checked>
-		Hide old dates<input type="checkbox" id="hideLoDate" checked>
-		Vbat<input type="checkbox" id="thvbat"><br>
+		<input type="button" id="butConnect" value="Connect" class="ok">	
+		<input type="button" id="butSave" value="Save data to .csv file">
+		<br><br>
+		<input type="checkbox" id="setDevTime" checked>
+		<label for="setDevTime">Set device time</label>
+		<input type="checkbox" id="hideLoDate" checked>
+		<label for="hideLoDate">Hide old dates</label>
+		<input type="checkbox" id="thvbat">
+		<label for="thvbat">Show battery voltage</label>
+		<br><br>
 		<span id='info'>?</span>
-	<div id='labdiv' style=></div>
+		<div id="div_v"></div>
+		<div id='labdiv'></div>
 	</div>
   </body>
 <script type="text/javascript">
@@ -143,9 +151,14 @@ var $ = function(id) {
 // Вывод в терминал
 function log(data) {$('info').innerHTML=data} // console.log(data);
 var devcnn = 0;
+var deviceConnected = '';
 function ShowConnect() {
-	if(devcnn==0) $("butConnect").value = "Connect"
-	else $("butConnect").value = "Disconnect";
+	if(devcnn==0)  {
+		$("butConnect").value = "Connect";
+		$("butConnect").classList.remove("danger");} 
+	else {
+		$("butConnect").value = "Disconnect " +  deviceConnected; 
+		$("butConnect").classList.add("danger");} 
 	$("butConnect").disabled = false;
 }
 $("butConnect").onclick =  function() {
@@ -163,7 +176,7 @@ function ShowGrfTH() {
 		$("div_v"),
 	    datau,
 		{
-			title: 'Memo Temperature and Humidity',
+			title: 'Stored data for: ' + deviceCache?.name,
 			showRangeSelector: true,
 			showRoller: true,
 			rollPeriod: 0,
@@ -340,6 +353,7 @@ function requestBluetoothDevice() {
 	then(device => {
 		log('"' + device.name + '" bluetooth device selected');
 		deviceCache = device;
+		deviceConnected = device.name;
 		deviceCache.addEventListener('gattserverdisconnected', handleDisconnection);
 		return deviceCache;
 	});

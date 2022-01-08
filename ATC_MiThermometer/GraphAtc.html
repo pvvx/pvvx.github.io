@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head><meta charset="utf-8">
+  <link rel="stylesheet" href="styles.css">
 <style type="text/css">
 /**
  * Default styles for the dygraphs charting library.
@@ -125,17 +126,20 @@
   <title>ATC Temperature and Humidity</title>
   </head>
   <body>
+	<h1>ATC Temperature and Humidity</h1>
+	<hr>
 	<div style="height: auto; width: auto; text-align: center;">
-	<div id="div_v"	style="height:400px;"></div>
-		<input type="button" id="butConnect" value="Connect">
-		<input type="button" id="butOnOff" value="Stop">
-		<input type="button" id="butClr" value="#">
+		<input type="button" id="butConnect" value="Connect" class="ok">
+		<input type="button" id="butOnOff" value="Stop" disabled="true">
+		<input type="button" id="butClr" value="Clear" disabled="true">
+		<input type="button" id="butSave" value="Save data to .csv file" disabled="true">
+		<br><br>
 		<input type="radio" checked name='rm1'  id="FixEnd"/>
 		<label for="FixEnd">Fixed</label>
 		<input type="radio" name='rm1' id="FixNone"/>
 		<label for="FixNone">Float</label>
-		<input type="button" id="butSave" value="Save data.csv"><br>
-	<div id='labdiv' style=></div>
+		<div id="div_v"></div>
+		<div id='labdiv'></div>
 	</div>
   </body>
 <script type="text/javascript">
@@ -146,6 +150,7 @@ var temp;
 var humi;
 var cur_idx = 0;
 var samples = 20000;
+
 // Вывод в терминал
 function log(data) {console.log(data);}
 var devcnn = 0;
@@ -156,8 +161,18 @@ $("butOnOff").onclick =  function() {
 	else {rend = 1; $("butOnOff").value = "Stop";}
 }
 function ShowConnect() {
-	if(devcnn==0) $("butConnect").value = "Connect"
-	else $("butConnect").value = "Disconnect";
+	if(devcnn==0)  {
+		$("butConnect").value = "Connect";
+		$("butConnect").classList.remove("danger");
+		$("butClr").disabled = true;
+		$("butOnOff").disabled = true;
+		$("butSave").disabled = true;} 
+	else {
+		$("butConnect").value = "Disconnect " +  deviceCache?.name; 
+		$("butConnect").classList.add("danger");
+		$("butClr").disabled = false;
+		$("butOnOff").disabled = false;
+		$("butSave").disabled = false;} 
 	$("butConnect").disabled = false;
 }
 $("butConnect").onclick =  function() {
@@ -185,7 +200,7 @@ function ShowGrf() {
 			$("div_v"),
 		    datau,
 			{
-				title: 'ATC Temperature and Humidity',
+				title: "Live data for: " + deviceCache?.name,
 				showRangeSelector: true,
 				showRoller: true,
 				rollPeriod: 7,
@@ -376,6 +391,7 @@ function connectDeviceAndCacheCharacteristic(device) {
 // Отключиться от подключенного устройства
 function disconnect() {
 	devcnn = 0;
+
 	if (deviceCache) {
 		log('Disconnecting from "' + deviceCache.name + '" bluetooth device...');
 		deviceCache.removeEventListener('gattserverdisconnected', handleDisconnection);
