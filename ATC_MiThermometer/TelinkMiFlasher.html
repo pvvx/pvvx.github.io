@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v3.5</title>
+<title>Telink Flasher v3.6</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -34,7 +34,7 @@ var pincode = {enable: false, value: 0};
 //Mi values
 var miEnabled = false,
 	otaEnabled = false,
-	EnabledCGPR1 = false,
+	EnabledQinping = false,
 	devInfEnabled = false,
 	miConnected = false,
 	devIdEnabled = false,
@@ -1089,11 +1089,11 @@ function doConnect() {
 		devIdEnabled = false;
 		devTest = false;
 		devInfEnabled = false;
-		EnabledCGPR1 = false;
+		EnabledQinping = false;
 		for (var i = 0; i < services.length; i++) {
 			addClog("Services: " + services[i].uuid);
 			if (services[i].uuid == "00010203-0405-0607-0809-0a0b0c0d1912") otaEnabled = true;
-			else if (services[i].uuid == "22210000-554a-4546-5542-46534450464d") EnabledCGPR1 = true;
+			else if (services[i].uuid == "22210000-554a-4546-5542-46534450464d") EnabledQinping = true;
 			else if (services[i].uuid == "ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6") miEnabled = true;
 			else if (services[i].uuid == "00001f10-0000-1000-8000-00805f9b34fb") customEnabled = true;
 			else if (services[i].uuid == "0000181a-0000-1000-8000-00805f9b34fb") devIdEnabled = true;
@@ -1160,8 +1160,9 @@ function detectMi() {
 				customAction();
 			}
 			$("custcfg").innerHTML = s;
-		} else if(EnabledCGPR1) CGPR1_Action();
-		else {
+		} else if(EnabledQinping && bluetoothDevice.name.substr(0,15) == "Qingping Motion") { // no "Qingping Temp"
+		 	CGPR1_Action();
+		} else {
 			setStatus("Connected.")
 			miEnabled = true;
 			miAuthorization();  //	miConnected
@@ -1179,7 +1180,7 @@ function reConnect() {
 }
 
 function skipActivation() {
-	if(EnabledCGPR1)
+	if(EnabledQinping)
 		$("custcfg").innerHTML = '<button type="button" onclick="sendCmdClear();">Clear all settings and reset device (into Qingping mode)</button><br><br>MTimer: <input type="text" id="mtimer" value="?"> ms <button type="button" onclick="getMTimer();">Get</button> <button type="button" onclick="setMTimer();">Set</button><br>';
 	else
 		$("custcfg").innerHTML = '';
