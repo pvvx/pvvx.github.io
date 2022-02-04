@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v3.6</title>
+<title>Telink Flasher v3.7</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -1270,7 +1270,7 @@ function crc16_modbus(buffer) {
 	}
 	return crc;
 };
-
+//-------------
 function hex2ascii(hexx) {
 	var hex = hexx.toString();
 	var str = '';
@@ -1279,19 +1279,65 @@ function hex2ascii(hexx) {
 		str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
 	return str;
 }
+var crc32 = (function() {
+    let table = new Uint32Array(256);
+    for(var i=256; i--;) {
+        let tmp = i;
+        for(let k=8; k--;) {
+            tmp = tmp & 1 ? 0xEDB88320 ^ tmp >>> 1 : tmp >>> 1;
+        }
+        table[i] = tmp;
+    }
+    return function( data ) {
+        let crc = -1;
+        let l = data.length;
+        for(let i=0; i<l; i++) {
+            crc = crc >>> 8 ^ table[ crc & 255 ^ data[i] ];
+        }
+        return (crc >>> 0);
+    };
+})();
+
+function testOTAFirmware(data) {
+	let fsize = data.byteLength;
+	addClog("File size = 0x"+ fsize.toString(16));
+	if (fsize < 0x800 || fsize > 0x20000) {
+		return "Wrong binary Telink OTA firmware size!";
+	}
+	let head = new DataView(data, 0, 0x20);
+	if(head.getUint32(0x08, true) != 0x544c4e4b){
+		return "Incorrect head in Telink OTA binary firmware";
+	}
+	let hsize = head.getUint32(0x18, true);
+	addClog("Size in head = 0x" + hsize.toString(16));
+ 	if((hsize > fsize) || ((hsize & 0x0f) != 4)) { 
+		return "Invalid size pointer in Telink OTA binary firmware!";
+	}
+	let fcrc = new Uint32Array(2);
+	fcrc[0] = crc32(new Uint8Array(data.slice(0, hsize - 4)));
+	let x = new DataView(data, hsize - 4, 4);
+	fcrc[1] = x.getUint32(0, true);
+	addClog("File CRC = 0x" + fcrc[1].toString(16) + ", Check CRC = 0x" + fcrc[0].toString(16));
+	if(fcrc[0] != fcrc[1]) {
+		return "Incorrect CRC in Telink OTA binary firmware!";
+	}
+	return "ok";
+}
 //-------------
 function getFirmwareArray(data, filename) {
-    //addAlog(filename);
-	firmwareArray = bytesToHex(data);
-	if(firmwareArray.substring(16,24)!="4b4e4c54"){
-		let s = "This file is no telink firmware .bin!"
-		alert(s);
+	addAlog("File: " + filename);
+        addClog("File: " + filename);
+	let s = testOTAFirmware(data);
+	if(s != "ok") {
 		addAlog(s);
 		blockCount = 0;
 		firmwareArray = "";
+		$("ldfrmw").innerHTML=s;
+		alert(s);
 		return;
 	}
-	addAlog("File size: " + firmwareArray.length / 2 + " bytes");
+	firmwareArray = bytesToHex(data);
+	addAlog("File size: " + (firmwareArray.length/2).toString(10) + " bytes");
 	if (firmwareArray.length % 32 !== 0) { // pad last block to 16bytes
 		var padHex = "ffffffffffffffffffffffffffffffff";
 		firmwareArray += padHex.substr(0, 32 - firmwareArray.length % 32);
@@ -1299,8 +1345,7 @@ function getFirmwareArray(data, filename) {
 	blockCount = firmwareArray.length / 32;
 	addAlog("Count: " + blockCount); 
 	fwname = filename;
-	let is = '<button type="button" onclick="startDFU();">Start Flashing</button> fw: \''+fwname+'\'';
-	$("ldfrmw").innerHTML = is;
+	$("ldfrmw").innerHTML = '<button type="button" onclick="startDFU();">Start Flashing</button> fw: \''+fwname+'\'';
 }
 
 function ajax_file(filename, fn) {
