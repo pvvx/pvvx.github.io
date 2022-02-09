@@ -18,6 +18,8 @@ Web files for projects:
 
 [XMWSDJ04MMC](https://pvvx.github.io/XMWSDJ04MMC)
 
+[CGDK2](https://pvvx.github.io/CGDK2)
+
 [CGDK2-2](https://pvvx.github.io/CGDK2/CGDK2-2)
 
 ---
