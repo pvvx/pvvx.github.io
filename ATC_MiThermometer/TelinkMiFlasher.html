@@ -11,7 +11,7 @@ var bluetoothDevice, gattServer, Theservice, writeCharacteristic;
 var ServiceMain, writeCharacteristicSpeed = null, nitifiyCharTemp, time_char, enc_main, enc_10, enc_19;
 //Firmware values
 var rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/";
-var otafiles = { loaded: false, version: 52, custom: ['ATC_V34d.bin','MHO_C401_v34.bin', 'CGG1_v34.bin', 'ATC_V34d.bin','ATC_V34d.bin','ATC_V34d.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_CGG1_v1.0.0_0130.bin','Original_OTA_CGG1_v1.0.0_0130.bin','Original_OTA_CGG1_v1.0.0_0130.bin']};
+var otafiles = { loaded: false, version: 52, custom: ['ATC_V34d.bin','MHO_C401_v34.bin', 'CGG1_v34.bin', 'ATC_V34d.bin','ATC_V34d.bin','ATC_V34d.bin','CGDK22_V34.bin','ATC_V34d.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_CGG1_v1.0.0_0130.bin','CGDK22_V34.bin','Original_OTA_CGG1_v1.0.0_0130.bin']};
 var firmwareArray = "",
 	startTime = 0,
 	blockCount = 0;
@@ -583,6 +583,7 @@ function CustomBlkParse(value) {
 		if((hw_id == 0)||(hw_id == 3)||(hw_id == 4)||(hw_id == 5)) s +='LYWSD03MMC';
 		else if(hw_id == 1) s +='MHO-C401';
 		else if(hw_id == 2) s +='CGG1';
+		else if(hw_id == 6) s +='CGDK2-2';
 		else s += 'Unknown'
 		if(devHWstr) s += ' ' + devHWstr;
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
@@ -1696,11 +1697,10 @@ function sendMAC() {
 function UpdExt() {
 	if(ext.enable && $("extbignumb").value) {
 		$("extbignumb").value = (ext.big_number / 10.0).toFixed(1);
-		if((cfg.hver & 0x07) == 2) { // CGG1
+		if(((cfg.hver & 0x07) == 2)||((cfg.hver & 0x07) == 6))  // CGG1 & CGDK2-2
 			$("extsmalnumb").value = (ext.small_number / 10.0).toFixed(1);
-		} else {
+		else
 			$("extsmalnumb").value = ext.small_number.toFixed(0);
-		}
 		$("extvtimed").value = ext.vtime;
 		$("extsmiley").value = ext.flg & 7;
 		$("extpersent").checked = ((ext.flg & 8) !=0 ? 1 : 0);
@@ -1712,7 +1712,7 @@ function UpdExt() {
 function sendExt() {
 	if(ext.enable) {
 		ext.big_number = Math.round(10.0 * parseFloat($("extbignumb").value));
-		if((cfg.hver & 0x07)  == 2) // CGG1
+		if(((cfg.hver & 0x07) == 2)||((cfg.hver & 0x07) == 6)) // CGG1 & CGDK2-2
 			ext.small_number = Math.round(10.0 * parseFloat($("extsmalnumb").value));
 		else
 			ext.small_number = parseInt($("extsmalnumb").value);
@@ -1866,7 +1866,7 @@ function CustomConfig() {
 		is += ' Test: [ <button type="button" onclick="lcd_clock();">Show clock on LCD</button> <button type="button" onclick="lcd_restore();">Repair LCD</button> ]';
 	is += '<br><br><input size="6" title="Big number: -99.5..1999.5" id="extbignumb" maxlength="5" value="123.4">';
 	is += ' <select id="exttmpsmb"><option value="0">&nbsp;&nbsp;</option><option value="1">°Г</option><option value="2">&nbsp;-</option><option value="3">°F</option><option value="4">&nbsp;_</option><option value="5">°C</option><option value="6" selected>&nbsp;=</option><option value="7">°E</option></select>';
-	if((cfg.hver & 0x07)  == 2) {
+	if(((cfg.hver & 0x07)  == 2)||((cfg.hver & 0x07)  == 6)) {
 		is += ' <select id="extsmiley"><option value="0" selected>&nbsp;&nbsp;&nbsp;</option><option value="5">&nbsp;---&nbsp;</option></select>';
 		is += '	<input size="5" title="Small number: -99.5..999.5" id="extsmalnumb" maxlength="5" value="56.7">';
 	}else{
@@ -1880,7 +1880,7 @@ function CustomConfig() {
 	is += '	<button type="button" id="extsend" onclick="sendExt();">Show</button>';
 	ext.enable = true;
 	is += '<br><br>Temperature: <select id="cfg_flg_cf"><option value="0">°C</option><option value="1">°F</option></select><br><br>';
-	if((cfg.hver & 0x07)  == 2)
+	if(((cfg.hver & 0x07)  == 2)||((cfg.hver & 0x07)  == 6)) 
 		is += 'Line: <select id="cfg_smiley"><option value="0" selected>&nbsp;&nbsp;&nbsp;</option><option value="5">&nbsp;---&nbsp;</option></select>';
 	else
 		is += 'Smiley: <select id="cfg_smiley"><option value="0">&nbsp;&nbsp;&nbsp;</option><option value="1">&nbsp;^_^&nbsp;</option><option value="2">&nbsp;-&and;-&nbsp;</option><option value="3">&nbsp;&Delta;&#9651;&Delta;&nbsp;</option><option value="4">(&nbsp;&nbsp;&nbsp;)</option><option value="5">(^_^)</option><option value="6">(-&and;-)</option><option value="7">(&Delta;&#9651;&Delta;)</option></select>';
