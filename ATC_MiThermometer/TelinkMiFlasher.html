@@ -11,7 +11,7 @@ var bluetoothDevice, gattServer, Theservice, writeCharacteristic;
 var ServiceMain, writeCharacteristicSpeed = null, nitifiyCharTemp, time_char, enc_main, enc_10, enc_19;
 //Firmware values
 var rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/";
-var otafiles = { loaded: false, version: 52, custom: ['ATC_V34d.bin','MHO_C401_v34.bin', 'CGG1_v34.bin', 'ATC_V34d.bin','ATC_V34d.bin','ATC_V34d.bin','CGDK22_V34.bin','ATC_V34d.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_CGG1_v1.0.0_0130.bin','CGDK22_V34.bin','Original_OTA_CGG1_v1.0.0_0130.bin']};
+var otafiles = { loaded: false, version: 52, custom: ['ATC_V35f.bin','MHO_C401_v35f.bin', 'CGG1_v35f.bin', 'ATC_V35f.bin','ATC_V35f.bin','ATC_V35fd.bin','CGDK2_V35f.bin','ATC_V35f.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_CGG1_v1.0.0_0130.bin','Original_OTA_CGDK2_v1.1.1_0210.bin','?']};
 var firmwareArray = "",
 	startTime = 0,
 	blockCount = 0;
@@ -437,6 +437,27 @@ function setMTimer() {
 		.then(() => { cus017Chr.writeValue(new Uint8Array([0x01,0x13])); });
 	}
 }
+function CustomQingpingParse(value) {
+	//let value = event.target.value;
+	let cid = value.getUint16(0, true);
+	if(cid == 0x1706) {
+		let temp = value.getInt16(2, true)/10;
+		let humi = value.getInt16(4, true)/10;
+		let s = "Temp: "+temp+"C, Humi: "+humi+"%";
+		$("tempHumiData").innerHTML = '<hr>'+s;
+		addClog(s);
+	} else if(cid == 0x0202) {
+		addLog("Battery: "+ value.getUint8(2) + "%");
+	} else if(cid == 0x0305) {
+		let mt = value.getUint8(2);
+		let lx = value.getUint16(3, true) + (value.getUint8(5) << 16);
+		let tempString = "MotionT: " + mt + ", Illumination: "+ lx + " lx";
+		$("tempHumiData").innerHTML = '<hr>'+tempString;
+		addClog(tempString);
+	} else 
+		addClog("CustNotify100: "+bytesToHex(event.target.value.buffer));
+}
+
 function CGPR1_Action() {
 	addLog("Detected Qingping CGPR1 device");
 	$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>  <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br> <button type="button" onclick="sendCmdClear();">Clear all settings and reset device (into Qingping mode)</button><br><br>MTimer: <input type="text" id="mtimer" value="?"> ms <button type="button" onclick="getMTimer();">Get</button> <button type="button" onclick="setMTimer();">Set</button><br>';
@@ -488,19 +509,27 @@ function CGPR1_Action() {
 			cus100Chr = characteristic;
 			addClog('Found 0x0100 characteristic');
 			return cus100Chr.startNotifications().then(() => {
-				cus100Chr.addEventListener('characteristicvaluechanged', event => {
-					let value = event.target.value;
-					if(value.getUint16(0, true) == 0x0305) {
-						let mt = value.getUint8(2);
-						let lx = value.getUint16(3, true) + (value.getUint8(5) << 16);
-						let tempString = "MotionT: " + mt + ", Illumination: "+ lx + " lx";
-						$("tempHumiData").innerHTML = '<hr>'+tempString;
-						addClog(tempString);
-					} else 
-						addClog("CustNotify100: "+bytesToHex(event.target.value.buffer));
-				});
+				cus100Chr.addEventListener('characteristicvaluechanged', event => CustomQingpingParse(event.target.value));
 				cus017Chr.writeValue(new Uint8Array([0x01,0x02]))
-				.then(() => { cus017Chr.writeValue(new Uint8Array([0x01,0x13])); });
+					.then(() => { cus017Chr.writeValue(new Uint8Array([0x01,0x13])); });
+				miAuthorization();
+			});
+		}).catch(handleError);
+}
+function CGDK2_Action() {
+	addLog("Detected Qingping CGDK2 device");
+	$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>  <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value="">';
+	gattServer.getPrimaryService("22210000-554a-4546-5542-46534450464d")
+		.then(service => {
+			addClog("Found Custom service");
+			cusService = service;
+			return cusService.getCharacteristic(0x0100);
+		}).then(characteristic => {
+			cus100Chr = characteristic;
+			addClog('Found 0x0100 characteristic');
+			return cus100Chr.startNotifications().then(() => {
+				cus100Chr.addEventListener('characteristicvaluechanged', 
+					event => CustomQingpingParse(event.target.value));
 				miAuthorization();
 			});
 		}).catch(handleError);
@@ -1161,8 +1190,11 @@ function detectMi() {
 				customAction();
 			}
 			$("custcfg").innerHTML = s;
-		} else if(EnabledQinping && bluetoothDevice.name.substr(0,15) == "Qingping Motion") { // no "Qingping Temp"
-		 	CGPR1_Action();
+		} else if(EnabledQinping) {
+			if(bluetoothDevice.name.substr(0,15) == "Qingping Motion") // no "Qingping Temp"
+			 	CGPR1_Action();
+			if(bluetoothDevice.name.substr(0,21) == "Qingping Temp RH Lite") 
+			 	CGDK2_Action();
 		} else {
 			setStatus("Connected.")
 			miEnabled = true;

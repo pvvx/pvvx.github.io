@@ -251,6 +251,7 @@ function miAuthorization() {
 			$("known_id").value = hex2ascii(device_new_id.substring(2));
 		} else {
 			addClog("No device known id!");
+			addLog("No device known id!");
 		}
 		mainCharSend("00000300", enc_19).then(function(character) {
 			if(mode_activation == 1) {
@@ -517,7 +518,7 @@ function doConnect() {
 */
 			} else {
 				setStatus('Only XMWSDJ04MMC supported!');
-				addClog('Only XMWSDJ04MMC supported!');
+				addLog('Only XMWSDJ04MMC supported!');
 				disconnect();
 			}
 		});

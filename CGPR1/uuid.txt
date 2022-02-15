@@ -26,7 +26,7 @@ Characteristic Name: 1 - Characteristic Short UUID: 0x1 - User Description: - Ha
 Characteristic Name: 2 - Characteristic Short UUID: 0x2 - User Description: - Handle: 30 - 0x0000001E - Value:
 Characteristic Name: 23 - Characteristic Short UUID: 0x17 - User Description: - Handle: 33 - 0x00000021 - Value:
 Characteristic Name: 24 - Characteristic Short UUID: 0x18 - User Description: - Handle: 35 - 0x00000023 - Value:
-Characteristic Name: 256 - Characteristic Short UUID: 0x100 - User Description: - Handle: 38 - 0x00000026 - Value: 05-03.00-05-00-00
+Characteristic Name: 256 - Characteristic Short UUID: 0x100 - User Description: - Handle: 38 - 0x00000026 - Value: 05-03-00-05-00-00
 
 Service Name: 65173
 Service UU ID: 0000fe95-0000-1000-8000-00805f9b34fb

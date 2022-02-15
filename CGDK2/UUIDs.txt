@@ -1,0 +1,37 @@
+BT Address: 58:2d:34:xx:xx:xx
+
+Service Name: GenericAccess Service UUID: 00001800-0000-1000-8000-00805f9b34fb
+Characteristic Name: DeviceName - Characteristic Short UUID: Ox2A00 Value: Qingping 	
+Characteristic Name: Appearance - Characteristic Short UUID: Ox2A01 Value: 00-00
+Characteristic Name: PeripheralPreferredConnectionParameters - Characteristic Short UUID: 0x2A04 - User Description: - Handle: 6 - 0x00000006 - Value: 14-00-28-00-00-00-E8-03
+
+Service Name: GenericAttribute Service UUID: 00001801-0000-1000-8000-00805f9b34fb
+Characteristic Name: ServiceChanged - Characteristic Short UUID: 0x2A05 Value: 00-00-00-00
+
+Service Name: Devicelnformation Service UUID: 0000180a-0000-1000-8000-00805f9b34fb
+Characteristic Name: ManufacturerNameString - Characteristic Short UUID: 0x2A29 Value: Qingping Technology (Beijing) Co., Ltd
+Characteristic Name: ModelNumberString - Characteristic Short UUID: 0x2A24 Value: CGDK2
+Characteristic Name: FirmwareRevisionString - Characteristic Short UUID: 0x2A26 Value: 2.1.0
+Characteristic Name: SerialNumberString - Characteristic Short UUID: 0x2A25 Value: 582D3412D7F8
+Characteristic Name: HardwareRevisionString - Characteristic Short UUID: 0x2A27 Value: 0001
+
+Service Name: 00010203-0405-0607-0809-0a0b0c0d1912 Service UUID: 00010203-0405-0607-0809-0a0b0c0d1912
+Characteristic Name: 00010203-0405-0607-0809-0a0b0c0d2b12 Value: 00
+
+Service Name: 22210000-554a-4546-5542-46534450464d Service UUID: 22210000-554a-4546-5542-46534450464d
+Characteristic Name: 1 - Characteristic Short UUID: 0x1 Value:
+Characteristic Name: 2 - Characteristic Short UUID: 0x2 Value: 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
+Characteristic Name: 3 - Characteristic Short UUID: 0x3 Value:
+Characteristic Name: 4 - Characteristic Short UUID: 0x4 Value: 1.1.1_0210
+Characteristic Name: 256 - Characteristic Short UUID: 0x100 Value: 06-17-F0-00-3E-01-00
+
+Service Name: 65173 Service UUID: 0000fe95-0000-1000-8000-00805f9b34fb
+Characteristic Name: 4 - Characteristic Short UUID: 0x04 Value: 1.1.1_0210
+Characteristic Name: 16 - Characteristic Short UUID: 0x10 Value: 00-00-00-00
+Characteristic Name: 23 - Characteristic Short UUID: 0x17 Value: 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
+Characteristic Name: 24 - Characteristic Short UUID: 0x18 Value: 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
+Characteristic Name: 25 - Characteristic Short UUID: 0x19 Value: 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
+
+Service Name: 00000100-0065-6c62-2e74-6f696d2e696d Service UUID: 00000100-0065-6c62-2e74-6f696d2e696d
+Characteristic Name: 00000101-0065-6c62-2e74-6f696d2e696d User Description: STDIO_RX Value:
+Characteristic Name: 00000102-0065-6c62-2e74-6f696d2e696d User Description: STDIO_TX Value: 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
