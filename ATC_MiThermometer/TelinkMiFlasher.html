@@ -30,6 +30,7 @@ var cfg = {enable: false, ver: 0, hver: 0, flg: 0, flg2: 0, temp_offset: 0, humi
 var trg = {enable: false, tmp_thr: 2100, hm_thr: 5000, tmp_hst: -1, hm_hst: 0, flg: 0};
 var cmf = {enable: false, tmp_lo: 2100, tmp_hi: 2600, hm_lo: 3000, hm_hi: 6000};
 var dnm = {enable: false, name: ""};
+var devtime = {};
 var pincode = {enable: false, value: 0};
 //Mi values
 var miEnabled = false,
@@ -69,6 +70,7 @@ function resetVariables() {
 	miConnected = false;
 	is_logged_in = false;
 	fwname = '';
+	devtime = {};
 	writeCharacteristicSpeed = null;
 	$("ldfrmw").innerHTML ='';
 	$("custcfg").innerHTML = '';
@@ -768,16 +770,51 @@ function CustomBlkParse(value) {
 			}
 		}
 	} else if(blkid == 0x23 && len >= 4) {
-		let time = value.getUint32(1,true);
-		addClog('Device Time: 0x' + hex(time,8));
-		let dt = new Date(time*1000);
+		devtime.cur = value.getUint32(1,true);
+		addClog('Device Time: 0x' + hex(devtime.cur,8));
+		let dt = new Date(devtime.cur*1000);
 		addAlog('Device Date: '+(dt.toISOString().slice(0, -1)).replace('T',' '));
+		if(len >= 8) {
+			devtime.set = value.getUint32(5,true);
+			addClog('Last clock setting Time: 0x' + hex(devtime.set,8));
+			if(devtime.set > 0x60000000 && 	devtime.step == 1) {
+				devtime.delta = devtime.cur - devtime.set;
+				let time = Date.now()/1000;
+				time -= (new Date()).getTimezoneOffset() * 60;
+				devtime.cmp = time;
+				let odt = new Date(devtime.set*1000);
+				addAlog('Last clock setting: '+(odt.toISOString().slice(0, -1)).replace('T',' '));
+				addAlog('Period: ' + devtime.delta + ' sec');
+				if(devtime.delta >= 10800) {
+					devtime.step = 2;
+					addClog("Send cmd Get StepTimeSec...");
+					let m = new Uint8Array(1);
+					m[0] = 0x24;
+					settingsCharacteristics.writeValue(m).then(_ => {
+						addAlog('Get StepTimeSec...');
+					});
+				} else {
+					devtime.step = 2;
+					addAlog('The minimum period for calculation is 3 hours!');
+				}
+			}
+		}
 	} else if(blkid == 0x24 && len >= 4) {
 		cfg.step_time = value.getUint32(1,true);
 		addAlog('Device StepTimeSec: ' + (cfg.step_time / 16.0).toFixed(3) + ' us');
 		if(cfg.ver >= 0x24 && $("cfg_time_delta")) {
-			$("cfg_time_delta").value = cfg.step_time - 16000000;
-		};
+			if(devtime.step == 2) {
+		                devtime.step = 0;
+				addClog('Delta Time: ' + (devtime.cmp - devtime.set) + ' sec');
+				let k = (devtime.cmp - devtime.set)/devtime.delta;
+				addClog('koef: ' + k);
+				let nstep_time = cfg.step_time * k;
+				$("cfg_time_delta").value = nstep_time - 16000000;
+			} else 
+				$("cfg_time_delta").value = cfg.step_time - 16000000;
+		}
+	let dtim = parseInt($("cfg_time_delta").value);
+
 	} else if(blkid == 0x20 && len >= 8) {
 		cmf.tmp_lo = value.getInt16(1, true); // temp lo
 		cmf.tmp_hi = value.getInt16(3, true); // temp hi
@@ -1643,7 +1680,15 @@ function setDevTime() {
 		addAlog('Send new DevTime ok');
 	});
 }
-
+function calkDeltaTime() {
+	devtime.step = 1;
+	addClog("Send cmd Get DevTime...");
+	blk = new Uint8Array(1);
+	blk[0] = 0x23;
+	settingsCharacteristics.writeValue(blk).then(_ => {
+		addAlog('Get DevTime...');
+	});
+}
 function lcd_restore() {
 	addClog("Send cmd (6100): Restore show LCD");
 	settingsCharacteristics.writeValue(new Uint8Array([0x61, 0])).then(_ => {addClog('Send data ok'); addLog("Send 'Repair LCD' ok");});
@@ -1843,6 +1888,7 @@ function sendDeltaTime() {
 		addClog("Send cmd set delta (24 + delta: '+dtim+' )...");
 		settingsCharacteristics.writeValue(new Uint8Array([0x24, dtim&0xff, (dtim>>8)&0xff])).then(_ => {
 			addAlog('Send delta time ok');
+			setDevTime();
 		});
 	} else {
 		addAlog("Delta time -32767 to 32767!");
@@ -1958,7 +2004,11 @@ function CustomConfig() {
 	if(cfg.ver >= 0x24) {
 		is += '<hr><button type="button" title="Get time clock delta" onclick="sendCustomSetting(&quot;24&quot;);">Get delta time</button>';
 		is += ' Adjust time clock delta: <input size="5" title="-32767..32767, in 1/16 us for 1 sec, default 0" id="cfg_time_delta" maxlength="6" value="0">';
-		is += ' <button type="button" onclick="sendDeltaTime();">Set delta time</button><br>';
+		is += ' <button type="button" onclick="sendDeltaTime();">Set delta time</button>';
+		if(cfg.ver >= 0x36)
+			is += ' <button type="button" title="The minimum period for calculation is 3 hours!" onclick="calkDeltaTime();">Calk delta time</button><br>';
+		else
+			is += '<br>';
 	}
 	if(cfg.ver >= 0x11) {
 		is += '<hr><input size="6" maxlength="6" type="text" title="000000..999999, 6 decimal digits, 000000 - PinCode Disable. Warning: If the PinCode is forgotten - only a hardware flasher!" id="pincode" value="000000"> <button title="Warning: If the PinCode is forgotten - only a hardware flasher!" type="button" onclick="sendPinCode();">!Set PinCode!</button><br>';
