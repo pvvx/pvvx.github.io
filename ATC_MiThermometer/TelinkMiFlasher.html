@@ -777,25 +777,31 @@ function CustomBlkParse(value) {
 		if(len >= 8) {
 			devtime.set = value.getUint32(5,true);
 			addClog('Last clock setting Time: 0x' + hex(devtime.set,8));
-			if(devtime.set > 0x60000000 && 	devtime.step == 1) {
-				devtime.delta = devtime.cur - devtime.set;
-				let time = Date.now()/1000;
-				time -= (new Date()).getTimezoneOffset() * 60;
-				devtime.cmp = time;
-				let odt = new Date(devtime.set*1000);
-				addAlog('Last clock setting: '+(odt.toISOString().slice(0, -1)).replace('T',' '));
-				addAlog('Period: ' + devtime.delta + ' sec');
-				if(devtime.delta >= 10800) {
-					devtime.step = 2;
-					addClog("Send cmd Get StepTimeSec...");
-					let m = new Uint8Array(1);
-					m[0] = 0x24;
-					settingsCharacteristics.writeValue(m).then(_ => {
-						addAlog('Get StepTimeSec...');
-					});
+			if(devtime.step == 1) {
+				if(devtime.set > 0x60000000) {
+					devtime.delta = devtime.cur - devtime.set;
+					let time = Date.now()/1000;
+					time -= (new Date()).getTimezoneOffset() * 60;
+					devtime.cmp = time;
+					let odt = new Date(devtime.set*1000);
+					addAlog('Last clock setting: '+(odt.toISOString().slice(0, -1)).replace('T',' '));
+					addAlog('Period: ' + devtime.delta + ' sec');
+					if(devtime.delta >= 10800) {
+						devtime.step = 2;
+						addClog("Send cmd Get StepTimeSec...");
+						let m = new Uint8Array(1);
+						m[0] = 0x24;
+						settingsCharacteristics.writeValue(m).then(_ => {
+							addAlog('Get StepTimeSec...');
+						});
+					} else {
+						devtime.step = 0;
+						addAlog('The minimum period for calculation is 3 hours!');
+					}
+						
 				} else {
-					devtime.step = 2;
-					addAlog('The minimum period for calculation is 3 hours!');
+					devtime.step = 0;
+					addAlog('The clock must be set beforehand!');
 				}
 			}
 		}
