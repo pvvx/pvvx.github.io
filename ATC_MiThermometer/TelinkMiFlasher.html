@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v3.9</title>
+<title>Telink Flasher v3.9a</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@ var settingsCharacteristics = null;
 // Custom config
 const MAX_RF_TX_Power = false;
 var cfg = {enable: false, ver: 0, hver: 0, flg: 0, flg2: 0, temp_offset: 0, humi_offset: 0, advertising_interval: 32, measure_interval: 5, rf_tx_power: 191, connect_latency: 99, lcd_tint: 55, av_meas_mem: 60, step_time: 16000000};
-var trg = {enable: false, tmp_thr: 2100, hm_thr: 5000, tmp_hst: -1, hm_hst: 0, flg: 0};
+var trg = {enable: false, tmp_thr: 2100, hm_thr: 5000, tmp_hst: -1, hm_hst: 0, flg: 0, rds_type: 0, rds_rpint: 0};
 var cmf = {enable: false, tmp_lo: 2100, tmp_hi: 2600, hm_lo: 3000, hm_hi: 6000};
 var dnm = {enable: false, name: ""};
 var devtime = {};
@@ -634,8 +634,17 @@ function CustomBlkParse(value) {
 		let humi = value.getInt16(5, true) / 100.0;
 		let count = value.getUint16(7, true);
 		let flg = 0;
-		if(len > 8) flg = value.getUint8(9);
-		let s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, Count: '+count+', flg: 0x'+hex(flg,2)+':r'+(flg&1)+'/t'+((flg>>1)&1);
+		let rds_count = 0;
+		if(len > 8) {
+			flg = value.getUint8(9);
+			if(len > 12)
+				rds_count = value.getUint32(10, true);
+		}
+		let s = '';
+		if(cfg.ver >= 0x99)
+			s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', Reed switch counter: '+ rds_count+', flg: 0x'+hex(flg,2)+':r'+(flg&1)+'/t'+((flg>>1)&1);
+		else
+			s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', flg: 0x'+hex(flg,2)+':r'+(flg&1)+'/t'+((flg>>1)&1);
 		$("tempHumiData").innerHTML = s;
 	    addClog(s);
 	} else if(blkid == 0x22 && len >= 7) {
@@ -648,16 +657,27 @@ function CustomBlkParse(value) {
 	} else if(blkid == 0x44 && len >= 7) {
 		trg.tmp_thr = value.getInt16(1, true) / 100.0; // temp threshold
 		trg.hm_thr = value.getInt16(3, true) / 100.0; // humi threshold
+		trg.rds_type = 0;
+		trg.rds_rpint = 0;
 		if(len >= 9) {
 			trg.tmp_hst = value.getInt16(5, true) / 100.0;        // temp hysteresis
 			trg.hm_hst = value.getInt16(7, true) / 100.0;        // humi hysteresis
-			trg.flg = value.getInt8(9);
+			if((len >= 12) && (cfg.ver >= 0x99)) {
+				trg.rds_rpint = value.getUint16(9, true);
+				trg.rds_type = value.getUint8(11);
+				trg.flg = value.getUint8(12);
+			} else
+				trg.flg = value.getUint8(9);
 		} else {
 			trg.tmp_hst = value.getInt8(5) / 10.0;        // temp hysteresis
 			trg.hm_hst = value.getInt8(6) / 10.0;        // humi hysteresis
 			trg.flg = value.getInt8(7);
 		}
-		let s = 'Threshold Temp/Humi: '+trg.tmp_thr.toFixed(2)+'°C/'+trg.hm_thr.toFixed(2)+'%, Hysteresis T/H: '+trg.tmp_hst.toFixed(2)+'°/'+trg.hm_hst.toFixed(2)+'%, flg: 0x'+hex(trg.flg,2);
+		let s = '';
+		if(cfg.ver >= 0x99)
+			s = 'Threshold Temp/Humi: '+trg.tmp_thr.toFixed(2)+'°C/'+trg.hm_thr.toFixed(2)+'%, Hysteresis T/H: '+trg.tmp_hst.toFixed(2)+'°/'+trg.hm_hst.toFixed(2)+'%, Reed switch mode: '+trg.rds_type+', Rs rep.interval: '+trg.rds_rpint+' sec, flg: 0x'+hex(trg.flg,2);
+		else
+			s = 'Threshold Temp/Humi: '+trg.tmp_thr.toFixed(2)+'°C/'+trg.hm_thr.toFixed(2)+'%, Hysteresis T/H: '+trg.tmp_hst.toFixed(2)+'°/'+trg.hm_hst.toFixed(2)+'%, flg: 0x'+hex(trg.flg,2);
 	    addAlog(s); UpdTrg();
 	} else if(blkid >= 0x10 && blkid <= 0x14 && len >= 1) {
 		let lb = value.getUint8(1);
@@ -779,14 +799,18 @@ function CustomBlkParse(value) {
 			addClog('Last clock setting Time: 0x' + hex(devtime.set,8));
 			if(devtime.step == 1) {
 				if(devtime.set > 0x60000000) {
-					devtime.delta = devtime.cur - devtime.set;
+					devtime.period = devtime.cur - devtime.set;
 					let time = Date.now()/1000;
 					time -= (new Date()).getTimezoneOffset() * 60;
 					devtime.cmp = time;
 					let odt = new Date(devtime.set*1000);
 					addAlog('Last clock setting: '+(odt.toISOString().slice(0, -1)).replace('T',' '));
-					addAlog('Period: ' + devtime.delta + ' sec');
-					if(devtime.delta >= 10800) {
+					addAlog('DevPeriod: ' + devtime.period + ' sec');
+					let rp = devtime.cmp - devtime.set;
+					addClog('RealPeriod: ' + rp + ' sec');
+					let delta = rp - devtime.period;
+					addClog('Delta: ' + delta + ' sec');
+					if(rp >= 10800) {
 						devtime.step = 2;
 						addClog("Send cmd Get StepTimeSec...");
 						let m = new Uint8Array(1);
@@ -807,19 +831,20 @@ function CustomBlkParse(value) {
 		}
 	} else if(blkid == 0x24 && len >= 4) {
 		cfg.step_time = value.getUint32(1,true);
+		addClog('step_time: ' + cfg.step_time);
 		addAlog('Device StepTimeSec: ' + (cfg.step_time / 16.0).toFixed(3) + ' us');
-		if(cfg.ver >= 0x24 && $("cfg_time_delta")) {
+		if(cfg.ver >= 0x24 && $("cfg_time_step")) {
 			if(devtime.step == 2) {
 		                devtime.step = 0;
-				addClog('Delta Time: ' + (devtime.cmp - devtime.set) + ' sec');
-				let k = (devtime.cmp - devtime.set)/devtime.delta;
+				let rp = devtime.cmp - devtime.set;
+				let k = devtime.period/rp;
 				addClog('koef: ' + k);
 				let nstep_time = cfg.step_time * k;
-				$("cfg_time_delta").value = nstep_time - 16000000;
+				$("cfg_time_step").value = nstep_time - 16000000;
 			} else 
-				$("cfg_time_delta").value = cfg.step_time - 16000000;
+				$("cfg_time_step").value = cfg.step_time - 16000000;
 		}
-	let dtim = parseInt($("cfg_time_delta").value);
+	let dtim = parseInt($("cfg_time_step").value);
 
 	} else if(blkid == 0x20 && len >= 8) {
 		cmf.tmp_lo = value.getInt16(1, true); // temp lo
@@ -1155,7 +1180,6 @@ function doConnect() {
 		gattServer = server;
 		return gattServer.getPrimaryServices();
 	}).then(services => {
-		//["00010203-0405-0607-0809-0a0b0c0d1912", "ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6", 0x180a, 0xfe95, 0x1f10, 0x181a]
 		miEnabled = false;
 		otaEnabled = false;
 		customEnabled = false;
@@ -1234,7 +1258,7 @@ function detectMi() {
 			}
 			$("custcfg").innerHTML = s;
 		} else if(EnabledQinping) {
-			if(bluetoothDevice.name.substr(0,15) == "Qingping Motion") // no "Qingping Temp"
+			if(bluetoothDevice.name.substr(0,15) == "Qingping Motion")
 			 	CGPR1_Action();
 			if(bluetoothDevice.name.substr(0,21) == "Qingping Temp RH Lite") 
 			 	CGDK2_Action();
@@ -1838,6 +1862,10 @@ function UpdTrg() {
 		$("trg_hm_thr").value =  trg.hm_thr.toFixed(2);
 		$("trg_tmp_hst").value =  trg.tmp_hst.toFixed(2);
 		$("trg_hm_hst").value =  trg.hm_hst.toFixed(2);
+		if(cfg.ver >= 0x99) {
+			$("rds_rpint").value =  trg.rds_rpint;
+			$("rds_type").value =  trg.rds_type & 3;
+		}
 	}
 }
 function setNewTBKey() {
@@ -1877,8 +1905,15 @@ function sendTrg() {
 			trg.tmp_hst = Math.round(100.0 * parseFloat($("trg_tmp_hst").value));
 			trg.hm_hst = Math.round(100.0 * parseFloat($("trg_hm_hst").value));
 			addClog("Send cmd (44 + trg data)...");
-			settingsCharacteristics.writeValue(new Uint8Array([0x44, trg.tmp_thr&0xff, (trg.tmp_thr>>8)&0xff,trg.hm_thr&0xff,(trg.hm_thr>>8)&0xff,trg.tmp_hst&0xff,(trg.tmp_hst>>8)&0xff,trg.hm_hst&0xff,(trg.hm_hst>>8)&0xff])).then(_ => {
+			if(cfg.ver >= 0x99) {
+                                trg.rds_rpint = parseInt($("rds_rpint").value);
+                                trg.rds_type = $("rds_type").value;
+				settingsCharacteristics.writeValue(new Uint8Array([0x44, trg.tmp_thr&0xff, (trg.tmp_thr>>8)&0xff,trg.hm_thr&0xff,(trg.hm_thr>>8)&0xff,trg.tmp_hst&0xff,(trg.tmp_hst>>8)&0xff,trg.hm_hst&0xff,(trg.hm_hst>>8)&0xff,trg.rds_rpint&0xff,(trg.rds_rpint>>8)&0xff,trg.rds_type&3])).then(_ => {
 				addAlog('Send Trg data ok');});
+			} else {
+				settingsCharacteristics.writeValue(new Uint8Array([0x44, trg.tmp_thr&0xff, (trg.tmp_thr>>8)&0xff,trg.hm_thr&0xff,(trg.hm_thr>>8)&0xff,trg.tmp_hst&0xff,(trg.tmp_hst>>8)&0xff,trg.hm_hst&0xff,(trg.hm_hst>>8)&0xff])).then(_ => {
+				addAlog('Send Trg data ok');});
+			}
 		} else {
 			trg.tmp_hst = Math.round(10.0 * parseFloat($("trg_tmp_hst").value));
 			trg.hm_hst = Math.round(10.0 * parseFloat($("trg_hm_hst").value));
@@ -1889,7 +1924,7 @@ function sendTrg() {
 	}
 }
 function sendDeltaTime() {
-	let dtim = parseInt($("cfg_time_delta").value);
+	let dtim = parseInt($("cfg_time_step").value);
 	if(dtim > -32768 && dtim < 32768) {
 		addClog("Send cmd set delta (24 + delta: '+dtim+' )...");
 		settingsCharacteristics.writeValue(new Uint8Array([0x24, dtim&0xff, (dtim>>8)&0xff])).then(_ => {
@@ -1982,7 +2017,7 @@ function CustomConfig() {
 	is += 'Temperature offset: <input size="5" title="-12.7..12.7°, default 0" id="cfg_tmp_off" maxlength="5" value="0"> °';
 	is += ', Humidity offset: <input size="5" title="-12.7..12.7%, default 0" id="cfg_hm_off" maxlength="5" value="0"> %<br><br>';
 	if(cfg.ver >= 0x36)
-		is += 'BT5+ PHY: <input title="Support BT5.0 PHY" type="checkbox" id="bt5_flags">, Channel Selection Algorithm 2: <input title="Channel Selection Algorithm 1 or 2" type="checkbox" id="csa2_flags"><br><br>';
+		is += 'BT5+ PHY: <input title="Support BT5.0 PHY (2Mbps)" type="checkbox" id="bt5_flags">, CSA2: <input title="Channel Selection Algorithm 2 or 1" type="checkbox" id="csa2_flags"><br><br>';
 	is += 'Advertising type: <select id="cfg_flg_adv_type"><option value="0">Atc1441</option><option value="1">Custom</option><option value="2">Mi</option><option value="3" selected>All</option></select>';
 	if(cfg.ver >= 0x30)
 		is += ', AdFlags: <input title="Toggle support for third-party software" type="checkbox" id="adv_flags">';
@@ -2009,7 +2044,7 @@ function CustomConfig() {
 	is += ' <button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>';
 	if(cfg.ver >= 0x24) {
 		is += '<hr><button type="button" title="Get time clock delta" onclick="sendCustomSetting(&quot;24&quot;);">Get delta time</button>';
-		is += ' Adjust time clock delta: <input size="5" title="-32767..32767, in 1/16 us for 1 sec, default 0" id="cfg_time_delta" maxlength="6" value="0">';
+		is += ' Adjust time clock delta: <input size="5" title="-32767..32767, in 1/16 us for 1 sec, default 0" id="cfg_time_step" maxlength="6" value="0">';
 		is += ' <button type="button" onclick="sendDeltaTime();">Set delta time</button>';
 		if(cfg.ver >= 0x36)
 			is += ' <button type="button" title="The minimum period for calculation is 3 hours!" onclick="calkDeltaTime();">Calk delta time</button><br>';
@@ -2034,7 +2069,11 @@ function CustomConfig() {
 	}
 	is += 'Temperature threshold: <input size="8" title="-40.00..80.00°C, default 21.00°C" id="trg_tmp_thr" maxlength="6" value="21.00"> °';
 	is += ', Humidity threshold: <input size="8" title="0..99.00%, default 50.00%" id="trg_hm_thr" maxlength="6" value="50.00"> %<br>';
-	is += ' <button type="button" title="Get/read current setings" onclick="sendCustomSetting(&quot;44&quot;);">Get TRG</button>';
+	if(cfg.ver >= 0x99) {
+		is += 'Reed switch mode: <select id="rds_type"><option value="0" selected>None</option><option value="1">Switch</option><option value="2">Couner</option></select><br>';
+		is += 'RS report interval:<input size="8" title="0 - Off, 1..65535 sec, default 3600 sec" id="rds_rpint" maxlength="6" value="3600"> sec'; 
+	}
+	is += '<hr> <button type="button" title="Get/read current setings" onclick="sendCustomSetting(&quot;44&quot;);">Get TRG</button>';
 	is += ' <button type="button" title="Set/save current setings" onclick="sendTrg();">Set TRG</button>';
 	is += ' <button type="button" title="GPIO_PA5 PullUp 10 kOm. Work only TRG off!" onclick="sendCustomSetting(&quot;4501&quot;);">Set pin to "1"</button>';
 	is += ' <button type="button" title="GPIO_PA5 PullDown 100 kOm. Work only TRG off!" onclick="sendCustomSetting(&quot;4500&quot;);">Set pin to "0"</button><br><hr>';
