@@ -805,17 +805,14 @@ function CustomBlkParse(value) {
 					devtime.cmp = time;
 					let odt = new Date(devtime.set*1000);
 					addAlog('Last clock setting: '+(odt.toISOString().slice(0, -1)).replace('T',' '));
-					addAlog('DevPeriod: ' + devtime.period + ' sec');
+					addAlog('DevPeriod: ' + devtime.period.toFixed(1) + ' sec');
 					let rp = devtime.cmp - devtime.set;
-					addClog('RealPeriod: ' + rp + ' sec');
 					let delta = rp - devtime.period;
-					addClog('Delta: ' + delta + ' sec');
-					if(rp >= 10800) {
+					addClog('RealPeriod: ' + rp.toFixed(1) + ' sec, Delta: ' + delta.toFixed(1) + ' sec');
+					if(rp >= 10800) { // 10800
 						devtime.step = 2;
 						addClog("Send cmd Get StepTimeSec...");
-						let m = new Uint8Array(1);
-						m[0] = 0x24;
-						settingsCharacteristics.writeValue(m).then(_ => {
+						settingsCharacteristics.writeValue(new Uint8Array([0x24])).then(_ => {
 							addAlog('Get StepTimeSec...');
 						});
 					} else {
@@ -841,6 +838,7 @@ function CustomBlkParse(value) {
 				addClog('koef: ' + k);
 				let nstep_time = cfg.step_time * k;
 				$("cfg_time_step").value = nstep_time - 16000000;
+				addClog('step_time: ' + nstep_time.toFixed(1));
 			} else 
 				$("cfg_time_step").value = cfg.step_time - 16000000;
 		}

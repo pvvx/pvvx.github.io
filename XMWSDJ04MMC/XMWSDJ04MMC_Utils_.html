@@ -1,0 +1,683 @@
+<html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XMWSDJ04MMC Utils v1.0</title>
+<script type="text/javascript" src="./core.js"></script>
+</head>
+<body>
+<script>
+//BLE values
+var bluetoothDevice, gattServer;
+//OTA values 
+var otaEnabled = false;
+var otaService, otaCharacteristic;
+//Firmware values
+var firmwareArray = "",
+	startTime = 0,
+	blockCount = 0;
+//Connection values
+var state = 0, connectTrys = 0;
+//Custom 
+var customEnabled;
+var cusService, cus0d7Chr, cus0c1Chr;
+//Mi values
+var miEnabled = false,
+    miConnected = false,
+    mode_activation, devActivated;
+//Mi Service
+var enc_main, enc_10, enc_19; 
+//Login values
+var mi_random_key, mi_random_key_recv, mi_device_info_recv, mi_device_info_send, device_known_id, expected_device_infos, is_logged_in = false;
+//Activation values
+var keypair, is_activated, own_public_key, device_public_key, shared_key, derived_key, mi_write_did;
+var device_new_id = "00626c742e332e31387374" + makeRandomID(6) + "783030"; // 0+"blt.3.18st"+rand[6]+"x00"
+
+var $ = function(id) { return document.getElementById(id);}
+
+function resetVariables() {
+	$("keyReg").disabled = true;
+	$("keyLog").disabled = true;
+	$("keyGet").disabled = true;
+	busy = false;
+	gattServer = null;
+	otaService = null;
+	otaCharacteristic = null;
+	miConnected = false;
+	is_logged_in = false;
+}
+
+function handleError(error) {
+	addLog(error);
+	resetVariables();
+	if (connectTrys < 5) {
+		connectTrys++;
+		addLog("Reconnect " + connectTrys + " from " + 5);
+		doConnect();
+	} else {
+//		addLog("Something went wrong, to many reconnect's");
+		connectTrys = 100;
+	}
+}
+
+function onDisconnected() {
+	addLog('Disconnected.');
+	setStatus('Disconnected.')
+}
+function disconnect() {
+	if (bluetoothDevice != null) bluetoothDevice.gatt.disconnect();
+	resetVariables();
+	connectTrys = 100;
+}
+
+function connect() {
+	var deviceOptions = {
+		optionalServices: ['00010203-0405-0607-0809-0a0b0c0d1912', 'ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6', 'fafafa00-fafa-fafa-fafa-fafafafafafa', 0xfe95],
+		acceptAllDevices: true,
+	};
+	let namePrefix = $('namePrefix').value;
+	if (!document.getElementById('hideUnknown').checked) {
+		deviceOptions.acceptAllDevices = false;
+		deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz0123456789"
+			.split("")
+			.map((x) => ({ namePrefix: x }));
+	} else {
+		if (namePrefix == "") {
+			namePrefix = "XMWSDJ04MMC";
+			$('namePrefix').value = namePrefix;
+		}
+		deviceOptions.acceptAllDevices = false;
+		deviceOptions.filters = namePrefix.split(",")
+			.map((x) => ({ namePrefix: x }));
+	}
+	
+
+	//console.log(deviceOptions)
+
+	if (bluetoothDevice != null) bluetoothDevice.gatt.disconnect();
+	resetVariables();
+	addLog("Searching for devices");
+	connectTrys = 0;
+	navigator.bluetooth.requestDevice(deviceOptions).then(device => {
+		bluetoothDevice = device;
+		bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
+		addLog("Connecting to: " + bluetoothDevice.name);
+		doConnect();
+	}).catch(addLog);
+}
+
+function customAction() {
+	gattServer.getPrimaryService("ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6")
+		.then(service => {
+			addClog("Found Custom service");
+			cusService = service;
+			return cusService.getCharacteristic("ebe0ccd2-7a0a-4b0c-8a1a-6ff2997da3a6");
+		}).then(characteristic => {
+			addClog("Found DeviceActivated characteristic");
+			return characteristic.readValue();
+		}).then(value => {
+			if(value.byteLength > 0) {
+				devActivated = value.getUint8(0);
+				addClog("devActivated =" + devActivated);
+				if(devActivated == 0) {
+					$("showWarn").innerHTML = "To activate:<br>1. Hold the button on the device for 7 seconds.<br>2. Select 'connect'.<br>3. Briefly press the button on the device.<br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>";
+				} else {
+					$("showWarn").innerHTML = "Device activated<br>";
+				}
+			}
+			return cusService.getCharacteristic("ebe0ccc1-7a0a-4b0c-8a1a-6ff2997da3a6");
+		}).then(characteristic => {
+			addClog('Found NotifyTHV characteristic');
+			cus0c1Chr = characteristic;
+			cus0c1Chr.startNotifications().then(() => {
+				cus0c1Chr.addEventListener('characteristicvaluechanged', event => {
+					let value = event.target.value;
+					addClog("NotifyTHV: " + bytesToHex(event.target.value.buffer));
+					if(value.byteLength == 6) {
+						let temp = value.getInt16(0, true)/10;
+						let humi = value.getInt16(2, true)/10;
+						let vbat = value.getInt16(4, true)/1000;
+						let s = "Temp: "+temp+"C, Humi: "+humi+"%, Ubat: "+ vbat + "V";
+						$("showTxt").innerHTML = s;
+						addClog(s);
+					}
+				});
+			});
+			return cusService.getCharacteristic("ebe0ccd7-7a0a-4b0c-8a1a-6ff2997da3a6");
+		}).then(characteristic => {
+			addClog('Found ComfortParameters characteristic');
+			cus0d7Chr = characteristic;
+			return cus0d7Chr.readValue();
+		}).then(value => {
+			if(value.byteLength == 8) {
+				let temphi = value.getInt16(0, true)/10;
+				let templo = value.getInt16(2, true)/10;
+				let humihi = value.getInt16(4, true)/10;
+				let humilo = value.getInt16(6, true)/10;
+				let s = "ComfortParameters: Temp: "+templo+".."+temphi+"C, Humi: "+humilo+".."+humihi+"%";
+				addLog(s);
+			}
+			miAuthorization();
+		}).catch(handleError);
+}
+//<!-- Copyright: Aaron Christophel / Atc1441  <a href="https://atcnetz.de">https://ATCnetz.de</a><br> -->
+//<!-- Added and recoded: pvvx -->
+var tstmtublk = 0;
+function miAuthorization() {
+	tstmtublk = 0;
+	gattServer.getPrimaryService(0xfe95)
+		.then(service => {
+			addClog("Found Mi service");
+			enc_main = service;
+			return enc_main.getCharacteristic(0x0010);
+		}).then(characteristic => {
+			addClog("Found Mi-Authentication characteristic");
+			enc_10 = characteristic;
+			return enc_main.getCharacteristic(0x0019);
+		}).then(characteristic => {
+			addClog('Found Mi-Standard characteristic');
+			enc_19 = characteristic;
+			miConnected = true;
+			return enc_10.startNotifications().then(() => {
+				enc_10.addEventListener('characteristicvaluechanged', event => {
+					var value = bytesToHex(event.target.value.buffer);
+					addClog("Mi-Authentication: " + value);
+					if (value == "11000000") { // REG_SUCCESS
+						setStatus("Registration successfull");
+						addLog("Registration successfull");
+						sendLogin();
+					} else if (value == "12000000") { // REG_FAILED
+						addLog("Registration failed!");
+						setStatus("Registration failed!");
+					} else if (value == "13000000") { // REG_VERIFY_SUCC
+						addLog("Registration verify successfull");
+						setStatus("Registration verify successfull");
+					} else if (value == "14000000") { // REG_VERIFY_FAIL
+						addLog("Registration verify failed!");
+						setStatus("Registration verify failed!");
+					} else if (value == "21000000") { // LOG_SUCCESS
+						is_logged_in = true;
+						addLog("Login successfull");
+						setStatus("Login successfull");
+					} else if (value == "22000000") { // LOG_INVALID_LTMK
+						addLog("Login invalid LMTK!");
+						setStatus("Login invalid LMTK!");
+					} else if (value == "23000000") { // LOG_FAILED
+						addLog("Login Failed!");
+						setStatus("Login Failed!");
+					} else	if (value == "e0000000") { // ERR_NOT_REGISTERED
+						addLog("Not registered!");
+						setStatus("Not registered!");
+					} else	if (value == "e1000000") { // ERR_REGISTERED
+						addLog("Error Registered!");
+						setStatus("Error Registered!");
+					} else	if (value == "e2000000") { // ERR_REPEAT_LOGIN
+						is_logged_in = true;
+						addLog("Repeat login!");
+						setStatus("Repeat login!");
+					} else	if (value == "e3000000") { // ERR_INVALID_OOB
+						addLog("Error: Invalid OOB!");
+						setStatus("Invalid OOB!");
+					}
+				});
+			}).then(characteristic => {
+				return enc_19.startNotifications().then(() => {
+					enc_19.addEventListener('characteristicvaluechanged', event => {
+	var value = bytesToHex(event.target.value.buffer);
+	addClog("Mi-Standard("+state+"): " + value);
+	if (value == "000001050100") {
+		addLog("Received Timeout from device!");
+		addClog("Received Timeout from device!");
+	} else if (value.substring(0, 6) == "000004") {
+		// 000004 00 06 xx
+		if (value.substring(6, 8) == "00") {
+			mainCharSend("00000500" + value.substring(8), enc_19).then(function(character) {
+			// 000005 00 06 xx
+			}).catch(function(err) {updateFail(err);});
+		} else if (value.substring(6, 8) == "01") {
+		// 000004 01 xx..
+			tstmtublk = (value.length - 8) / 2;
+			addClog("tstmtublk = "+tstmtublk);			
+			mainCharSend("00000501" + value.substring(8), enc_19).then(function(character) {
+			// 000005 01 xx..
+				if (mode_activation == 0)
+					setTimeout(sendLogin, 50);
+				else
+					setTimeout(getDevInfo, 50);
+			}).catch(function(err) {tstmtublk = 0; updateFail(err);});
+		}
+	} else if (value.substring(0, 16) == "0000020001000000") {
+	// "0000020001 000000 device_new_id
+		if(value.length > 20) {
+			device_new_id = value.substring(16);
+			$("known_id").value = hex2ascii(device_new_id.substring(2));
+		} else {
+			addClog("No device known id!");
+			addLog("No device known id!");
+		}
+		mainCharSend("00000300", enc_19).then(function(character) {
+			if(mode_activation == 1) {
+				state = 11;
+				setTimeout(startDevLogin(), 50);
+			} else if (mode_activation == 0)
+				setTimeout(sendLogin, 30);
+		}).catch(function(err) { updateFail(err); });
+	} else if (mode_activation == 1) {
+		if (state > 10) {
+			if ((state == 11) && (value == "00000101")) {
+				addClog("send own_public_key");
+				state = 12;
+				mainCharSend("0100" + own_public_key.substring(2), enc_19);
+			} else if ((state == 12) && (value == "00000100")) {
+				state = 13;
+			} else if ((state == 13) && value.substring(0, 8) == "00000203") {
+				// 0000020 device_public_key
+				// addClog("read device_public_key");
+				state = 14;
+				device_public_key = "04" + value.substring(8);
+				mainCharSend("00000300", enc_19).then(function(character) {
+					makeSharedKey("000000000100");
+        			}).catch(function(err) { updateFail(err); });
+			} else if ((state == 14) && (value == "00000101")) {
+				state = 15;
+				mainCharSend("0100" + mi_write_did, enc_19);
+			} else if ((state == 15) && (value == "00000100")) {
+				// REG_VERIFY_SUCC
+				state = 16;
+				addLog("Checking registration ...");
+				setStatus("Checking registration ...");
+				mainCharSend("13000000", enc_10);
+			} else
+				addClog("?");
+		} else if (value == "000000000100") {
+			is_activated = false;
+			mainCharSend("00000101", enc_19);
+		} else if (value == "000000000200") {
+			is_activated = true;
+			mainCharSend("00000101", enc_19);
+		} else if ((is_activated == true) && (state == 0) && value.substring(0, 4) == "0100") {
+			device_known_id = value.substring(4);
+		} else if ((is_activated == true) && (state == 0) && value.substring(0, 4) == "0200") {
+			device_known_id += value.substring(4);
+			device_new_id = device_known_id.substring(8);
+			$("known_id").value = hex2ascii(device_known_id.substring(10));
+			mainCharSend("00000100", enc_19).then(function(character) {
+				setTimeout(startDevLogin(), 50);
+			}).catch(function(err) { updateFail(err); });
+		} else if (value == "010001000000") {
+			mainCharSend("00000100", enc_19).then(function(character) {
+				setTimeout(startDevLogin(), 50);
+			}).catch(function(err) { updateFail(err); });
+		} else if ((state == 1) && (value == "00000101")) {
+			state = 2;
+			mainCharSend("0100" + own_public_key.substring((36 * 0) + 2, (36 * 0) + 36 + 2), enc_19).then(function(character) {
+				mainCharSend("0200" + own_public_key.substring((36 * 1) + 2, (36 * 1) + 36 + 2), enc_19).then(function(character) {
+					mainCharSend("0300" + own_public_key.substring((36 * 2) + 2, (36 * 2) + 36 + 2), enc_19).then(function(character) {
+						mainCharSend("0400" + own_public_key.substring((36 * 3) + 2, (36 * 3) + 36 + 2), enc_19);
+					}).catch(function(err) { updateFail(err); });
+				}).catch(function(err) { updateFail(err); });
+			}).catch(function(err) { updateFail(err); });
+		} else if (value == "000000030400") 
+			mainCharSend("00000101", enc_19);
+		else if ((state == 2) && value.substring(0, 4) == "0100") {
+			device_public_key = "04" + value.substring(4);
+		} else if ((state == 2) && value.substring(0, 4) == "0200") {
+			device_public_key += value.substring(4);
+		} else if ((state == 2) && value.substring(0, 4) == "0300") {
+			device_public_key += value.substring(4);
+		} else if ((state == 2) && value.substring(0, 4) == "0400") {
+			device_public_key += value.substring(4);
+			mainCharSend("00000100", enc_19).then(function(character) {
+				makeSharedKey("000000000200");
+			}).catch(function(err) { updateFail(err); });
+		} else if ((state == 2) && (value == "00000101")) {
+			state = 3;
+			mainCharSend("0100" + mi_write_did.substring(36 * 0, (36 * 0) + 36), enc_19).then(function(character) {
+				mainCharSend("0200" + mi_write_did.substring(36 * 1, (36 * 1) + 36), enc_19);
+			}).catch(function(err) { updateFail(err); });
+		} else if ((state == 3) && (value == "00000100")) {
+			state = 0;
+			mainCharSend("13000000", enc_10); // REG_VERIFY_SUCC ?
+		} else if (value == "12000000") {
+			addLog("Registration failed!");
+			setStatus("Registration failed!");
+		} else if (value == "11000000") {
+			addLog("Registration successfull");
+			setStatus("Registration successfull");
+		}
+	} else { // Mode Login
+		if ((state == 0) && (value == "00000101")) {
+			state = 1;
+			mainCharSend("0100" + mi_random_key, enc_19);
+		} else if ((state == 1) && (value == "0000000d0100")) {
+			state = 2;
+			mainCharSend("00000101", enc_19);
+		} else if ((state == 1) && (value.substring(0, 8) == "0000020d")) {
+		// 0000020d-mi_random_key_recv
+			state = 12;
+			mi_random_key_recv = value.substring(8);
+			do_login_generate("00000300");
+		} else if ((state == 2) && value.substring(0, 4) == "0100") {
+			state = 3;
+			mi_random_key_recv = value.substring(4);
+			do_login_generate("00000100");
+		} else if ((state == 3) && (value == "0000000c0200")) {
+			state = 4;
+			mainCharSend("00000101", enc_19);
+		} else if ((state == 12) && (value.substring(0, 8) == "0000020c")) {
+		// 0000020c-mi_device_info_recv
+			state = 13;
+			mi_device_info_recv = value.substring(8);
+			mainCharSend("00000300", enc_19).then(function(character) {
+				if (expected_device_infos == mi_device_info_recv) {
+					addLog("Received device infos are correct");
+					mainCharSend("0000000a0100", enc_19);
+				} else {
+					addLog("Received device infos are not correct");
+					state = 0;
+					mainCharSend("00000100", enc_19);
+				}
+			}).catch(function(err) {updateFail(err);});
+		} else if ((state == 4) && value.substring(0, 4) == "0100") {
+			state = 5;
+			mi_device_info_recv = value.substring(4);
+		} else if ((state == 5) && value.substring(0, 4) == "0200") {
+			state = 6;
+			mi_device_info_recv += value.substring(4);
+			if (expected_device_infos == mi_device_info_recv)
+				addLog("Received device infos are correct");
+			else
+				addLog("Received device infos are not correct");
+			mainCharSend("00000100", enc_19).then(function(character) {
+				mainCharSend("0000000a0200", enc_19);
+			})
+		} else if ((state == 6) && (value == "00000101")) {
+			state = 7;
+			mainCharSend("0100" + mi_device_info_send.substring(36 * 0, (36 * 0) + 36), enc_19).then(function(character) {
+				mainCharSend("0200" + mi_device_info_send.substring(36 * 1, (36 * 1) + 36), enc_19);
+			}).catch(function(err) { updateFail(err); });
+		} else if ((state == 13) && (value == "00000101")) {
+			state = 14;
+			// 0100-mi_device_info_send
+			mainCharSend("0100" + mi_device_info_send, enc_19).then(function(character) {
+			}).catch(function(err) { updateFail(err); });
+		} else if ((state == 14) && (value == "00000100")) {
+			state = 0;
+			// addClog("Terminating code");
+		}
+	}});
+	addLog("Connected");
+	setStatus("Connected")
+	if(devActivated == 0)
+		$("keyReg").disabled = false;
+	$("keyLog").disabled = false;
+	$("keyGet").disabled = false;
+	});});}).catch(handleError);
+}
+function getDevInfo() {
+	setStatus("Get device info ...");
+	addLog("Get device info ...");
+	mainCharSend("a2000000", enc_10);
+}
+function startDevLogin() {
+	addLog("Start Login ...");
+	setStatus("Start Login ...");
+	mainCharSend("15000000", enc_10).then(function(character) {  
+		doGenerate();
+		if(tstmtublk > 200) 
+			mainCharSend("000000030100", enc_19);
+		else
+			mainCharSend("000000030400", enc_19);
+	}).catch(function(err) {updateFail(err);});
+}
+function keyRegister(flg) {
+	if (miConnected == false) {
+		addLog("Not connected");
+		return;
+	}
+	setStatus("Activating now, please wait...");
+	addLog("Activating now, please wait...");
+	state = 0;
+	mode_activation = 1;
+	if(tstmtublk == 0) 
+		mainCharSend("a4000000", enc_10);
+	else
+		startDevLogin("000000030400");
+}
+function sendLogin() {
+	mi_random_key = bytesToHex(window.crypto.getRandomValues(new Uint8Array(16)));
+	state = 0;
+	mode_activation = 0;
+	mainCharSend("24000000", enc_10).then(function(character) {
+		mainCharSend("0000000b0100", enc_19);
+	}).catch(function(err) {updateFail(err);});
+}
+function keyMiLogin() {
+	let tk = $("mi_token").value;
+	let bk = $("mi_bind_key").value;
+	if(tk.length == 24) {
+		if(bk.length == 32) {
+			setStatus("Login, please wait...");
+			addLog("Login, please wait...");
+			state = 0;
+			mode_activation = 0;
+			if(tstmtublk == 0) 
+				mainCharSend("a4000000", enc_10);
+			else
+				sendLogin();
+		} else {
+			addLog("Bind Key must be 16 hex digits!");
+			setStatus("Bind Key must be 16 hex digits!");
+		}
+	} else {
+		addLog("Mi Token must be 12 hex digits!");
+		setStatus("Mi Token must be 12 hex digits!");
+	}
+}
+function keyGetInfo() {
+	setStatus("Get info, please wait...");
+	addLog("Get info, please wait...");
+	state = 0;
+	mode_activation = 2;
+	if(tstmtublk == 0) 
+		mainCharSend("a4000000", enc_10);
+	else
+		mainCharSend("a2000000", enc_10);
+}
+function doConnect() {
+	bluetoothDevice.gatt.connect().then(server => {
+		addClog("Found GATT server");
+		gattServer = server;
+		gattServer.getPrimaryServices()
+		.then(services => {
+			miEnabled = false;
+			otaEnabled = false;
+			customEnabled = false;
+			enableActivate = 0;
+			for (var i = 0; i < services.length; i++) {
+				console.log("Services: " + services[i].uuid);
+				if (services[i].uuid == "fafafa00-fafa-fafa-fafa-fafafafafafa")	otaEnabled = true;
+				else if (services[i].uuid == "0000fe95-0000-1000-8000-00805f9b34fb") miEnabled = true;
+				else if (services[i].uuid == "ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6") customEnabled = true;
+			}
+			if(otaEnabled && miEnabled && customEnabled) {
+				setStatus("Detected XMWSDJ04MMC Device");
+				customAction();
+/*
+			}
+			if(miEnabled) {
+				miAuthorization();
+				gattServer.getPrimaryService('00010203-0405-0607-0809-0a0b0c0d1912')
+			        .then(service => {
+					addClog("Found OTA service");
+					otaService = service;
+					otaService.getCharacteristic('00010203-0405-0607-0809-0a0b0c0d2b12')
+				.then(characteristic => {
+					addClog("Found OTA characteristic");
+					otaCharacteristic = characteristic;
+					//customAction();
+				})});
+*/
+			} else {
+				setStatus('Only XMWSDJ04MMC supported!');
+				addLog('Only XMWSDJ04MMC supported!');
+				disconnect();
+			}
+		});
+	}).catch(handleError);
+}
+
+function addLog(logTXT) {
+	var time = new Date().toLocaleTimeString();
+	var logString = time + ": " + logTXT;
+	$("result").innerHTML += logString + "<br>";
+}
+
+function addClog(logTXT) {
+	console.log(logTXT);
+}
+
+function clearLog() {
+	$("result").innerHTML = "";
+}
+
+function setStatus(status) {
+	addClog("Status: " + status);
+	$("percent").innerHTML = "Status: " + status;
+}
+
+function updateFail(err) {
+	addLog("Update error: " + err);
+	setStatus("Update error: " + err);
+}
+
+function decimalToHex(d, padding) {
+	var hex = Number(d).toString(16);
+	while (hex.length < 4) {
+		hex = "0" + hex;
+	}
+	return hex;
+}
+
+function hexToBytes(hex) {
+	for (var bytes = [], c = 0; c < hex.length; c += 2)
+		bytes.push(parseInt(hex.substr(c, 2), 16));
+	return new Uint8Array(bytes);
+}
+
+function bytesToHex(data) {
+	return new Uint8Array(data).reduce(function(memo, i) {
+		return memo + ("0" + i.toString(16)).slice(-2);
+	}, "");
+}
+
+function makeRandomID(length) {
+	var result = '';
+	var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	var charactersLength = characters.length;
+	for (var i = 0; i < length; i++) {
+		result += characters.charAt(Math.floor(Math.random() * charactersLength));
+	}
+	return bytesToHex(new TextEncoder("utf-8").encode(result));
+}
+
+function hex2ascii(hexx) {
+	var hex = hexx.toString();
+	var str = '';
+	for (var i = 0;
+		(i < hex.length && hex.substr(i, 2) !== '00'); i += 2)
+		str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+	return str;
+}
+
+var mainCharSend = function(data, characteristic) {
+	return new Promise(function(resolve, reject) {
+		addClog("Send: " + data);
+		characteristic.writeValue(hexToBytes(data)).then(function(character) {
+			resolve("ok");
+		}).catch(function(err) {
+			reject("some error while sending char data");
+		});
+	});
+}
+
+function doGenerate() {
+	window.crypto.subtle.generateKey({
+			name: 'ECDH',
+			namedCurve: 'P-256'
+		}, false, ['deriveKey', 'deriveBits'])
+		.then(own_key => {
+			keypair = own_key;
+			return window.crypto.subtle.exportKey('raw', own_key.publicKey);
+		})
+		.then(ownPublicKeyExported => {
+			own_public_key = bytesToHex(ownPublicKeyExported);
+		})
+		.catch(err => {
+			addLog(err);
+		});
+}
+
+function makeSharedKey(sdata) {
+	window.crypto.subtle.importKey('raw', hexToBytes(device_public_key), {
+			name: 'ECDH',
+			namedCurve: 'P-256'
+		}, true, [])
+		.then(device_key_imported => {
+			return window.crypto.subtle.deriveBits({
+				name: 'ECDH',
+				namedCurve: 'P-256',
+				public: device_key_imported
+			}, keypair.privateKey, 256)
+		})
+		.then(sharedSecret => {
+			shared_key = bytesToHex(sharedSecret);
+			addClog("SharedKey - ok");
+			deriveTheKey();
+			mainCharSend(sdata, enc_19);
+		})
+		.catch(err => {
+			addClog("SharedKey: " +err);
+			addLog("Activating failed! SharedKey: " +err);
+		})
+}
+
+function deriveTheKey() {
+	var derived_key = sjcl.codec.hex.fromBits(sjcl.misc.hkdf(sjcl.codec.hex.toBits(shared_key), 8 * 64, null, "mible-setup-info", sjcl.hash["sha256"]));
+	$("mi_token").value = derived_key.substring(0, 24);
+	$("mi_bind_key").value = derived_key.substring(24, 56);
+	var mi_bind_A = derived_key.substring(56, 88);
+	mi_write_did = sjcl.codec.hex.fromBits(sjcl.mode.ccm.encrypt(new sjcl.cipher.aes(sjcl.codec.hex.toBits(mi_bind_A)), sjcl.codec.hex.toBits(device_new_id), sjcl.codec.hex.toBits("101112131415161718191A1B"), sjcl.codec.hex.toBits("6465764944"), 32));
+}
+function do_login_generate(cdata) {
+	var salt = hexToBytes(mi_random_key + mi_random_key_recv);
+	var salt1 = hexToBytes(mi_random_key_recv + mi_random_key);
+	var derived_key = sjcl.codec.hex.fromBits(sjcl.misc.hkdf(sjcl.codec.hex.toBits($("mi_token").value), 8 * 64, sjcl.codec.hex.toBits(bytesToHex(salt)), "mible-login-info", sjcl.hash["sha256"]));
+	expected_device_infos = sjcl.codec.hex.fromBits(new sjcl.misc.hmac(sjcl.codec.hex.toBits(derived_key.substring(0, 32))).mac(sjcl.codec.hex.toBits(bytesToHex(salt1))));
+	mi_device_info_send = sjcl.codec.hex.fromBits(new sjcl.misc.hmac(sjcl.codec.hex.toBits(derived_key.substring(32, 64))).mac(sjcl.codec.hex.toBits(bytesToHex(salt))));
+	mainCharSend(cdata, enc_19);
+}
+
+</script>
+<big><big>XMWSDJ04MMC Utils</big></big><a href="https://pvvx.github.io/XMWSDJ04MMC">&#9432;</a><br>
+  <hr>	
+  <button type="button" onclick="connect();">Connect</button>
+  <label for="hideUnknown">Hide unknown</label>
+  <input type="checkbox" id="hideUnknown" checked>
+  <button type="button" onclick="disconnect();">Disconnect</button><br>
+  <label for="namePrefix">BLE device name prefix filter(s)</label>
+  <input type="text" id="namePrefix" value="XMWSDJ04MMC"><br>
+  <div id="percent">Status: waiting for you to connect a device</div><hr>
+  <div id="showTxt"></div>
+  <hr>
+  <div id="showWarn"></div>
+  <button type="button" id="keyReg" onclick="keyRegister(1);" disabled>Mi Activation</button>
+  <button type="button" id="keyLog" onclick="keyMiLogin(1);" disabled>Mi Login</button><br><br>
+  Device known id:<br>
+  <input size="40" type="text" id="known_id" value=""> <button type="button" id="keyGet" onclick="keyGetInfo(1);" disabled>Get</button><br>
+  Mi Token:<br>
+  <input size="40" type="text" id="mi_token" value=""><br>
+  Mi Bind Key:<br>
+  <input size="40" type="text" id="mi_bind_key" value=""><br>
+  <hr>
+  <div id="log"><button type="button" onclick="clearLog();">Clear Log</button><br></div>
+ <div id="result"></div>
+</body></html>
