@@ -432,7 +432,7 @@ function InfoReadFlash() {
 function EraseSectorFlash() {
 	if(myCharacteristic) {
 		let faddr = (parseInt($('inputFAddr').value, 16)) & 0xfff000;
-		let blk = new Uint8Array([0xd5, faddr&0xff, (faddr>>8)&0xff, (faddr>>16)&0xff], data);
+		let blk = new Uint8Array([0xd5, faddr&0xff, (faddr>>8)&0xff, (faddr>>16)&0xff]);
 		myCharacteristic.writeValue(blk).then(_ => {
 			addAlog('Send command "Erase Sector Flash at 0x'+hex(faddr,6)+'"...');
 		});
