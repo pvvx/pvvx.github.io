@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v3.9a</title>
+<title>Telink Flasher v4.0</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -11,7 +11,7 @@ var bluetoothDevice, gattServer, Theservice, writeCharacteristic;
 var ServiceMain, writeCharacteristicSpeed = null, nitifiyCharTemp, time_char, enc_main, enc_10, enc_19;
 //Firmware values
 var rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/";
-var otafiles = { loaded: false, version: 52, custom: ['ATC_V35f.bin','MHO_C401_v35f.bin', 'CGG1_v35f.bin', 'ATC_V35f.bin','ATC_V35f.bin','ATC_V35fd.bin','CGDK2_V35f.bin','ATC_V35f.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_CGG1_v1.0.0_0130.bin','Original_OTA_CGDK2_v1.1.1_0210.bin','?']};
+var otafiles = { loaded: false, version: 52, custom: ['ATC_v36c.bin','MHO_C401_v36c.bin', 'CGG1_v36c.bin', 'ATC_v36c.bin','ATC_v36c.bin','ATC_v36c.bin','CGDK2_v36c.bin','ATC_v36c.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_CGG1_v1.0.0_0130.bin','Original_OTA_CGDK2_v1.1.1_0217.bin','?']};
 var firmwareArray = "",
 	startTime = 0,
 	blockCount = 0;
@@ -149,32 +149,65 @@ function connect() {
 
 const tabid2name = [
   { id: 0x01AA, name: "LYWSDCGQ"},
-  { id: 0x0347, name: "CGG1"},
-  { id: 0x0B48, name: "CGG1_ENCRYPTED"},
-  { id: 0x066F, name: "CGDK2"},
   { id: 0x045B, name: "LYWSD02"},
   { id: 0x055B, name: "LYWSD03MMC"},
-  { id: 0x0576, name: "CGD1"},
-  { id: 0x06d3, name: "MHO_C303"},
-  { id: 0x0387, name: "MHO_C401"},
-  { id: 0x02DF, name: "JQJCY01YM"},
+  { id: 0x1203, name: "XMWSDJ04MMC"},
+  { id: 0x04E1, name: "XMMF01JQD"},
   { id: 0x0098, name: "HHCCJCY01"},
   { id: 0x03BC, name: "GCLS002"},
   { id: 0x015D, name: "HHCCPOT002"},
   { id: 0x040A, name: "WX08ZM"},
   { id: 0x098B, name: "MCCGQ02HL"},
-  { id: 0x0083, name: "YM_K1501"},
-  { id: 0x0113, name: "YM_K1501EU"},
-  { id: 0x045C, name: "V_SK152"},
+  { id: 0x0083, name: "YM-K1501"},
+  { id: 0x0113, name: "YM-K1501EU"},
+  { id: 0x045C, name: "V-SK152"},
   { id: 0x0863, name: "SJWS01LM"},
   { id: 0x07F6, name: "MJYD02YL"},
+  { id: 0x03DD, name: "MUE4094RT"},
+  { id: 0x0A8D, name: "RTCGQ02LM"},
+  { id: 0x00DB, name: "MMC-T201-1"},
+  { id: 0x0489, name: "M1S-T500"},
+  { id: 0x0C3C, name: "CGC1"},
+  { id: 0x0576, name: "CGD1"},
+  { id: 0x066F, name: "CGDK2"},
+  { id: 0x0347, name: "CGG1"},
+  { id: 0x0B48, name: "CGG1-ENCRYPTED"},
+  { id: 0x03D6, name: "CGH1"},
   { id: 0x0A83, name: "CGPR1"},
+  { id: 0x06d3, name: "MHO-C303"},
+  { id: 0x0387, name: "MHO-C401"},
+  { id: 0x02DF, name: "JQJCY01YM"},
+  { id: 0x0997, name: "JTYJGD03MI"},
+  { id: 0x1568, name: "K9B-1BTN"},
+  { id: 0x1569, name: "K9B-2BTN"},
+  { id: 0x0DFD, name: "K9B-3BTN"},
+  { id: 0x07BF, name: "YLAI003"},
+  { id: 0x0153, name: "YLYK01YL"},
+  { id: 0x068E, name: "YLYK01YL-FANCL"},
+  { id: 0x04E6, name: "YLYK01YL-VENFAN"},
+  { id: 0x03BF, name: "YLYB01YL-BHFRC"},
+  { id: 0x03B6, name: "YLKG07YL/YLKG08YL"},
+  { id: 0x069E, name: "ZNMS16LM"},
+  { id: 0x069F, name: "ZNMS17LM"},
+  { id: 0x04E9, name: "MJZNMSQ01YD"},
+  { id: 0x098C, name: "XMZNMST02YD"}
 ];
-
 function id2name(dev_id) {
 	let did = tabid2name.map(el => el.id); 
 	let i = did.indexOf(dev_id);
 	if(i != -1) return tabid2name[i].name;
+	return "?";
+}
+const tabDoor2event = [
+  { id: 0, name: "opened"},
+  { id: 1, name: "closed"},
+  { id: 2, name: "closing timeout"},
+  { id: 3, name: "device reset"}
+];
+function Door2event(id) {
+	let did = tabDoor2event.map(el => el.id); 
+	let i = did.indexOf(id);
+	if(i != -1) return tabDoor2event[i].name;
 	return "?";
 }
 
@@ -285,6 +318,11 @@ function catchAdvertisement(device) {
 										let temp = b.getInt16(i, true) / 10.0;
 										let humi = b.getInt16(i+2, true) / 10.0;
 										s += ', Temp: '+temp+'°C Humi: '+humi+'%';
+									}
+									break;
+								case 0x1019:
+									if(data_len == 1) {
+										s += ', Door: '+ Door2event(b.getUint8(i));
 									}
 									break;
 								default:
@@ -641,7 +679,7 @@ function CustomBlkParse(value) {
 				rds_count = value.getUint32(10, true);
 		}
 		let s = '';
-		if(cfg.ver >= 0x99)
+		if(cfg.ver >= 0x37)
 			s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', Reed switch counter: '+ rds_count+', flg: 0x'+hex(flg,2)+':r'+(flg&1)+'/t'+((flg>>1)&1);
 		else
 			s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', flg: 0x'+hex(flg,2)+':r'+(flg&1)+'/t'+((flg>>1)&1);
@@ -662,7 +700,7 @@ function CustomBlkParse(value) {
 		if(len >= 9) {
 			trg.tmp_hst = value.getInt16(5, true) / 100.0;        // temp hysteresis
 			trg.hm_hst = value.getInt16(7, true) / 100.0;        // humi hysteresis
-			if((len >= 12) && (cfg.ver >= 0x99)) {
+			if((len >= 12) && (cfg.ver >= 0x37)) {
 				trg.rds_rpint = value.getUint16(9, true);
 				trg.rds_type = value.getUint8(11);
 				trg.flg = value.getUint8(12);
@@ -674,7 +712,7 @@ function CustomBlkParse(value) {
 			trg.flg = value.getInt8(7);
 		}
 		let s = '';
-		if(cfg.ver >= 0x99)
+		if(cfg.ver >= 0x37)
 			s = 'Threshold Temp/Humi: '+trg.tmp_thr.toFixed(2)+'°C/'+trg.hm_thr.toFixed(2)+'%, Hysteresis T/H: '+trg.tmp_hst.toFixed(2)+'°/'+trg.hm_hst.toFixed(2)+'%, Reed switch mode: '+trg.rds_type+', Rs rep.interval: '+trg.rds_rpint+' sec, flg: 0x'+hex(trg.flg,2);
 		else
 			s = 'Threshold Temp/Humi: '+trg.tmp_thr.toFixed(2)+'°C/'+trg.hm_thr.toFixed(2)+'%, Hysteresis T/H: '+trg.tmp_hst.toFixed(2)+'°/'+trg.hm_hst.toFixed(2)+'%, flg: 0x'+hex(trg.flg,2);
@@ -1860,7 +1898,7 @@ function UpdTrg() {
 		$("trg_hm_thr").value =  trg.hm_thr.toFixed(2);
 		$("trg_tmp_hst").value =  trg.tmp_hst.toFixed(2);
 		$("trg_hm_hst").value =  trg.hm_hst.toFixed(2);
-		if(cfg.ver >= 0x99) {
+		if(cfg.ver >= 0x37) {
 			$("rds_rpint").value =  trg.rds_rpint;
 			$("rds_type").value =  trg.rds_type & 3;
 		}
@@ -1903,14 +1941,14 @@ function sendTrg() {
 			trg.tmp_hst = Math.round(100.0 * parseFloat($("trg_tmp_hst").value));
 			trg.hm_hst = Math.round(100.0 * parseFloat($("trg_hm_hst").value));
 			addClog("Send cmd (44 + trg data)...");
-			if(cfg.ver >= 0x99) {
-                                trg.rds_rpint = parseInt($("rds_rpint").value);
-                                trg.rds_type = $("rds_type").value;
+			if(cfg.ver >= 0x37) {
+				trg.rds_rpint = parseInt($("rds_rpint").value);
+				trg.rds_type = $("rds_type").value;
 				settingsCharacteristics.writeValue(new Uint8Array([0x44, trg.tmp_thr&0xff, (trg.tmp_thr>>8)&0xff,trg.hm_thr&0xff,(trg.hm_thr>>8)&0xff,trg.tmp_hst&0xff,(trg.tmp_hst>>8)&0xff,trg.hm_hst&0xff,(trg.hm_hst>>8)&0xff,trg.rds_rpint&0xff,(trg.rds_rpint>>8)&0xff,trg.rds_type&3])).then(_ => {
-				addAlog('Send Trg data ok');});
+					addAlog('Send Trg data ok');});
 			} else {
 				settingsCharacteristics.writeValue(new Uint8Array([0x44, trg.tmp_thr&0xff, (trg.tmp_thr>>8)&0xff,trg.hm_thr&0xff,(trg.hm_thr>>8)&0xff,trg.tmp_hst&0xff,(trg.tmp_hst>>8)&0xff,trg.hm_hst&0xff,(trg.hm_hst>>8)&0xff])).then(_ => {
-				addAlog('Send Trg data ok');});
+					addAlog('Send Trg data ok');});
 			}
 		} else {
 			trg.tmp_hst = Math.round(10.0 * parseFloat($("trg_tmp_hst").value));
@@ -2067,9 +2105,10 @@ function CustomConfig() {
 	}
 	is += 'Temperature threshold: <input size="8" title="-40.00..80.00°C, default 21.00°C" id="trg_tmp_thr" maxlength="6" value="21.00"> °';
 	is += ', Humidity threshold: <input size="8" title="0..99.00%, default 50.00%" id="trg_hm_thr" maxlength="6" value="50.00"> %<br>';
-	if(cfg.ver >= 0x99) {
-		is += 'Reed switch mode: <select id="rds_type"><option value="0" selected>None</option><option value="1">Switch</option><option value="2">Couner</option></select><br>';
-		is += 'RS report interval:<input size="8" title="0 - Off, 1..65535 sec, default 3600 sec" id="rds_rpint" maxlength="6" value="3600"> sec'; 
+	if(cfg.ver >= 0x37) {
+		is += '<hr>Management GPIO_RS (Reed Switch):<br>';
+		is += 'RS mode: <select id="rds_type"><option value="0" selected>None</option><option value="1">Switch</option><option value="2">Couner</option></select><br>';
+		is += 'RS report interval: <input size="8" title="0 - Off, 1..65535 sec, default 3600 sec" id="rds_rpint" maxlength="6" value="3600"> sec'; 
 	}
 	is += '<hr> <button type="button" title="Get/read current setings" onclick="sendCustomSetting(&quot;44&quot;);">Get TRG</button>';
 	is += ' <button type="button" title="Set/save current setings" onclick="sendTrg();">Set TRG</button>';

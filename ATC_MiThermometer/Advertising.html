@@ -22,7 +22,7 @@ function log(data) {
     document.getElementById("log").innerHTML += logString + "<br>";
 }
 function onButtonClick() {
-  var deviceOptions = { optionalServices: [0xfe95, 0x181a, 0xfdcd, 0xfff9, 0x1f11] };
+  var deviceOptions = { optionalServices: [0xfe95, 0x181a, 0xfdcd, 0xfff9, 0x1f11, 0x2AEB] };
   deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz_#@!*';,.<>{}[]"
 	.split("").map((x) => ({namePrefix:x}));
   log('Requesting Bluetooth Scan...');
@@ -49,31 +49,65 @@ function hex(number, len) {
 }
 const tabid2name = [
   { id: 0x01AA, name: "LYWSDCGQ"},
-  { id: 0x0347, name: "CGG1"},
-  { id: 0x0B48, name: "CGG1_ENCRYPTED"},
-  { id: 0x066F, name: "CGDK2"},
   { id: 0x045B, name: "LYWSD02"},
   { id: 0x055B, name: "LYWSD03MMC"},
-  { id: 0x0576, name: "CGD1"},
-  { id: 0x06d3, name: "MHO_C303"},
-  { id: 0x0387, name: "MHO_C401"},
-  { id: 0x02DF, name: "JQJCY01YM"},
+  { id: 0x1203, name: "XMWSDJ04MMC"},
+  { id: 0x04E1, name: "XMMF01JQD"},
   { id: 0x0098, name: "HHCCJCY01"},
   { id: 0x03BC, name: "GCLS002"},
   { id: 0x015D, name: "HHCCPOT002"},
   { id: 0x040A, name: "WX08ZM"},
   { id: 0x098B, name: "MCCGQ02HL"},
-  { id: 0x0083, name: "YM_K1501"},
-  { id: 0x0113, name: "YM_K1501EU"},
-  { id: 0x045C, name: "V_SK152"},
+  { id: 0x0083, name: "YM-K1501"},
+  { id: 0x0113, name: "YM-K1501EU"},
+  { id: 0x045C, name: "V-SK152"},
   { id: 0x0863, name: "SJWS01LM"},
   { id: 0x07F6, name: "MJYD02YL"},
+  { id: 0x03DD, name: "MUE4094RT"},
+  { id: 0x0A8D, name: "RTCGQ02LM"},
+  { id: 0x00DB, name: "MMC-T201-1"},
+  { id: 0x0489, name: "M1S-T500"},
+  { id: 0x0C3C, name: "CGC1"},
+  { id: 0x0576, name: "CGD1"},
+  { id: 0x066F, name: "CGDK2"},
+  { id: 0x0347, name: "CGG1"},
+  { id: 0x0B48, name: "CGG1-ENCRYPTED"},
+  { id: 0x03D6, name: "CGH1"},
   { id: 0x0A83, name: "CGPR1"},
+  { id: 0x06d3, name: "MHO-C303"},
+  { id: 0x0387, name: "MHO-C401"},
+  { id: 0x02DF, name: "JQJCY01YM"},
+  { id: 0x0997, name: "JTYJGD03MI"},
+  { id: 0x1568, name: "K9B-1BTN"},
+  { id: 0x1569, name: "K9B-2BTN"},
+  { id: 0x0DFD, name: "K9B-3BTN"},
+  { id: 0x07BF, name: "YLAI003"},
+  { id: 0x0153, name: "YLYK01YL"},
+  { id: 0x068E, name: "YLYK01YL-FANCL"},
+  { id: 0x04E6, name: "YLYK01YL-VENFAN"},
+  { id: 0x03BF, name: "YLYB01YL-BHFRC"},
+  { id: 0x03B6, name: "YLKG07YL/YLKG08YL"},
+  { id: 0x069E, name: "ZNMS16LM"},
+  { id: 0x069F, name: "ZNMS17LM"},
+  { id: 0x04E9, name: "MJZNMSQ01YD"},
+  { id: 0x098C, name: "XMZNMST02YD"}
 ];
 function id2name(dev_id) {
 	let did = tabid2name.map(el => el.id); 
 	let i = did.indexOf(dev_id);
 	if(i != -1) return tabid2name[i].name;
+	return "?";
+}
+const tabDoor2event = [
+  { id: 0, name: "opened"},
+  { id: 1, name: "closed"},
+  { id: 2, name: "closing timeout"},
+  { id: 3, name: "device reset"}
+];
+function Door2event(id) {
+	let did = tabDoor2event.map(el => el.id); 
+	let i = did.indexOf(id);
+	if(i != -1) return tabDoor2event[i].name;
 	return "?";
 }
 
@@ -168,11 +202,6 @@ const logDataView = (labelOfDataSource, key, b) => {
 								case 0x100a:
 									if(data_len == 1) {
 										s += ', Bat: '+ b.getUint8(i) + '%';
-										if(b.byteLength >= i + 3 && b.getUint8(i+1) == 2) {
-											let Vbat = b.getUint16(i+2, true);
-											s += ', Vbat: '+ Vbat + ' mV';
-											i += 3;
-										}
 									}
 									break;
 								case 0x100d:
@@ -180,6 +209,11 @@ const logDataView = (labelOfDataSource, key, b) => {
 										let temp = b.getInt16(i, true) / 10.0;
 										let humi = b.getInt16(i+2, true) / 10.0;
 										s += ', Temp: '+temp+'°C Humi: '+humi+'%';
+									}
+									break;
+								case 0x1019:
+									if(data_len == 1) {
+										s += ', Door: '+ Door2event(b.getUint8(i));
 									}
 									break;
 								default:
@@ -310,8 +344,12 @@ const logDataView = (labelOfDataSource, key, b) => {
 			", LightEvent: "+((flg>>5)&1));
 			log(s); 
 		}
+	} else if(key == '00002aeb-0000-1000-8000-00805f9b34fb') {  // Count24
+		if(b.byteLength > 2) {
+			let cnt = (b.getUint16(0, false)<<8) | b.getUint8(2);
+			log("Event - Count 24 bits: " + cnt); 
+		}
 	}
-	
 };
 </script>
 </html>
