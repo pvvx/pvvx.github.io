@@ -126,17 +126,20 @@
   <title>ATC Temperature and Humidity (Dev Point)</title>
   </head>
   <body>
+	<h1>ATC Temperature and Dev Point</h1>
+	<hr>
 	<div style="height: auto; width: auto; text-align: center;">
+	<input type="button" id="butConnect" value="Connect">
+	<input type="button" id="butOnOff" value="Stop">
+	<input type="button" id="butClr" value="Clear">
+	<input type="button" id="butSave" value="Save dat to .csv file">
+	<br><br>
+	<input type="radio" checked name='rm1'  id="FixEnd"/>
+	<label for="FixEnd">Fixed</label>
+	<input type="radio" name='rm1' id="FixNone"/>
+	<label for="FixNone">Float</label>
 	<div id="div_v"	style="height:400px;"></div>
-		<input type="button" id="butConnect" value="Connect">
-		<input type="button" id="butOnOff" value="Stop">
-		<input type="button" id="butClr" value="#">
-		<input type="radio" checked name='rm1'  id="FixEnd"/>
-		<label for="FixEnd">Fixed</label>
-		<input type="radio" name='rm1' id="FixNone"/>
-		<label for="FixNone">Float</label>
-		<input type="button" id="butSave" value="Save data.csv"><br>
-		<span id='info'>?</span>
+	<span id='info'>?</span>
 	<div id='labdiv' style=></div>
 	</div>
   </body>

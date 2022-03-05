@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<html class="telFlasherClass">
+<head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Telink Flasher v3.6</title>
 <script type="text/javascript" src="./core.js"></script>
@@ -72,7 +74,7 @@ function resetVariables() {
 	writeCharacteristicSpeed = null;
 	$("ldfrmw").innerHTML ='';
 	$("custcfg").innerHTML = '';
-	$("tempHumiData").innerHTML = "Temp/Humi: waiting notify for data after connecting";
+	$("tempHumiData").innerHTML = "Temp/Humidity: waiting notify for data after connecting";
 	$("percent").innerHTML = "Status: Disconnected";
 }
 
@@ -411,7 +413,6 @@ function catchAdvertisement(device) {
 		}
 	}
 	addAlog(s);
-	$("MAC").innerHTML = s+'<hr>';
 	abortController.abort();
 	doConnect();
 	})
@@ -439,7 +440,7 @@ function setMTimer() {
 }
 function CGPR1_Action() {
 	addLog("Detected Qingping CGPR1 device");
-	$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>  <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br> <button type="button" onclick="sendCmdClear();">Clear all settings and reset device (into Qingping mode)</button><br><br>MTimer: <input type="text" id="mtimer" value="?"> ms <button type="button" onclick="getMTimer();">Get</button> <button type="button" onclick="setMTimer();">Set</button><br>';
+	$("custcfg").innerHTML = '<hr><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>  <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br> <button type="button" onclick="sendCmdClear();">Clear all settings and reset device (into Qingping mode)</button><br><br>MTimer: <input type="text" id="mtimer" value="?"> ms <button type="button" onclick="getMTimer();">Get</button> <button type="button" onclick="setMTimer();">Set</button><br>';
 	gattServer.getPrimaryService("22210000-554a-4546-5542-46534450464d")
 		.then(service => {
 			addClog("Found Custom service");
@@ -877,7 +878,7 @@ function miAuthorization() {
 						$("ldfile").hidden = false;
 						if(otafiles.loaded && otafiles.version) {
 							if(cfg.hver != null)
-								$("ldfrmw").innerHTML = ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>  <button type="button" onclick="BackToOriginal();">'+ otafiles.original[cfg.hver & 0x07] +'</button>';
+								$("ldfrmw").innerHTML = ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>  <button type="button" onclick="BackToOriginal();">'+ otafiles.original[cfg.hver & 0x07] +'</button><hr>';
 						}
 					} else	if (value == "e3000000") { // ERR_INVALID_OOB
 						addLog("Error: Invalid OOB!");
@@ -1145,7 +1146,7 @@ function detectMi() {
 		if (miEnabled) {
 			addLog("Detected Mi device");
 			setStatus("Detected Mi device");
-			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
+			$("custcfg").innerHTML = '<hr><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
 			miAction();
 		} else if (customEnabled) {
 			let s = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
@@ -1167,7 +1168,7 @@ function detectMi() {
 			miEnabled = true;
 			miAuthorization();  //	miConnected
 			$("ldfile").hidden = false;
-			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>  <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
+			$("custcfg").innerHTML = '<hr><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>  <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
 		}}).catch(handleError);
 }
 
@@ -1181,7 +1182,7 @@ function reConnect() {
 
 function skipActivation() {
 	if(EnabledQinping)
-		$("custcfg").innerHTML = '<button type="button" onclick="sendCmdClear();">Clear all settings and reset device (into Qingping mode)</button><br><br>MTimer: <input type="text" id="mtimer" value="?"> ms <button type="button" onclick="getMTimer();">Get</button> <button type="button" onclick="setMTimer();">Set</button><br>';
+		$("custcfg").innerHTML = '<hr><button type="button" onclick="sendCmdClear();">Clear all settings and reset device (into Qingping mode)</button><br><br>MTimer: <input type="text" id="mtimer" value="?"> ms <button type="button" onclick="getMTimer();">Get</button> <button type="button" onclick="setMTimer();">Set</button><br>';
 	else
 		$("custcfg").innerHTML = '';
 	is_logged_in = true;
@@ -1360,7 +1361,7 @@ function BackToOriginal() {
 
 window.onload = function() {
 	//TODO Test enable -web-platform-features
-	$("MAC").innerHTML= '#enable-experimental-web-platform-features may be needed to read MAC (copy link: <a href=chrome://flags/#enable-experimental-web-platform-features>Chrome<a>, <a href=opera://flags/#enable-experimental-web-platform-features>Opera<a>, <a href=edge://flags/#enable-experimental-web-platform-features>Edge<a>)<hr>';
+	$("MAC").innerHTML= '#enable-experimental-web-platform-features may be needed to read MAC (copy link: <a href=chrome://flags/#enable-experimental-web-platform-features>Chrome<a>, <a href=opera://flags/#enable-experimental-web-platform-features>Opera<a>, <a href=edge://flags/#enable-experimental-web-platform-features>Edge<a>)';
 	addClog("Load index file 'firmware.json'...");
 	ajax_file('firmware.json', getOtaJson);
 	document.querySelector("#file").addEventListener("change", function() {
@@ -1816,7 +1817,7 @@ function CustomConfig() {
 	$("ldfrmw").innerHTML = is;
   }
   if(cfg.ver >= 0x10) {
-	is = 'Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button>';
+	is = '<hr>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button>';
 	if((cfg.hver & 0x07)  == 0)
 		is += ' Test: [ <button type="button" onclick="lcd_clock();">Show clock on LCD</button> <button type="button" onclick="lcd_restore();">Repair LCD</button> ]';
 	is += '<br><br><input size="6" title="Big number: -99.5..1999.5" id="extbignumb" maxlength="5" value="123.4">';
@@ -1967,7 +1968,7 @@ function CustomConfig() {
 	$("cfg_lcd_tint").value = String((cfg.lcd_tint * 0.05).toFixed(2));
 	cfg.enable = true;
   } else
-	$("custcfg").innerHTML = '<br><br>Unsupported device software version! Custom ATC version >= 1.0!<br><br>';
+	$("custcfg").innerHTML = '<hr><br><br>Unsupported device software version! Custom ATC version >= 1.0!<br><br>';
 }
 function hex(number, len) {
 	var str = (number.toString(16)).toUpperCase();
@@ -2021,25 +2022,62 @@ function SendCustomConfig() {
 		addAlog(s);
 		sendCustomSetting('55'+hex(cfg.flg,2)+hex(cfg.flg2,2)+hex(cfg.temp_offset&0xff,2)+hex(cfg.humi_offset&0xff,2)+hex(cfg.advertising_interval,2)+hex(cfg.measure_interval,2)+hex(cfg.rf_tx_power,2)+hex(cfg.connect_latency,2)+hex(cfg.lcd_tint,2)+hex(cfg.hver,2)+hex(cfg.av_meas_mem,2));
 	}
-	$("custcfg").innerHTML = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
+	$("custcfg").innerHTML = '<hr><button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
 }
 
 </script>
-<big><big>Telink Flasher for Mi Thermostat</big></big> <a href="https://github.com/atc1441/ATC_MiThermometer">©</a> <a href="https://github.com/pvvx/ATC_MiThermometer">&#9432;</a><br>
+<h1>Telink Flasher for Mi Thermostat <a style="font-size: 12px" href="https://github.com/atc1441/ATC_MiThermometer">©</a> <a style="font-size: 12px" href="https://github.com/pvvx/ATC_MiThermometer">&#9432;</a></h1>
+<div class="navbar">
+	<div class="container nav-container">
+		<input class="checkbox" type="checkbox" name="" id="">
+		<div class="hamburger-lines">
+		  <span class="line line1"></span>
+		  <span class="line line2"></span>
+		  <span class="line line3"></span>
+		</div>  
+	  <div class="menu-items">
+			<li> Live Data </li>
+			<li><a href="GraphAtc.html">Graph Atc 1</a></li>
+			<li><a href="GraphAtc1.html">Graph Atc 2</a></li>
+			<li><a href="GraphAtc2.html">Graph Atc 3</a></li>
+			<li><a href="Advertising.html">Advertising</a></li>
+			<li>Stored data</li>
+			<li><a href="GraphMemo.html">Memo Graph</a></li>
+			<li><a href="GraphMemoOriginal.html">Original Memo Graph</a></li>
+			<li>Others & Flasher</li>
+			<li><a href="TelinkMiFlasher.html">Flasher</a></li>
+			<li><a href="TelinkOTA.html">OTA Flasher</a></li>
+			<li><a href="DevPoint.html">Dev Point</a></li>
+	  </div>
+	</div>
+</div>
+<hr>
 <!-- Copyright: Aaron Christophel / Atc1441  <a href="https://atcnetz.de">https://ATCnetz.de</a><br> -->
-  <button type="button" onclick="connect();">Connect</button> Get Advertising MAC:<input type="checkbox" title="Web Experimental Features!" id="advmac">
-  <button type="button" onclick="disconnect();">Disconnect</button>
-  <button type="button" onclick="reConnect();">Reconnect</button><br>
+<div style="height: auto; width: auto;">
+  <input type="checkbox" title="Web Experimental Features!" id="advmac">
+  <label for="advmac">Get Advertising MAC</label> 
+  <br>
+  <input type="checkbox" id="hideUnknown" checked>
   <label for="hideUnknown">Hide unknown</label>
-  <input type="checkbox" id="hideUnknown" checked><br>
+  <br>
   <label for="namePrefix">BLE device name prefix filter(s)</label>
   <input type="text" id="namePrefix" value="" placeholder="LYWSD03,ATC"><br>
-  <div id="ldfile" hidden="true">Select Firmware: <input type="file" accept=".bin" id="file"/></div>
-  <div id="ldfrmw"></div>
- <div id="percent">Status: waiting for you to connect a device</div><hr>
- <div id="tempHumiData">Temp/Humi: waiting for data after connecting</div><hr>
+  <button type="button" onclick="connect();">Connect</button> 
+  <button type="button" onclick="disconnect();">Disconnect</button>
+  <button type="button" onclick="reConnect();">Reconnect</button><br>
+ </div> 
+ <div id="percent">Status: waiting for you to connect a device</div>
+ <div id="tempHumiData">Temp/Humidity: waiting for data after connecting</div><hr>
  <div id="MAC"></div>
-  <div id="custcfg"></div><hr>
+ <div>
+	<hr>
+	<div id="ldfile" hidden="true">
+		Select Firmware: <input type="file" accept=".bin" id="file"/></div>
+	<div id="ldfrmw"></div>
+ </div>
+  <div id="custcfg"></div>
+  <hr>
   <button type="button" onclick="clearLog();">Clear Log</button>
- <div id="log"></div>
+  <div id="log"></div> 
+
 </body></html>
