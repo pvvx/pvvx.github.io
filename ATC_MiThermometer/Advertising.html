@@ -24,7 +24,7 @@ function log(data) {
     document.getElementById("log").innerHTML += logString + "<br>";
 }
 function onButtonClick() {
-  var deviceOptions = { optionalServices: [0xfe95, 0x181a, 0x181c, 0xfdcd, 0xfff9, 0x1f11, 0x2aeb] };
+  var deviceOptions = { optionalServices: [0xfe95, 0x181a, 0x181c, 0x181e, 0xfdcd, 0xfff9, 0x1f11, 0x2aeb] };
   deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz_#@!*';,.<>{}[]"
 	.split("").map((x) => ({namePrefix:x}));
   log('Requesting Bluetooth Scan...');
@@ -371,9 +371,11 @@ const logDataView = (labelOfDataSource, key, b) => {
 			let cnt = (b.getUint16(0, false)<<8) | b.getUint8(2);
 			log("Event - Count 24 bits: " + cnt); 
 		}
+	} else if(key == '0000181e-0000-1000-8000-00805f9b34fb') {  // HA BLE
+		log("HA-BLE, Data encrypted"); 
 	} else if(key == '0000181c-0000-1000-8000-00805f9b34fb') {  // HA BLE
 		if(b.byteLength > 1) {
-			let s = " HA-BLE";
+			let s = "HA-BLE";
 			let len = b.byteLength;
 			let i = 0;
 			while(i < len) {
@@ -419,7 +421,7 @@ const logDataView = (labelOfDataSource, key, b) => {
 				i += sl+1;
 			}
 			log(s); 
-	   }
+		}
 	}
 };
 </script>

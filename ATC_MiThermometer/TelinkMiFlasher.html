@@ -117,7 +117,7 @@ function onDisconnected() {
 
 function connect() {
 	var deviceOptions = {
-		optionalServices: ['00010203-0405-0607-0809-0a0b0c0d1912', 'ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6', '22210000-554a-4546-5542-46534450464d', 0x180a, 0x181c, 0xfe95, 0x1f10, 0x1f11, 0x181a, 0xfff9, 0xfdcd, 0xffe0],
+		optionalServices: ['00010203-0405-0607-0809-0a0b0c0d1912', 'ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6', '22210000-554a-4546-5542-46534450464d', 0x180a, 0x181c, 0x181e, 0xfe95, 0x1f10, 0x1f11, 0x181a, 0xfff9, 0xfdcd, 0xffe0],
 		acceptAllDevices: true };
 	const hideUnknown = $('hideUnknown').checked;
 	const namePrefix = $('namePrefix').value;
@@ -519,6 +519,8 @@ function catchAdvertisement(device) {
 				i += sl+1;
 			}
 		}
+	} else if(key == '0000181e-0000-1000-8000-00805f9b34fb') {  // HA BLE
+		s += " HA-BLE, Data encrypted";
 	}
 	addAlog(s);
 	abortController.abort();

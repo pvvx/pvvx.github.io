@@ -2,7 +2,7 @@
 <html>
   <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AdScanerTrg v2.1</title>
+  <title>AdScanerTrg v2.2</title>
   </head>
 <script type="text/javascript">
 var cfg = {tmp_thr:0,tmp_hst:0,hm_thr:0,hm_hst:0,hm_thr:0,hm_hst:0,m_tim:0,flg:0};
@@ -748,49 +748,53 @@ const advDataView = (labelOfDataSource, key, b) => {
 			let cnt = (b.getUint16(0, false)<<8) | b.getUint8(2);
 			log(` ${labelOfDataSource} Data: ` + hex(key,2) + ':' + si + ' Count 24 bits: ' + cnt);
 		}
+	} else if(key == 0x181e) {  // HA BLE
+		log(` ${labelOfDataSource} Data: ` + hex(key,2) + ':' + si + ' HA-BLE, Data encrypted');
 	} else if(key == 0x181c) {  // HA BLE
 		if(b.byteLength > 1) {
-			let s = " HA-BLE";
+			let s = "HA-BLE";
 			let len = b.byteLength;
 			let i = 0;
 			while(i < len) {
-				let sl = b.getUint8(i)&31;
-				if(sl < 1 || i >= len - sl) break;
+				let sl = b.getUint8(i)&31; // size
+				if(i+sl+1 > len) break;
 				let st = b.getUint8(i)>>5;
-				let dd = b.getUint8(i+1);
-				let value = 0;
-				let did = tabHaBle2name.map(el => el.id); 
-				let e = did.indexOf(dd);
-				let f = 1;
-				if(e != -1) f = tabHaBle2name[e].factor;
-				if(st == 0) {
-					if(sl == 2)
-						value = b.getUint8(i+2);
-					else if(sl == 3)
-						value = b.getUint16(i+2, true);
-					else if(sl == 4)
-						value = b.getUint16(i+2, true) + (b.getUint8(i+4)<<16);
-					else if(sl == 5)
-						value = b.getUint32(i+2, true);
-					if(f != 1) 	value = (value*f).toFixed(3);
-				} else if(st == 1) {
-					if(sl == 2)
-						value = b.getInt8(i+2);
-					else if(sl == 3)
-						value = b.getInt16(i+2, true);
-					else if(sl == 4) {
-						value = b.getUnt16(i+2, true) + (b.getUint8(i+4)<<16);
-						if(value >= 0x800000)
-							value = 0x1000000 - value;
-					} else if(sl == 5)
-						value = b.getInt32(i+2, true);
-					if(f != 1) 	value = (value*f).toFixed(3);
-				} else 
-					value = "?";
-				if(e != -1) {
-					s += ', '+tabHaBle2name[e].name+': '+value+tabHaBle2name[e].unit;
-				} else 				
-					s += ', '+st+'?: '+value;
+				if(sl > 0) {
+					let dd = b.getUint8(i+1);
+					let value = 0;
+					let did = tabHaBle2name.map(el => el.id); 
+					let e = did.indexOf(dd);
+					let f = 1;
+					if(e != -1) f = tabHaBle2name[e].factor;
+					if(st == 0) {
+						if(sl == 2)
+							value = b.getUint8(i+2);
+						else if(sl == 3)
+							value = b.getUint16(i+2, true);
+						else if(sl == 4)
+							value = b.getUint16(i+2, true) + (b.getUint8(i+4)<<16);
+						else if(sl == 5)
+							value = b.getUint32(i+2, true);
+						if(f != 1) 	value = (value*f).toFixed(3);
+					} else if(st == 1) {
+						if(sl == 2)
+							value = b.getInt8(i+2);
+						else if(sl == 3)
+							value = b.getInt16(i+2, true);
+						else if(sl == 4) {
+							value = b.getUnt16(i+2, true) + (b.getUint8(i+4)<<16);
+							if(value >= 0x800000)
+								value = 0x1000000 - value;
+						} else if(sl == 5)
+							value = b.getInt32(i+2, true);
+						if(f != 1) 	value = (value*f).toFixed(3);
+					} else 
+						value = "?";
+					if(e != -1) {
+						s += ', '+tabHaBle2name[e].name+': '+value+tabHaBle2name[e].unit;
+					} else 				
+						s += ', '+st+'?: '+value;
+				}
 				i += sl+1;
 			}
 			log(` ${labelOfDataSource} Data: ` + hex(key,2) + ':' + si + s);
