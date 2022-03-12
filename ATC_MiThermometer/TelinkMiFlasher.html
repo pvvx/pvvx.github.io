@@ -628,8 +628,9 @@ function CGPR1_Action() {
 		}).catch(handleError);
 }
 function CGDK2_Action() {
+    cus017Chr = null;
 	addLog("Detected Qingping CGDK2 device");
-	$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>  <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value="">';
+	$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value="">';
 	gattServer.getPrimaryService("22210000-554a-4546-5542-46534450464d")
 		.then(service => {
 			addClog("Found Custom service");
@@ -646,8 +647,9 @@ function CGDK2_Action() {
 		}).catch(handleError);
 }
 function CGG1_Action() {
+    cus017Chr = null;
 	addLog("Detected Qingping CGG1 device");
-	$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>  <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value="">';
+	$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button>  <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value="">';
 	gattServer.getPrimaryService("22210000-554a-4546-5542-46534450464d")
 		.then(service => {
 			addClog("Found Custom service");
@@ -1407,7 +1409,7 @@ function reConnect() {
 }
 
 function skipActivation() {
-	if(EnabledQinping)
+	if(cus017Chr && EnabledQinping)
 		$("custcfg").innerHTML = '<hr><button type="button" onclick="sendCmdClear();">Clear all settings and reset device (into Qingping mode)</button><br><br>MTimer: <input type="text" id="mtimer" value="?"> ms <button type="button" onclick="getMTimer();">Get</button> <button type="button" onclick="setMTimer();">Set</button><br>';
 	else
 		$("custcfg").innerHTML = '';
@@ -2339,7 +2341,7 @@ function SendCustomConfig() {
 }
 
 </script>
-<h1>Telink Flasher for Mi Thermostat <a style="font-size: 12px" href="https://github.com/atc1441/ATC_MiThermometer">©</a> <a style="font-size: 12px" href="https://github.com/pvvx/ATC_MiThermometer">&#9432;</a></h1>
+<h1>Telink Flasher for Mi Thermostat</h1>
 <div class="navbar">
 	<div class="container nav-container">
 		<input class="checkbox" type="checkbox" name="" id="">
@@ -2349,18 +2351,22 @@ function SendCustomConfig() {
 		  <span class="line line3"></span>
 		</div>  
 	  <div class="menu-items">
+
+			<li> GitHub </li>
+			<li><a style="font-size: 12px" href="https://github.com/atc1441/ATC_MiThermometer">©</a> <a style="font-size: 12px" href="https://github.com/pvvx/ATC_MiThermometer">&#9432;</a></li>
 			<li> Live Data </li>
 			<li><a href="GraphAtc.html">Graph Atc 1</a></li>
 			<li><a href="GraphAtc1.html">Graph Atc 2</a></li>
 			<li><a href="GraphAtc2.html">Graph Atc 3</a></li>
+			<li><a href="DevPoint.html">Dev Point</a></li>
 			<li><a href="Advertising.html">Advertising</a></li>
 			<li>Stored data</li>
 			<li><a href="GraphMemo.html">Memo Graph</a></li>
-			<li><a href="GraphMemoOriginal.html">Original Memo Graph</a></li>
+			<li><a href="GraphMemoOriginal.html">LYWSD03MMC Memo Graph </a></li>
 			<li>Others & Flasher</li>
 			<li><a href="TelinkMiFlasher.html">Flasher</a></li>
 			<li><a href="TelinkOTA.html">OTA Flasher</a></li>
-			<li><a href="DevPoint.html">Dev Point</a></li>
+			<li><a href="USBCOMFlashTx.html">Windows USB-COM Flasher</a></li>
 	  </div>
 	</div>
 </div>
