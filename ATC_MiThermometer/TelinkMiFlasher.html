@@ -1634,7 +1634,7 @@ function BackToOriginal() {
 
 window.onload = function() {
 	//TODO Test enable -web-platform-features
-	$("MAC").innerHTML= '#enable-experimental-web-platform-features may be needed to read MAC (copy link: <a href=chrome://flags/#enable-experimental-web-platform-features>Chrome<a>, <a href=opera://flags/#enable-experimental-web-platform-features>Opera<a>, <a href=edge://flags/#enable-experimental-web-platform-features>Edge<a>)';
+	$("MAC").innerHTML= '<span>&#8505;</span>  #enable-experimental-web-platform-features may be needed to read MAC (copy link: <a href=chrome://flags/#enable-experimental-web-platform-features>Chrome<a>, <a href=opera://flags/#enable-experimental-web-platform-features>Opera<a>, <a href=edge://flags/#enable-experimental-web-platform-features>Edge<a>)';
 	addClog("Load index file 'firmware.json'...");
 	ajax_file('firmware.json', getOtaJson);
 	document.querySelector("#file").addEventListener("change", function() {

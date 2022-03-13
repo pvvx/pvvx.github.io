@@ -78,6 +78,7 @@ div#log {
 
 div#MAC {
   font-style: italic;
+  font-size: smaller;
   margin: 8px;
 }
 
@@ -195,9 +196,9 @@ select {
 
 .navbar .menu-items {
   position: relative;
-  padding-top: 60px;
+  padding-top: 55px;
   box-shadow: 5px 3px 13px 0px rgb(204 204 204 / 80%);
-  height: 100vh;
+  min-height: 100vh;
   width: 60%;
   transform: translate(-150%);
   display: flex;
@@ -209,7 +210,7 @@ select {
 }
 
 .navbar .menu-items li {
-  margin-bottom: 1.2rem;
+  margin-bottom: 12px;
   font-size: 1.2rem;
   font-weight: 800;
 }
