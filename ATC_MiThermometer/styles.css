@@ -89,7 +89,7 @@ div#percent {
   background-color: #eef6fc;
   padding-top: 5px;
   padding-bottom: 5px;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 div#tempHumiData{
@@ -112,7 +112,6 @@ select {
 
 .navbar {
   width: 95%;
-  box-shadow: 0 1px 4px rgb(146 161 176 / 15%);
   position: absolute;
   top: 0;
 }
