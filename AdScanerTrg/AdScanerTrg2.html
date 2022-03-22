@@ -671,7 +671,7 @@ const advDataView = (labelOfDataSource, key, b) => {
 			let cnt = b.getUint8(13);
 			let flg = b.getUint8(14);
 			let s = 'MAC: '+hex(buf[5],2)+hex(buf[4],2)+hex(buf[3],2)+hex(buf[2],2)+hex(buf[1],2)+hex(buf[0],2);
-			s += ', Bat: '+bat+'%, Vbat: '+vbat+' mV , Temp: '+temp+'°C, Humi: '+humi+'%, Count: '+cnt+', Flg: 0x'+hex(flg,2)+' rds('+(flg&1)+')/trg('+((flg>>1)&1)+')';
+			s += ', Bat: '+bat+'%, Vbat: '+vbat+' mV , Temp: '+temp+'°C, Humi: '+humi+'%, MsgId: '+cnt+', Flg: 0x'+hex(flg,2)+' rds('+(flg&1)+')/trg('+((flg>>1)&1)+')';
 			log(` ${labelOfDataSource} Data: ` + hex(key,2) + ':' + si + ' ' + s);}
 		else if(b.byteLength == 13) { // atc1441
 			// A4 C1 38 56 58 70 01 0A 18 48 0B 25 70
@@ -681,7 +681,7 @@ const advDataView = (labelOfDataSource, key, b) => {
 			let vbat = b.getUint16(10, false);
 			let cnt = b.getUint8(12);
 			let s = 'MAC: '+hex(buf[0],2)+hex(buf[1],2)+hex(buf[2],2)+hex(buf[3],2)+hex(buf[4],2)+hex(buf[5],2);
-			s += ', Bat: '+bat+'%, Vbat: '+vbat+' mV, Temp: '+temp+'°C, Humi: '+humi+'%, Count: '+cnt;
+			s += ', Bat: '+bat+'%, Vbat: '+vbat+' mV, Temp: '+temp+'°C, Humi: '+humi+'%, MsgId: '+cnt;
 			log(` ${labelOfDataSource} Data: ` + hex(key,2) + ':' + si + ' ' + s);}
 		else if(b.byteLength == 11) { // pvvx encrypted
 			// 35 B746 94BF 96 90 EF1ACFA9
@@ -752,7 +752,7 @@ const advDataView = (labelOfDataSource, key, b) => {
 		log(` ${labelOfDataSource} Data: ` + hex(key,2) + ':' + si + ' HA-BLE, Data encrypted');
 	} else if(key == 0x181c) {  // HA BLE
 		if(b.byteLength > 1) {
-			let s = "HA-BLE";
+			let s = ' HA-BLE';
 			let len = b.byteLength;
 			let i = 0;
 			while(i < len) {
