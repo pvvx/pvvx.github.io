@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v4.2</title>
+<title>Telink Flasher v4.3</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -13,7 +13,7 @@ var bluetoothDevice, gattServer, Theservice, writeCharacteristic;
 var ServiceMain, writeCharacteristicSpeed = null, nitifiyCharTemp, time_char, enc_main, enc_10, enc_19;
 //Firmware values
 var rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/";
-var otafiles = { loaded: false, version: 52, custom: ['ATC_v36c.bin','MHO_C401_v36c.bin', 'CGG1_v36c.bin', 'ATC_v36c.bin','ATC_v36c.bin','ATC_v36c.bin','CGDK2_v36c.bin','ATC_v36c.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_CGG1_v1.0.0_0130.bin','Original_OTA_CGDK2_v1.1.1_0217.bin','?']};
+var otafiles = { loaded: false, version: 52, custom: ['ATC_v37d.bin','MHO_C401_v37c.bin', 'CGG1_v37c.bin', 'ATC_v37d.bin','ATC_v37d.bin','ATC_v37d.bin','CGDK2_v37c.bin','ATC_v37c.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_CGG1_v1.0.0_0130.bin','Original_OTA_CGDK2_v1.1.1_0217.bin','?']};
 var firmwareArray = "",
 	startTime = 0,
 	blockCount = 0;
@@ -1043,6 +1043,18 @@ function getTestCharacteristic() {
 	}).catch(handleError);
 }
 
+function menuUpgrade() {
+	let is = "";
+	$("ldfile").hidden = false;
+	if(otafiles.loaded && otafiles.version && cfg.hver != null)
+		is = '<button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button> <button type="button" onclick="BackToOriginal();">' + otafiles.original[cfg.hver & 0x07] +'</button>';
+	if(fwname != "" && firmwareArray != "") {
+		if(is != "") is += '<br>';
+		is += '<button type="button" onclick="startDFU();">Start Flashing</button> fw: \''+fwname+'\'';
+	}
+	$("ldfrmw").innerHTML = is;
+}
+
 function miAuthorization() {
 	gattServer.getPrimaryService(0xfe95)
 		.then(service => {
@@ -1078,11 +1090,7 @@ function miAuthorization() {
 						is_logged_in = true;
 						addLog("Login successfull");
 						setStatus("Login successfull");
-						$("ldfile").hidden = false;
-						if(otafiles.loaded && otafiles.version) {
-							if(cfg.hver != null)
-								$("ldfrmw").innerHTML = ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>  <button type="button" onclick="BackToOriginal();">'+ otafiles.original[cfg.hver & 0x07] +'</button>';
-						}
+						menuUpgrade();
 					} else if (value == "22000000") { // LOG_INVALID_LTMK
 						addLog("Login invalid LMTK!");
 						setStatus("Login invalid LMTK!");
@@ -1099,11 +1107,7 @@ function miAuthorization() {
 						is_logged_in = true;
 						addLog("Repeat login!");
 						setStatus("Repeat login!");
-						$("ldfile").hidden = false;
-						if(otafiles.loaded && otafiles.version) {
-							if(cfg.hver != null)
-								$("ldfrmw").innerHTML = ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>  <button type="button" onclick="BackToOriginal();">'+ otafiles.original[cfg.hver & 0x07] +'</button><hr>';
-						}
+						menuUpgrade();
 					} else	if (value == "e3000000") { // ERR_INVALID_OOB
 						addLog("Error: Invalid OOB!");
 						setStatus("Invalid OOB!");
@@ -1555,12 +1559,13 @@ function testOTAFirmware(data) {
 //-------------
 function getFirmwareArray(data, filename) {
 	addAlog("File: " + filename);
-        addClog("File: " + filename);
+    addClog("File: " + filename);
 	let s = testOTAFirmware(data);
 	if(s != "ok") {
 		addAlog(s);
 		blockCount = 0;
 		firmwareArray = "";
+		fwname = "";
 		$("ldfrmw").innerHTML=s;
 		alert(s);
 		return;
@@ -1574,7 +1579,7 @@ function getFirmwareArray(data, filename) {
 	blockCount = firmwareArray.length / 32;
 	addAlog("Count: " + blockCount); 
 	fwname = filename;
-	$("ldfrmw").innerHTML = '<button type="button" onclick="startDFU();">Start Flashing</button> fw: \''+fwname+'\'';
+	menuUpgrade();
 }
 
 function ajax_file(filename, fn) {
@@ -2100,14 +2105,8 @@ function setBKey() {
 	addLog("BindKey must be 16 hex digits!")
 }
 function CustomConfig() {
+  menuUpgrade();
   let is = '';
-  if(otafiles.loaded && fwname == '') {
-	if(otafiles.version)
-		is += ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>';
-	if(otafiles.original.length > (cfg.hver & 0x07))
-		is += ' <button type="button" onclick="BackToOriginal();">'+ otafiles.original[cfg.hver & 0x07] +'</button> ';
-	$("ldfrmw").innerHTML = is;
-  }
   if(cfg.ver >= 0x10) {
 	is = '<hr>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button>';
 	if((cfg.hver & 0x07)  == 0)

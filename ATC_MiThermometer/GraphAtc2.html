@@ -396,7 +396,7 @@ function connectDeviceAndCacheCharacteristic(device) {
 				if(value.getUint8(0) == 0x33) {
 					vbat = value.getUint16(1, true);
 					temp = value.getInt16(3, true) / 100.0;
-					humi = value.getInt16(5, true) / 100.0;
+					humi = value.getUint16(5, true) / 100.0;
 					let count = value.getUint8(7);
 					let s = 'Vbat: '+vbat+' mV , Temp: '+temp+'°C, Humi: '+humi+'%, Count: '+count;
 					$('info').innerHTML = s;
