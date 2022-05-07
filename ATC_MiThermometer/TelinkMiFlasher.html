@@ -503,7 +503,7 @@ function catchAdvertisement(device) {
 						else if(sl == 3)
 							value = b.getInt16(i+2, true);
 						else if(sl == 4) {
-							value = b.getUnt16(i+2, true) | (b.getInt8(i+4)<<16);
+							value = b.getUint16(i+2, true) | (b.getInt8(i+4)<<16);
 						} else if(sl == 5)
 							value = b.getInt32(i+2, true);
 						if(f != 1) 	value = (value*f).toFixed(3);
