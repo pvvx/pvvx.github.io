@@ -10,6 +10,8 @@ Web files for projects:
 
 ---
 
+[CGG1-M-2022](https://pvvx.github.io/CGG1_2022)
+
 [CGG1-old](https://pvvx.github.io/CGG1_old)
 
 [LYWSD02](https://pvvx.github.io/LYWSD02)
