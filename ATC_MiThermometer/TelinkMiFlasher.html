@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v4.3</title>
+<title>Telink Flasher v4.4</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -13,7 +13,7 @@ var bluetoothDevice, gattServer, Theservice, writeCharacteristic;
 var ServiceMain, writeCharacteristicSpeed = null, nitifiyCharTemp, time_char, enc_main, enc_10, enc_19;
 //Firmware values
 var rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/";
-var otafiles = { loaded: false, version: 52, custom: ['ATC_v37d.bin','MHO_C401_v37c.bin', 'CGG1_v37c.bin', 'ATC_v37d.bin','ATC_v37d.bin','ATC_v37d.bin','CGDK2_v37c.bin','ATC_v37c.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_CGG1_v1.0.0_0130.bin','Original_OTA_CGDK2_v1.1.1_0217.bin','?']};
+var otafiles = { loaded: false, version: 52, custom: ['ATC_v37d.bin','MHO_C401_v37c.bin', 'CGG1_v37c.bin', 'ATC_v37d.bin','ATC_v37d.bin','ATC_v37d.bin','CGDK2_v37c.bin','CGG1N_v37c.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_CGG1_v1.0.0_0130.bin','Original_OTA_CGDK2_v1.1.1_0217.bin','Original_OTA_CGG1N_v2.2.1.bin']};
 var firmwareArray = "",
 	startTime = 0,
 	blockCount = 0;
@@ -644,9 +644,9 @@ function CGDK2_Action() {
 			});
 		}).catch(handleError);
 }
-function CGG1_Action() {
+function CGG1_Action(model) {
     cus017Chr = null;
-	addLog("Detected Qingping CGG1 device");
+	addLog("Detected Qingping CGG1 device " + model);
 	$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button>  <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value="">';
 	gattServer.getPrimaryService("22210000-554a-4546-5542-46534450464d")
 		.then(service => {
@@ -734,14 +734,15 @@ function CustomBlkParse(value) {
 		if(len >= 10) cfg.lcd_tint = value.getUint8(10);
 		else cfg.lcd_tint = 55;
 		if(len >= 11) cfg.hver = value.getUint8(11); 
-		else if(cfg.hver == null) cfg.hver = 7;
+		else if(cfg.hver == null) cfg.hver = 15;
 		if(len >= 12) cfg.av_meas_mem = value.getUint8(12); else cfg.av_meas_mem = 0;
 		let s = 'Hardware Version: ';
-		let hw_id = cfg.hver & 0x07;
+		let hw_id = cfg.hver & 0x0F;
 		if((hw_id == 0)||(hw_id == 3)||(hw_id == 4)||(hw_id == 5)) s +='LYWSD03MMC';
 		else if(hw_id == 1) s +='MHO-C401';
 		else if(hw_id == 2) s +='CGG1';
 		else if(hw_id == 6) s +='CGDK2';
+		else if(hw_id == 7) s +='CGG1-M';
 		else s += 'Unknown'
 		if(devHWstr) s += ' ' + devHWstr;
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
@@ -896,7 +897,7 @@ function CustomBlkParse(value) {
 		}
 	} else if(blkid == 0x60 && len >= 6) {
 		let s = 'LCD data: '+bytesToHex(value.buffer.slice(1));
-		addClog(s);
+		addAlog(s);
 	} else if(blkid == 0x61 && len >= 1) {
 		let s = 'LCD flg: '+hex(value.getUint8(1), 2);
 		addClog(s);
@@ -1261,6 +1262,7 @@ function miAuthorization() {
 					}
 					else if (bluetoothDevice.name == 'MHO-C401') cfg.hver = 1;
 					else if (bluetoothDevice.name.substr(0,20) == "Qingping Temp & RH M") cfg.hver = 2;
+					else if (bluetoothDevice.name.substr(0,18) == "Qingping Temp RH M") cfg.hver = 7;
 					else if (bluetoothDevice.name.substr(0,21) == "Qingping Temp RH Lite") cfg.hver = 6;
 					else {
 						cfg.hver = null;
@@ -1392,7 +1394,9 @@ function detectMi() {
 		else if(EnabledQinping && bluetoothDevice.name.substr(0,21) == "Qingping Temp RH Lite") 
 			CGDK2_Action();
 		else if(EnabledQinping && bluetoothDevice.name.substr(0,20) == "Qingping Temp & RH M") 
-			CGG1_Action();
+			CGG1_Action("2020-2021");
+		else if(EnabledQinping && bluetoothDevice.name.substr(0,18) == "Qingping Temp RH M") 
+			CGG1_Action("2022");
 		else {
 			setStatus("Connected.")
 			miEnabled = true;
@@ -1621,7 +1625,7 @@ function getOtaJson(d, name) {
 
 function FirmwareUpgrade() {
 	if(cfg.hver != null) {
-		let fn = otafiles.custom[cfg.hver & 0x07];
+		let fn = otafiles.custom[cfg.hver & 0x0F];
 		addAlog("Load firmware file '"+fn+"'...");
 		ajax_file(fn, getFirmwareArray);
 	}
@@ -1629,7 +1633,7 @@ function FirmwareUpgrade() {
 
 function BackToOriginal() {
 	if(cfg.hver != null) {
-		let fn = otafiles.original[cfg.hver & 0x07];
+		let fn = otafiles.original[cfg.hver & 0x0F];
 		addAlog("Load firmware file '"+fn+"'...");
 		ajax_file(fn, getFirmwareArray);
 	}
@@ -1936,7 +1940,7 @@ function sendMAC() {
 function UpdExt() {
 	if(ext.enable && $("extbignumb").value) {
 		$("extbignumb").value = (ext.big_number / 10.0).toFixed(1);
-		if(((cfg.hver & 0x07) == 2)||((cfg.hver & 0x07) == 6))  // CGG1 & CGDK2
+		if(((cfg.hver & 0x0F) == 2)||((cfg.hver & 0x0F) == 6)||((cfg.hver & 0x0F) == 7))  // CGG1 & CGDK2
 			$("extsmalnumb").value = (ext.small_number / 10.0).toFixed(1);
 		else
 			$("extsmalnumb").value = ext.small_number.toFixed(0);
@@ -1951,7 +1955,7 @@ function UpdExt() {
 function sendExt() {
 	if(ext.enable) {
 		ext.big_number = Math.round(10.0 * parseFloat($("extbignumb").value));
-		if(((cfg.hver & 0x07) == 2)||((cfg.hver & 0x07) == 6)) // CGG1 & CGDK2
+		if(((cfg.hver & 0x0F) == 2)||((cfg.hver & 0x0F) == 6)||((cfg.hver & 0x0F) == 7)) // CGG1 & CGDK2
 			ext.small_number = Math.round(10.0 * parseFloat($("extsmalnumb").value));
 		else
 			ext.small_number = parseInt($("extsmalnumb").value);
@@ -2107,11 +2111,11 @@ function CustomConfig() {
   let is = '';
   if(cfg.ver >= 0x10) {
 	is = '<hr>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button>';
-	if((cfg.hver & 0x07)  == 0)
+	if((cfg.hver & 0x0F)  == 0)
 		is += ' Test: [ <button type="button" onclick="lcd_clock();">Show clock on LCD</button> <button type="button" onclick="lcd_restore();">Repair LCD</button> ]';
 	is += '<br><br><input size="6" title="Big number: -99.5..1999.5" id="extbignumb" maxlength="5" value="123.4">';
 	is += ' <select id="exttmpsmb"><option value="0">&nbsp;&nbsp;</option><option value="1">°Г</option><option value="2">&nbsp;-</option><option value="3">°F</option><option value="4">&nbsp;_</option><option value="5">°C</option><option value="6" selected>&nbsp;=</option><option value="7">°E</option></select>';
-	if(((cfg.hver & 0x07)  == 2)||((cfg.hver & 0x07)  == 6)) {
+	if(((cfg.hver & 0x0F)  == 2)||((cfg.hver & 0x0F)  == 6)||((cfg.hver & 0x0F)  == 7)) {
 		is += ' <select id="extsmiley"><option value="0" selected>&nbsp;&nbsp;&nbsp;</option><option value="5">&nbsp;---&nbsp;</option></select>';
 		is += '	<input size="5" title="Small number: -99.5..999.5" id="extsmalnumb" maxlength="5" value="56.7">';
 	}else{
@@ -2125,14 +2129,14 @@ function CustomConfig() {
 	is += '	<button type="button" id="extsend" onclick="sendExt();">Show</button>';
 	ext.enable = true;
 	is += '<br><br>Temperature: <select id="cfg_flg_cf"><option value="0">°C</option><option value="1">°F</option></select><br><br>';
-	if(((cfg.hver & 0x07)  == 2)||((cfg.hver & 0x07)  == 6)) 
+	if(((cfg.hver & 0x0F)  == 2)||((cfg.hver & 0x0F)  == 6)||((cfg.hver & 0x0F)  == 7)) 
 		is += 'Line: <select id="cfg_smiley"><option value="0" selected>&nbsp;&nbsp;&nbsp;</option><option value="5">&nbsp;---&nbsp;</option></select>';
 	else
 		is += 'Smiley: <select id="cfg_smiley"><option value="0">&nbsp;&nbsp;&nbsp;</option><option value="1">&nbsp;^_^&nbsp;</option><option value="2">&nbsp;-&and;-&nbsp;</option><option value="3">&nbsp;&Delta;&#9651;&Delta;&nbsp;</option><option value="4">(&nbsp;&nbsp;&nbsp;)</option><option value="5">(^_^)</option><option value="6">(-&and;-)</option><option value="7">(&Delta;&#9651;&Delta;)</option></select>';
 
 	is += ', Comfort: <input type="checkbox" id="cfg_flg_comfort">';
 	is += ', Show batt: <input type="checkbox" id="cfg_flg_show_batt">';
-	if(cfg.ver >= 0x18 && (cfg.hver & 0x10) != 0)
+	if(cfg.ver >= 0x18)
 		is += ', Clock: <input type="checkbox" id="cfg_flg_blinking"> <button type="button" onclick="setDevTime();">Set Time</button> <button type="button" onclick="sendCustomSetting(&quot;23&quot;);">Get Time</button>';
 	else
 		is += ', Blinking: <input type="checkbox" id="cfg_flg_blinking">';
