@@ -733,8 +733,10 @@ function CustomBlkParse(value) {
 		cfg.connect_latency = value.getUint8(9);
 		if(len >= 10) cfg.lcd_tint = value.getUint8(10);
 		else cfg.lcd_tint = 55;
-		if(len >= 11) cfg.hver = value.getUint8(11); 
-		else if(cfg.hver == null) cfg.hver = 15;
+		if(len >= 11) {
+			cfg.hver = value.getUint8(11);
+			if(cfg.ver < 0x36) cfg.hver &= 0x87;
+		} else if(cfg.hver == null) cfg.hver = 0x80;
 		if(len >= 12) cfg.av_meas_mem = value.getUint8(12); else cfg.av_meas_mem = 0;
 		let s = 'Hardware Version: ';
 		let hw_id = cfg.hver & 0x0F;
@@ -2340,7 +2342,6 @@ function SendCustomConfig() {
 	}
 	$("custcfg").innerHTML = '<hr><button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
 }
-
 </script>
 <h1>Telink Flasher for Mi Thermostat</h1>
 <div class="navbar">
