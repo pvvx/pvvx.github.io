@@ -2207,7 +2207,7 @@ function CustomConfig() {
 	is += ', Humidity threshold: <input size="8" title="0..99.00%, default 50.00%" id="trg_hm_thr" maxlength="6" value="50.00"> %<br>';
 	if(cfg.ver >= 0x37) {
 		is += '<hr>Management GPIO_RS (Reed Switch):<br>';
-		is += 'RS mode: <select id="rds_type"><option value="0" selected>None</option><option value="1">Switch</option><option value="2">Couner</option></select><br>';
+		is += 'RS mode: <select id="rds_type"><option value="0" selected>None</option><option value="1">Switch</option><option value="2">Counter</option></select><br>';
 		is += 'RS report interval: <input size="8" title="0 - Off, 1..65535 sec, default 3600 sec" id="rds_rpint" maxlength="6" value="3600"> sec'; 
 	}
 	is += '<hr> <button type="button" title="Get/read current setings" onclick="sendCustomSetting(&quot;44&quot;);">Get TRG</button>';
