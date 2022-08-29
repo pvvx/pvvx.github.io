@@ -373,7 +373,7 @@ function connectDeviceAndCacheCharacteristic(device) {
 			log('Notifications Started');
 			characteristicVTH.addEventListener('characteristicvaluechanged', event => {
 				var value = event.target.value;
-				if(value.getUint8(0) == 0x33) {
+				if(value.byteLength > 7 && value.getUint8(0) == 0x33) {
 					vbat = value.getUint16(1, true);
 					temp = value.getInt16(3, true) / 100.0;
 					humi = value.getInt16(5, true) / 100.0;
