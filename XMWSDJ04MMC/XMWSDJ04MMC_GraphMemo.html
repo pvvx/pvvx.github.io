@@ -328,24 +328,27 @@ function connectDeviceAndCacheCharacteristic(device) {
 								if(!start_data) return;
 								let value = event.target.value;
 								if(value.byteLength < 16) return
-								log('DataRead: '+ bytesToHex(value.buffer));
+								// log('DataRead: '+ bytesToHex(value.buffer));
 								// 0        4        8    10   12   14
 								// 23000000 e0a50100 f200 0601 e800 dd00
+								// Index    DevTime  Thi  Hhi  Tlo  Hlo
+								// 7b150000 a0032e01 ef00 2102 e800 0b02
+								// Index: 5499, DevTime: 19792800, Temp: 39.20, Humi: 37.75%
 								index_cur = value.getUint32(0, true);
 								time_data = value.getUint32(4, true);
 								temp_hi = value.getInt16(8, true)/10.0;
-								temp_lo = value.getInt16(10, true)/10.0;
-								humi_hi = value.getUint16(12, true)/10.0;
+								temp_lo = value.getInt16(12, true)/10.0;
+								humi_hi = value.getUint16(10, true)/10.0;
 								humi_lo = value.getUint16(14, true)/10.0;
 								temp = (temp_hi + temp_lo)/2;
 								humi = (humi_hi + humi_lo)/2;
-								log('Index: ' + index_cur + ', DevTime: '+ time_data +', Temp: '+ temp.toFixed(2) +', Humi: '+humi.toFixed(2)+ '%');
+								log((index_end - index_cur) + ' samples left to read');
+								//log('Index: ' + index_cur + ', DevTime: '+ time_data +', Temp: '+ temp.toFixed(2) +', Humi: '+humi.toFixed(2)+ '%');
 								ShowGrf();
-								renderChart();
 								if(index_cur >= index_end) {
-								    log('Count: ' + index_cur);
+									renderChart();
 									disconnect();
-								};
+								} else if (index_cur%250 == 0) renderChart();
 							});
 							log('Getting Index characteristic...');
 							service.getCharacteristic('ebe0ccba-7a0a-4b0c-8a1a-6ff2997da3a6').then(characteristic => {
