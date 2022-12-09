@@ -393,6 +393,7 @@ function handleDisconnection(event) {
 			catch(error => log(error));
 	}
 }
+var start_time;
 // Подключение к определенному устройству, получение сервиса и характеристики
 function connectDeviceAndCacheCharacteristic(device) {
   if (device.gatt.connected && characteristicVTH && characteristicVTH) {
@@ -427,12 +428,15 @@ function connectDeviceAndCacheCharacteristic(device) {
 						let tm = value.getInt16(7, true) / 100.0;
 						let hm = value.getUint16(9, true) / 100.0;
 						let vb = value.getUint16(11, true);
+						/* Slow speed on some devices!
 						let dt = new Date(tc*1000);
 						console.log('Memo '+((dt.toISOString().slice(0, -1)).replace('T',' ')).replace('.000','')+' - Vbat: '+vb+' mV , Temp: '+tm+'°C, Humi: '+hm+'%, Count: '+cnt);
+						*/
 						log('Read Count: '+cnt);
 						memo.push([tc,tm,hm,vb]);
 					} else if(len >= 3) {
 						console.log('Read count: '+ memo.length);
+						console.log('Read time: ' + ((Date.now() - start_time)/1000).toFixed(3) + ' sec');
 						let time = Date.now()/1000;
 						time -= (new Date()).getTimezoneOffset() * 60;
 						blk = new Uint8Array(5);
@@ -459,6 +463,7 @@ function connectDeviceAndCacheCharacteristic(device) {
 			memo = new Array();
 			datau = new Array();
 			log('Send command get-memo (0..19632 samples)...');
+			start_time = Date.now();
 			return characteristicVTH.writeValue(new Uint8Array([0x35,0xB0,0x4C,0,0]));
 		});
 	});
