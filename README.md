@@ -26,6 +26,8 @@ Web files for projects:
 
 [TH-05](https://pvvx.github.io/TH-05)
 
+[CX0726B](https://pvvx.github.io/CX0726B)
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
