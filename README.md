@@ -24,6 +24,8 @@ Web files for projects:
 
 [CGDK2-2](https://pvvx.github.io/CGDK2/CGDK2-2)
 
+[TH-05](https://pvvx.github.io/TH-05)
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)

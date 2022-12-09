@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v4.6</title>
+<title>Telink Flasher v4.7</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -732,6 +732,7 @@ function CustomBlkParse(value) {
 		cfg.advertising_interval = value.getUint8(6);
 		cfg.measure_interval = value.getUint8(7);
 		cfg.rf_tx_power = value.getUint8(8);
+		if((cfg.rf_tx_power &0x80)==0) MAX_RF_TX_Power=true;
 		cfg.connect_latency = value.getUint8(9);
 		if(len >= 10) cfg.lcd_tint = value.getUint8(10);
 		else cfg.lcd_tint = 55;
@@ -2364,8 +2365,13 @@ function SendCustomConfig() {
 	if(cfg.measure_interval < 1) cfg.measure_interval = 1;
 	else if(cfg.measure_interval > 25) cfg.measure_interval = 25;
 	cfg.rf_tx_power = parseInt($("cfg_rf_tx").value);
-	if(!MAX_RF_TX_Power) if(cfg.rf_tx_power < 130) cfg.rf_tx_power = 130;
-  	if(cfg.rf_tx_power > 191) cfg.rf_tx_power = 191;
+	if(cfg.rf_tx_power&0x80) { /*VANT*/
+ 	 	if(cfg.rf_tx_power > 191) cfg.rf_tx_power = 191;
+ 	 	else if(cfg.rf_tx_power < 130) cfg.rf_tx_power = 130;
+	} else { /*VBAT*/
+		if(cfg.rf_tx_power < 23) cfg.rf_tx_power = 23;
+		else if(cfg.rf_tx_power > 63) cfg.rf_tx_power = 63;
+	}
 	cfg.connect_latency = Math.round((parseFloat($("cfg_con_lat").value) / 20.0) - 1);
 	if(cfg.connect_latency < 0) cfg.connect_latency = 0;
 	else if(cfg.connect_latency > 200) cfg.connect_latency = 200;
