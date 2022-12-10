@@ -460,11 +460,14 @@ function connectDeviceAndCacheCharacteristic(device) {
 				}
 			});
 			DevConnected();
-			memo = new Array();
-			datau = new Array();
-			log('Send command get-memo (0..19632 samples)...');
-			start_time = Date.now();
-			return characteristicVTH.writeValue(new Uint8Array([0x35,0xB0,0x4C,0,0]));
+			log('Synchronized Read for low speed BT adapters');
+			return characteristicVTH.readValue().then(value => {
+				memo = new Array();
+				datau = new Array();
+				log('Send command get-memo (0..19632 samples)...');
+				start_time = Date.now();
+				return characteristicVTH.writeValue(new Uint8Array([0x35,0xB0,0x4C,0,0]));
+				});
 		});
 	});
 }
