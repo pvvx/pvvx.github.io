@@ -1265,6 +1265,7 @@ function miAuthorization() {
 						else if(devHWstr == 'B1.6') cfg.hver = 3;
 						else if(devHWstr == 'B1.9') cfg.hver = 4;
 						else if(devHWstr == 'B1.7' || devHWstr == 'B2.0') cfg.hver = 5;
+						else if(devHWstr == 'B1.5' || devHWstr == 'B1.8') cfg.hver = 0; // ??
 						else {
 							cfg.hver = null;
 							$("ldfile").hidden = false;
