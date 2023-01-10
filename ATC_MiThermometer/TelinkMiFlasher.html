@@ -757,9 +757,7 @@ function CustomBlkParse(value) {
 			else s += ', Sensor: SHTC3 (SHTV3)';
 		}
 		addAlog(s);
-		s = 'Custom config: ['+cfg.flg+', '+cfg.flg2+', '+cfg.temp_offset+', '+cfg.humi_offset+', '+cfg.advertising_interval+', '+cfg.measure_interval+', '+cfg.rf_tx_power+', '+cfg.connect_latency+', '+cfg.lcd_tint+', '+cfg.hver+', '+cfg.av_meas_mem+']';
-		addAlog(s);
-		addClog('Custom config HEX string: '+bytesToHex(value.buffer));
+		addAlog('Custom config HEX string: ' + bytesToHex(value.buffer));
 		if(cfg.ver >= 5) CustomConfig();
 		else addLog('Old version - out of service!')
 	} else if(blkid == 0x33 && len >= 8) {
