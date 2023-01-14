@@ -14,7 +14,7 @@ var ServiceMain, writeCharacteristicSpeed = null, nitifiyCharTemp, time_char, en
 //Firmware values
 var rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/";
 var otafiles = { loaded: false, version: 57,
-custom: ['ATC_v38.bin','MHO_C401_v38.bin', 'CGG1_v38.bin', 'ATC_v38.bin','ATC_v38.bin','ATC_v38.bin','CGDK2_v38.bin','CGG1M_v38.bin'],
+custom: ['ATC_v39.bin','MHO_C401_v39.bin', 'CGG1_v39.bin', 'ATC_v39.bin','ATC_v39.bin','ATC_v39.bin','CGDK2_v39.bin','CGG1M_v39.bin'],
 original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_CGG1_v1.0.0_0130.bin','Original_OTA_CGDK2_v1.1.1_0217.bin','Original_OTA_CGG1N_v2.2.1.bin']};
 var firmwareArray = "",
 	startTime = 0,
@@ -757,9 +757,9 @@ function CustomBlkParse(value) {
 			else s += ', Sensor: SHTC3 (SHTV3)';
 		}
 		addAlog(s);
-		addAlog('Custom config HEX string: ' + bytesToHex(value.buffer));
+		addAlog('Custom config HEX string: 55' + bytesToHex(value.buffer.slice(2)));
 		if(cfg.ver >= 5) CustomConfig();
-		else addLog('Old version - out of service!')
+		else addLog('Old version - out of service!');
 	} else if(blkid == 0x33 && len >= 8) {
 		let vbat = value.getUint16(1, true);
 		let temp = value.getInt16(3, true) / 100.0;

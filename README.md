@@ -20,6 +20,8 @@ Web files for projects:
 
 [XMWSDJ04MMC](https://pvvx.github.io/XMWSDJ04MMC)
 
+[MJWSD05MMC](https://pvvx.github.io/MJWSD05MMC)
+
 [CGDK2](https://pvvx.github.io/CGDK2)
 
 [CGDK2-2](https://pvvx.github.io/CGDK2/CGDK2-2)
