@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v4.7</title>
+<title>Telink Flasher v4.8</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -665,31 +665,42 @@ function CGG1_Action(model) {
 			});
 		}).catch(handleError);
 }
+//var micharacteristics;
 function miAction() {
+	writeCharacteristicSpeed = null;
 	gattServer.getPrimaryService('ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6')
 		.then(service => {
-			addClog("Found Main service");
+			addClog("Found MiMain service");
 			ServiceMain = service;
-			return ServiceMain.getCharacteristic('ebe0ccd8-7a0a-4b0c-8a1a-6ff2997da3a6');
-		}).then(characteristic => {
-			addClog("Found Write characteristic Speed");
-			writeCharacteristicSpeed = characteristic;
-			return ServiceMain.getCharacteristic('ebe0ccc1-7a0a-4b0c-8a1a-6ff2997da3a6');
-		}).then(characteristic => {
-			addClog('Found Temp characteristic');
-			nitifiyCharTemp = characteristic;
-			return nitifiyCharTemp.startNotifications().then(() => {
-				nitifiyCharTemp.addEventListener('characteristicvaluechanged', event => {
-					let value = event.target.value;
-					let temp = value.getInt16(0, true) / 100;
-					let hum = value.getUint8(2);
-					let vbat = value.getUint16(3,true);
-					let tempTempString = "Temp: " + temp + "°C, Humi: " + hum + "%, "+vbat+" mV";
-					$("tempHumiData").innerHTML = '<hr>'+tempTempString;
-					addClog(tempTempString);
-				});
-				miAuthorization()
-			});
+			addClog("Check micharacteristics:");
+			return ServiceMain.getCharacteristics();
+		}).then(characteristics => {
+			//micharacteristics = characteristics;
+			for (let i = 0; i < characteristics.length; i++) {
+				addClog(characteristics[i].uuid);
+				if (characteristics[i].uuid == "ebe0ccd8-7a0a-4b0c-8a1a-6ff2997da3a6") {
+					ServiceMain.getCharacteristic(characteristics[i].uuid).then (characteristic => 
+					{ addClog("Found MiSet characteristic Speed");
+					 writeCharacteristicSpeed = characteristic; });
+				}
+				else if (characteristics[i].uuid == "ebe0ccc1-7a0a-4b0c-8a1a-6ff2997da3a6") {
+					ServiceMain.getCharacteristic(characteristics[i].uuid).then ( characteristic => 
+					{ addClog('Found MiTemp characteristic');
+						nitifiyCharTemp = characteristic;
+						return nitifiyCharTemp.startNotifications().then(() => {
+							nitifiyCharTemp.addEventListener('characteristicvaluechanged', event => {
+							let value = event.target.value;
+							let temp = value.getInt16(0, true) / 100;
+							let hum = value.getUint8(2);
+							let vbat = value.getUint16(3,true);
+							let tempTempString = "Temp: " + temp + "°C, Humi: " + hum + "%, "+vbat+" mV";
+							$("tempHumiData").innerHTML = '<hr>'+tempTempString;
+							addClog(tempTempString); });
+						});
+					});
+				}
+			}
+			miAuthorization()
 		}).catch(handleError);
 }
 var buf11;
@@ -1401,6 +1412,7 @@ function detectMi() {
 			$("custcfg").innerHTML = s;
 		} else if(EnabledQinping && bluetoothDevice.name.substr(0,15) == "Qingping Motion")
 			CGPR1_Action();
+		// "MJWSD05MMC"
 		else if(EnabledQinping && bluetoothDevice.name.substr(0,21) == "Qingping Temp RH Lite") 
 			CGDK2_Action();
 		else if(EnabledQinping && bluetoothDevice.name.substr(0,20) == "Qingping Temp & RH M") 
