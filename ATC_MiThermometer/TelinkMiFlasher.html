@@ -2197,7 +2197,10 @@ function CustomConfig() {
 	is += 'Temperature offset: <input size="5" title="-12.7..12.7°, default 0" id="cfg_tmp_off" maxlength="5" value="0"> °';
 	is += ', Humidity offset: <input size="5" title="-12.7..12.7%, default 0" id="cfg_hm_off" maxlength="5" value="0"> %<br><br>';
 	if(cfg.ver >= 0x36)
-		is += 'BT5+ PHY: <input title="Support BT5.0 PHY (LE 2M/1M/500K/125K)" type="checkbox" id="bt5_flags">, CSA2: <input title="Channel Selection Algorithm 2 or 1" type="checkbox" id="csa2_flags"><br><br>';
+		if(cfg.ver == 0x99) 
+			is += 'BT5+ PHY: <input title="Support BT5.0 PHY (LE 2M/1M/500K/125K)" type="checkbox" id="bt5_flags">, EXT.ADV: <input title="Enable Extended Advertising" type="checkbox" id="ext_adv_flags">, LongRange: <input title="Enable Extended Advertising Long Range (Coded PHY S8)" type="checkbox" id="longrange_flags"><br><br>';
+		else
+			is += 'BT5+ PHY: <input title="Support BT5.0 PHY (LE 2M/1M/500K/125K)" type="checkbox" id="bt5_flags">, CSA2: <input title="Channel Selection Algorithm 2 or 1" type="checkbox" id="csa2_flags"><br><br>';
 	is += 'Advertising type: <select id="cfg_flg_adv_type"><option value="0">ATC441</option><option value="1">PVVX (Custom)</option><option value="2">MIJIA (MiHome)</option><option value="3" selected>';
 	if(cfg.ver >= 0x37)
 		is += 'BTHome</option></select>';
@@ -2321,9 +2324,16 @@ function CustomConfig() {
 		$("cfg_av_meas_mem").onchange = function() {InfoIntervals();}
 	}
 	if(cfg.ver >= 0x36) {
-		$("bt5_flags").checked = (cfg.flg2&0x20) != 0;
-		$("csa2_flags").checked = (cfg.flg2&0x40) != 0;
+		if(cfg.ver == 0x99) {
+			$("bt5_flags").checked = (cfg.flg2&0x20) != 0;
+			$("ext_adv_flags").checked = (cfg.flg2&0x40) != 0;
+			$("longrange_flags").checked = (cfg.flg2&0x80) != 0;
+		} else {
+			$("bt5_flags").checked = (cfg.flg2&0x20) != 0;
+			$("csa2_flags").checked = (cfg.flg2&0x40) != 0;
+		}
 	}
+
 	$("cfg_tmp_off").value = String((cfg.temp_offset / 10.0).toFixed(1));
 	$("cfg_hm_off").value = String((cfg.humi_offset / 10.0).toFixed(1));
 	$("cfg_adv_int").value = String((cfg.advertising_interval * 62.5).toFixed(1));
@@ -2359,8 +2369,14 @@ function SendCustomConfig() {
 	if(cfg.ver >= 0x30)
 		cfg.flg2 += (($("adv_flags").checked) ? 0x10 : 0);
 	if(cfg.ver >= 0x36) {
-		cfg.flg2 += (($("bt5_flags").checked) ? 0x20 : 0);
-		cfg.flg2 += (($("csa2_flags").checked) ? 0x40 : 0);
+		if(cfg.ver == 0x99) {
+			cfg.flg2 += (($("bt5_flags").checked) ? 0x20 : 0);
+			cfg.flg2 += (($("ext_adv_flags").checked) ? 0x40 : 0);
+			cfg.flg2 += (($("longrange_flags").checked) ? 0x80 : 0);
+		} else {
+			cfg.flg2 += (($("bt5_flags").checked) ? 0x20 : 0);
+			cfg.flg2 += (($("csa2_flags").checked) ? 0x40 : 0);
+		}
 	}
 	if(cfg.ver >= 0x20)
 		cfg.av_meas_mem = parseInt($("cfg_av_meas_mem").value);
