@@ -12,6 +12,7 @@
 var bluetoothDevice, gattServer, Theservice, writeCharacteristic;
 var ServiceMain, writeCharacteristicSpeed = null, nitifiyCharTemp, time_char, enc_main, enc_10, enc_19;
 //Firmware values
+var fwmaxsize = 0x20000;
 var rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/";
 var otafiles = { loaded: false, version: 57,
 custom: ['ATC_v39.bin','MHO_C401_v39.bin', 'CGG1_v39.bin', 'ATC_v39.bin','ATC_v39.bin','ATC_v39.bin','CGDK2_v39.bin','CGG1M_v39.bin'],
@@ -1397,6 +1398,8 @@ function detectMi() {
 			addLog("Detected Mi device");
 			setStatus("Detected Mi device");
 			$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
+		 	if (bluetoothDevice.name.substr(0,10) == "MJWSD05MMC")
+			 	fwmaxsize = 0x28000;
 			miAction();
 		} else if (customEnabled) {
 			let s = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
@@ -1413,7 +1416,6 @@ function detectMi() {
 			$("custcfg").innerHTML = s;
 		} else if(EnabledQinping && bluetoothDevice.name.substr(0,15) == "Qingping Motion")
 			CGPR1_Action();
-		// "MJWSD05MMC"
 		else if(EnabledQinping && bluetoothDevice.name.substr(0,21) == "Qingping Temp RH Lite") 
 			CGDK2_Action();
 		else if(EnabledQinping && bluetoothDevice.name.substr(0,20) == "Qingping Temp & RH M") 
@@ -1559,7 +1561,7 @@ var crc32 = (function() {
 function testOTAFirmware(data) {
 	let fsize = data.byteLength;
 	addClog("File size = 0x"+ fsize.toString(16));
-	if (fsize < 0x800 || fsize > 0x20000) {
+	if (fsize < 0x800 || fsize > fwmaxsize) {
 		return "Wrong binary Telink OTA firmware size!";
 	}
 	let head = new DataView(data, 0, 0x20);
