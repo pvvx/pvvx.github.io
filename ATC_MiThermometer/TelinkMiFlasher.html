@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v4.8</title>
+<title>Telink Flasher v4.9</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -2199,7 +2199,9 @@ function CustomConfig() {
 	is += ', Humidity offset: <input size="5" title="-12.7..12.7%, default 0" id="cfg_hm_off" maxlength="5" value="0"> %<br><br>';
 	if(cfg.ver >= 0x36)
 		if(cfg.ver == 0x99) 
-			is += 'BT5+ PHY: <input title="Support BT5.0 PHY (LE 2M/1M/500K/125K)" type="checkbox" id="bt5_flags">, EXT.ADV: <input title="Enable Extended Advertising" type="checkbox" id="ext_adv_flags">, LongRange: <input title="Enable Extended Advertising Long Range (Coded PHY S8)" type="checkbox" id="longrange_flags"><br><br>';
+			is += 'BT5+ PHY: <input title="Support BT5.0 PHY (LE 2M/1M/500K/125K, CSA2)" type="checkbox" id="bt5_flags">, EXT.ADV: <input title="Enable Extended Advertising" type="checkbox" id="ext_adv_flags">, LongRange: <input title="Enable Extended Advertising Long Range (Coded PHY S8)" type="checkbox" id="longrange_flags"><br><br>';
+		else if(cfg.ver >= 0x40) 
+			is += 'BT5+ PHY: <input title="Support BT5.0 PHY (LE 2M/1M/500K/125K, CSA2)" type="checkbox" id="bt5_flags"><br><br>';
 		else
 			is += 'BT5+ PHY: <input title="Support BT5.0 PHY (LE 2M/1M/500K/125K)" type="checkbox" id="bt5_flags">, CSA2: <input title="Channel Selection Algorithm 2 or 1" type="checkbox" id="csa2_flags"><br><br>';
 	is += 'Advertising type: <select id="cfg_flg_adv_type"><option value="0">ATC441</option><option value="1">PVVX (Custom)</option><option value="2">MIJIA (MiHome)</option><option value="3" selected>';
@@ -2325,12 +2327,11 @@ function CustomConfig() {
 		$("cfg_av_meas_mem").onchange = function() {InfoIntervals();}
 	}
 	if(cfg.ver >= 0x36) {
+		$("bt5_flags").checked = (cfg.flg2&0x20) != 0;
 		if(cfg.ver == 0x99) {
-			$("bt5_flags").checked = (cfg.flg2&0x20) != 0;
 			$("ext_adv_flags").checked = (cfg.flg2&0x40) != 0;
 			$("longrange_flags").checked = (cfg.flg2&0x80) != 0;
-		} else {
-			$("bt5_flags").checked = (cfg.flg2&0x20) != 0;
+		} else if(cfg.ver < 0x40) {
 			$("csa2_flags").checked = (cfg.flg2&0x40) != 0;
 		}
 	}
@@ -2370,12 +2371,11 @@ function SendCustomConfig() {
 	if(cfg.ver >= 0x30)
 		cfg.flg2 += (($("adv_flags").checked) ? 0x10 : 0);
 	if(cfg.ver >= 0x36) {
+		cfg.flg2 += (($("bt5_flags").checked) ? 0x20 : 0);
 		if(cfg.ver == 0x99) {
-			cfg.flg2 += (($("bt5_flags").checked) ? 0x20 : 0);
 			cfg.flg2 += (($("ext_adv_flags").checked) ? 0x40 : 0);
 			cfg.flg2 += (($("longrange_flags").checked) ? 0x80 : 0);
-		} else {
-			cfg.flg2 += (($("bt5_flags").checked) ? 0x20 : 0);
+		} else if(cfg.ver < 0x40) {
 			cfg.flg2 += (($("csa2_flags").checked) ? 0x40 : 0);
 		}
 	}
