@@ -122,17 +122,15 @@ function connect() {
 	var deviceOptions = {
 		optionalServices: ['00010203-0405-0607-0809-0a0b0c0d1912', 'ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6', '22210000-554a-4546-5542-46534450464d', 0x180a, 0x181c, 0x181e, 0xfe95, 0x1f10, 0x1f11, 0x181a, 0xfff9, 0xfdcd, 0xffe0],
 		acceptAllDevices: true };
-	const hideUnknown = $('hideUnknown').checked;
 	const namePrefix = $('namePrefix').value;
-	if (hideUnknown) {
-		deviceOptions.acceptAllDevices = false;
-		deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz_#@!*0123456789';,.<>{}[]"
-			.split("")
-			.map((x) => ({ namePrefix: x }));
-	}
 	if (namePrefix) {
 		deviceOptions.acceptAllDevices = false;
 		deviceOptions.filters = namePrefix.split(",")
+			.map((x) => ({ namePrefix: x }));
+	} else {
+		deviceOptions.acceptAllDevices = false;
+		deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz_#@!*0123456789';,.<>{}[]"
+			.split("")
 			.map((x) => ({ namePrefix: x }));
 	}
 	addClog(deviceOptions)
@@ -2455,9 +2453,6 @@ function SendCustomConfig() {
 <div style="height: auto; width: auto;">
   <input type="checkbox" title="Web Experimental Features!" id="advmac">
   <label for="advmac">Get Advertising MAC</label> 
-  <br>
-  <input type="checkbox" id="hideUnknown" checked>
-  <label for="hideUnknown">Hide unknown</label>
   <br>
   <label for="namePrefix">BLE device name prefix filter(s)</label>
   <input type="text" id="namePrefix" value="" placeholder="LYWSD03,ATC"><br>

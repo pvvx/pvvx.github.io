@@ -154,6 +154,8 @@
 	<hr>
 	<div style="height: auto; width: auto; text-align: center;">
 		<input type="button" id="butConnect" value="Connect" class="ok">	
+	  	<label for="namePrefix">BLE device name prefix filter(s)</label>
+  		<input type="text" id="namePrefix" value="" placeholder="LYWSD03,ATC">
 		<input type="button" id="butSave" value="Save data to .csv file">
 		<br><br>
 		<input type="checkbox" id="setDevTime" checked>
@@ -164,7 +166,7 @@
 		<label for="thvbat">Show battery voltage</label>
 		<br><br>
 		<span id='info'>?</span>
-		<div id="div_v"></div>
+		<div id='div_v'></div>
 		<div id='labdiv'></div>
 	</div>
   </body>
@@ -294,9 +296,9 @@ function download(data, filename, type) {
 $("butSave").onclick =  function() {
     download(convertArrayOfObjectsToCSV({data: memo}), 'data.csv', 'text/csv;charset=utf-8');
 }
-if(window.innerHeight > 320) $('div_v').style.height = (window.innerHeight-80) + 'px';
+if(window.innerHeight > 320) $('div_v').style.height = (window.innerHeight-120) + 'px';
 window.onresize = function(){
-	if(window.innerHeight > 320) $('div_v').style.height = (window.innerHeight-80) + 'px';
+	if(window.innerHeight > 320) $('div_v').style.height = (window.innerHeight-120) + 'px';
 //	if(gu) gu.resize();
 //	$('div_v').style.width = (window.innerWidth-50) + 'px';
 }
@@ -369,8 +371,15 @@ function connect() {
 // Запрос выбора Bluetooth устройства
 function requestBluetoothDevice() {
 	var deviceOptions = {optionalServices: [0xfe95, 0x181a, 0x1f10]};
-	deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz_#@!*0123456789';,.<>{}[]"
-	.split("").map((x) => ({namePrefix:x}));
+	const namePrefix = $('namePrefix').value;
+	if (namePrefix) {
+		deviceOptions.acceptAllDevices = false;
+		deviceOptions.filters = namePrefix.split(",")
+			.map((x) => ({ namePrefix: x }));
+	} else {
+		deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz_#@!*0123456789';,.<>{}[]"
+		.split("").map((x) => ({namePrefix:x}));
+	}
 	// deviceOptions.filters.services = [0xfe95, 0x181a, 0x1f10];
 	log('Requesting bluetooth device...');
 	return navigator.bluetooth.requestDevice(deviceOptions).
