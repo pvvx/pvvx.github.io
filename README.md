@@ -30,6 +30,8 @@ Web files for projects:
 
 [CX0726B](https://pvvx.github.io/CX0726B)
 
+[iSearching](https://pvvx.github.io/iSearching)
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
