@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v5.1</title>
+<title>Telink Flasher v5.2</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -14,8 +14,8 @@ var ServiceMain, writeCharacteristicSpeed = null, nitifiyCharTemp, time_char, en
 //Firmware values
 var fwmaxsize = 0x20000;
 var rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/";
-var otafiles = { loaded: false, version: 57,
-custom: ['ATC_v39.bin','MHO_C401_v39.bin', 'CGG1_v39.bin', 'ATC_v39.bin','ATC_v39.bin','ATC_v39.bin','CGDK2_v39.bin','CGG1M_v39.bin'],
+var otafiles = { loaded: false, version: 65,
+custom: ['ATC_v41.bin','MHO_C401_v41.bin', 'CGG1_v41.bin', 'ATC_v41.bin','ATC_v41.bin','ATC_v41.bin','CGDK2_v41.bin','CGG1M_v41.bin'],
 original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_CGG1_v1.0.0_0130.bin','Original_OTA_CGDK2_v1.1.1_0217.bin','Original_OTA_CGG1N_v2.2.1.bin']};
 var firmwareArray = "",
 	startTime = 0,
@@ -2199,15 +2199,15 @@ function CustomConfig() {
 	is += 'Temperature offset: <input size="5" title="-12.7..12.7°, default 0" id="cfg_tmp_off" maxlength="5" value="0"> °';
 	is += ', Humidity offset: <input size="5" title="-12.7..12.7%, default 0" id="cfg_hm_off" maxlength="5" value="0"> %<br><br>';
 	if(cfg.ver >= 0x36)
-		if(cfg.ver == 0x99) 
-			is += 'BT5+ PHY: <input title="Support BT5.0 PHY (LE 2M/1M/500K/125K, CSA2)" type="checkbox" id="bt5_flags">, EXT.ADV: <input title="Enable Extended Advertising" type="checkbox" id="ext_adv_flags">, LongRange: <input title="Enable Extended Advertising Long Range (Coded PHY S8)" type="checkbox" id="longrange_flags"><br><br>';
+		if(cfg.ver >= 0x42) 
+			is += 'BT5+ PHY: <input title="Support BT5.0 PHY (LE 2M/1M/500K/125K, CSA2)" type="checkbox" id="bt5_flags">, LE LongRange: <input title="Enable Extended Advertising Long Range (Coded PHY S8)" type="checkbox" id="longrange_flags"><br><br>';
 		else if(cfg.ver >= 0x40) 
 			is += 'BT5+ PHY: <input title="Support BT5.0 PHY (LE 2M/1M/500K/125K, CSA2)" type="checkbox" id="bt5_flags"><br><br>';
 		else
 			is += 'BT5+ PHY: <input title="Support BT5.0 PHY (LE 2M/1M/500K/125K)" type="checkbox" id="bt5_flags">, CSA2: <input title="Channel Selection Algorithm 2 or 1" type="checkbox" id="csa2_flags"><br><br>';
 	is += 'Advertising type: <select id="cfg_flg_adv_type"><option value="0">ATC1441</option><option value="1">PVVX (Custom)</option><option value="2">MIJIA (MiHome)</option><option value="3" selected>';
 	if(cfg.ver >= 0x37)
-		is += 'BTHome</option></select>';
+		is += 'BTHome v1</option></select>';
 	else
 		is += 'All</option></select>';
 	if(cfg.ver >= 0x30)
@@ -2332,9 +2332,8 @@ function CustomConfig() {
 	}
 	if(cfg.ver >= 0x36) {
 		$("bt5_flags").checked = (cfg.flg2&0x20) != 0;
-		if(cfg.ver == 0x99) {
-			$("ext_adv_flags").checked = (cfg.flg2&0x40) != 0;
-			$("longrange_flags").checked = (cfg.flg2&0x80) != 0;
+		if(cfg.ver >= 0x42) {
+			$("longrange_flags").checked = (cfg.flg2&0x40) != 0;
 		} else if(cfg.ver < 0x40) {
 			$("csa2_flags").checked = (cfg.flg2&0x40) != 0;
 		}
@@ -2376,9 +2375,8 @@ function SendCustomConfig() {
 		cfg.flg2 += (($("adv_flags").checked) ? 0x10 : 0);
 	if(cfg.ver >= 0x36) {
 		cfg.flg2 += (($("bt5_flags").checked) ? 0x20 : 0);
-		if(cfg.ver == 0x99) {
-			cfg.flg2 += (($("ext_adv_flags").checked) ? 0x40 : 0);
-			cfg.flg2 += (($("longrange_flags").checked) ? 0x80 : 0);
+		if(cfg.ver >= 0x42) {
+			cfg.flg2 += (($("longrange_flags").checked) ? 0x40 : 0);
 		} else if(cfg.ver < 0x40) {
 			cfg.flg2 += (($("csa2_flags").checked) ? 0x40 : 0);
 		}
