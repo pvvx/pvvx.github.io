@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v5.3</title>
+<title>Telink Flasher v5.4</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -120,7 +120,7 @@ function onDisconnected() {
 
 function connect() {
 	var deviceOptions = {
-		optionalServices: ['00010203-0405-0607-0809-0a0b0c0d1912', 'ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6', '22210000-554a-4546-5542-46534450464d', 0x180a, 0x181c, 0x181e, 0xfe95, 0x1f10, 0x1f11, 0x181a, 0xfff9, 0xfdcd, 0xffe0],
+		optionalServices: ['00001f10-0000-1000-8000-00805f9b34fb','00010203-0405-0607-0809-0a0b0c0d1912', 'ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6', '22210000-554a-4546-5542-46534450464d', 0x180a, 0x181c, 0x181e, 0xfe95, 0x1f10, 0x1f11, 0x181a, 0xfff9, 0xfdcd, 0xffe0],
 		services: [0x180a, 0x181c, 0x181e, 0xfe95, 0x1f10, 0x1f11, 0x181a, 0xfff9, 0xfdcd, 0xffe0],
 		acceptAllDevices: true };
 	const namePrefix = $('namePrefix').value;
@@ -761,6 +761,7 @@ function CustomBlkParse(value) {
 		else if(hw_id == 6) s +='CGDK2';
 		else if(hw_id == 7) s +='CGG1-M';
 		else if(hw_id == 8) s +='MHO-C401N';
+		else if(hw_id == 9) s +='MJWSD05MMC';
 		else s += 'Unknown'
 		if(devHWstr) s += ' ' + devHWstr;
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
@@ -793,8 +794,13 @@ function CustomBlkParse(value) {
 		$("tempHumiData").innerHTML = s;
 	    addClog(s);
 	} else if(blkid == 0x22 && len >= 7) {
-		ext.big_number = value.getInt16(1, true); // -995..19995, x0.1
-		ext.small_number = value.getInt16(3, true); // -9..99, x1
+		if((cfg.hver & 0x0f) != 9) {
+			ext.big_number = value.getInt16(1, true); // -995..19995, x0.1
+			ext.small_number = value.getInt16(3, true); // -9..99, x1
+		} else {
+			ext.big_number = value.getInt32(1, true); // -9950..199950, x0.01
+			ext.small_number = 0;
+		}
 		ext.vtime = value.getUint16(5, true); // in sec
 		ext.flg = value.getUint8(7);
 		let s = 'ExtShow: big_number: '+ext.big_number+', small_number: '+ext.small_number+', ext.vtime: '+ext.vtime+' s, flg: '+hex(ext.flg,2);
@@ -976,7 +982,7 @@ function CustomBlkParse(value) {
 		cfg.step_time = value.getUint32(1,true);
 		addClog('step_time: ' + cfg.step_time);
 		addAlog('Device StepTimeSec: ' + (cfg.step_time / 16.0).toFixed(3) + ' us');
-		if(cfg.ver >= 0x24 && $("cfg_time_step")) {
+		if($("cfg_time_step") && cfg.ver >= 0x24) {
 			if(devtime.step == 2) {
 		                devtime.step = 0;
 				let rp = devtime.cmp - devtime.set;
@@ -988,8 +994,6 @@ function CustomBlkParse(value) {
 			} else 
 				$("cfg_time_step").value = cfg.step_time - 16000000;
 		}
-	let dtim = parseInt($("cfg_time_step").value);
-
 	} else if(blkid == 0x20 && len >= 8) {
 		cmf.tmp_lo = value.getInt16(1, true); // temp lo
 		cmf.tmp_hi = value.getInt16(3, true); // temp hi
@@ -1306,6 +1310,7 @@ function miAuthorization() {
 					} else if (bluetoothDevice.name.substr(0,20) == "Qingping Temp & RH M") cfg.hver = 2;
 					else if (bluetoothDevice.name.substr(0,18) == "Qingping Temp RH M") cfg.hver = 7;
 					else if (bluetoothDevice.name.substr(0,21) == "Qingping Temp RH Lite") cfg.hver = 6;
+					else if (bluetoothDevice.name == "MJWSD05MMC") cfg.hver = 9;
 					else {
 						cfg.hver = null;
 						$("ldfile").hidden = false;
@@ -1364,9 +1369,9 @@ function doConnect() {
 		for (var i = 0; i < services.length; i++) {
 			addClog("Services: " + services[i].uuid);
 			if (services[i].uuid == "00010203-0405-0607-0809-0a0b0c0d1912") otaEnabled = true;
+			else if (services[i].uuid == "00001f10-0000-1000-8000-00805f9b34fb") customEnabled = true;
 			else if (services[i].uuid == "22210000-554a-4546-5542-46534450464d") EnabledQinping = true;
 			else if (services[i].uuid == "ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6") miEnabled = true;
-			else if (services[i].uuid == "00001f10-0000-1000-8000-00805f9b34fb") customEnabled = true;
 			else if (services[i].uuid == "0000181a-0000-1000-8000-00805f9b34fb") devIdEnabled = true;
 			else if (services[i].uuid == "0000ffe0-0000-1000-8000-00805f9b34fb") devTest = true;
 			else if (services[i].uuid == "0000180a-0000-1000-8000-00805f9b34fb") devInfEnabled = true; // Device Information Service
@@ -1385,7 +1390,49 @@ function doConnect() {
 	}).then(characteristic => {
 		addClog("Found Telink OTA write characteristic");
 		writeCharacteristic = characteristic;
-		detectMi();
+	getHWVersion(devInfEnabled).then(hwstr => {
+		devHWstr = hwstr;
+		if (devHWstr) { 
+			addLog('Hardware Revision String: ' + devHWstr);
+			if (softwareversion) addLog('Software Revision String: ' + softwareversion);
+		}
+		if (miEnabled) {
+			addLog("Detected Mi device");
+			setStatus("Detected Mi device");
+			$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
+		 	if (bluetoothDevice.name.substr(0,10) == "MJWSD05MMC")
+			 	fwmaxsize = 0x28000;
+			miAction();
+		} else if (customEnabled) {
+			let s = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send commands to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
+			if (devTest) {
+				addLog("Detected Test device");
+				setStatus("Detected Test device");
+				getTestCharacteristic();	
+				s += '<a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html">TelinkOTA</a><br>';
+			} else {
+				addLog("Detected custom Firmware");
+				setStatus("Detected custom Firmware");
+				customAction();
+			}
+			$("custcfg").innerHTML = s;
+		} else if(EnabledQinping && bluetoothDevice.name.substr(0,15) == "Qingping Motion")
+			CGPR1_Action();
+		else if(EnabledQinping && bluetoothDevice.name.substr(0,21) == "Qingping Temp RH Lite") 
+			CGDK2_Action();
+		else if(EnabledQinping && bluetoothDevice.name.substr(0,20) == "Qingping Temp & RH M") 
+			CGG1_Action("2020-2021");
+		else if(EnabledQinping && bluetoothDevice.name.substr(0,18) == "Qingping Temp RH M") 
+			CGG1_Action("2022");
+		else {
+			setStatus("Connected.")
+			miEnabled = true;
+			miAuthorization();  //	miConnected
+			$("ldfile").hidden = false;
+			$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>  <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
+		}}).catch(handleError);
+
+//		detectMi();
 	}).catch(handleError);
  }	
 }
@@ -1438,7 +1485,7 @@ function detectMi() {
 			 	fwmaxsize = 0x28000;
 			miAction();
 		} else if (customEnabled) {
-			let s = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
+			let s = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send commands to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
 			if (devTest) {
 				addLog("Detected Test device");
 				setStatus("Detected Test device");
@@ -2006,35 +2053,56 @@ function sendMAC() {
 
 function UpdExt() {
 	if(ext.enable && $("extbignumb").value) {
-		$("extbignumb").value = (ext.big_number / 10.0).toFixed(1);
-		if(((cfg.hver & 0x0f) == 2)||((cfg.hver & 0x0f) == 6)||((cfg.hver & 0x0f) == 7))  // CGG1 & CGDK2
-			$("extsmalnumb").value = (ext.small_number / 10.0).toFixed(1);
-		else
-			$("extsmalnumb").value = ext.small_number.toFixed(0);
-		$("extvtimed").value = ext.vtime;
+		let hver = cfg.hver & 0x0f;
+		if(hver == 9) {
+			$("extbignumb").value = (ext.big_number / 100.0).toFixed(2);
+			$("exttmpsmb").value = (ext.flg >> 4) & 0x07;
+			$("extpersent").checked = ((ext.flg & 0x80) !=0 ? 1 : 0);
+			$("extbattery").checked = ((ext.flg & 8) !=0 ? 1 : 0);
+		} else { 
+			$("extbignumb").value = (ext.big_number / 10.0).toFixed(1);
+			if(hver == 2 || hver == 6 || hver == 7)  // CGG1 & CGDK2
+				$("extsmalnumb").value = (ext.small_number / 10.0).toFixed(1);
+			else
+				$("extsmalnumb").value = ext.small_number.toFixed(0);
+			$("extpersent").checked = ((ext.flg & 8) !=0 ? 1 : 0);
+			$("exttmpsmb").value = (ext.flg >> 5) & 0x07;
+			$("extbattery").checked = ((ext.flg & 16) !=0 ? 1 : 0);
+		}
 		$("extsmiley").value = ext.flg & 7;
-		$("extpersent").checked = ((ext.flg & 8) !=0 ? 1 : 0);
-		$("extbattery").checked = ((ext.flg & 16) !=0 ? 1 : 0);
-		$("exttmpsmb").value = (ext.flg >> 5) & 7;
+		$("extvtimed").value = ext.vtime;
 	}
 }
 
 function sendExt() {
 	if(ext.enable) {
-		ext.big_number = Math.round(10.0 * parseFloat($("extbignumb").value));
-		if(((cfg.hver & 0x0f) == 2)||((cfg.hver & 0x0f) == 6)||((cfg.hver & 0x0f) == 7)) // CGG1 & CGDK2
-			ext.small_number = Math.round(10.0 * parseFloat($("extsmalnumb").value));
-		else
-			ext.small_number = parseInt($("extsmalnumb").value);
+		let hver = cfg.hver & 0x0f;
+		if(hver != 9)  {
+			ext.big_number = Math.round(10.0 * parseFloat($("extbignumb").value));
+			if(hver == 2 || hver == 6 || hver == 7) // CGG1 & CGDK2
+				ext.small_number = Math.round(10.0 * parseFloat($("extsmalnumb").value));
+			else
+				ext.small_number = parseInt($("extsmalnumb").value);
+			ext.cfg = (parseInt($("extsmiley").value) & 7) +
+			($("extpersent").checked ? 8 : 0) +
+			($("extbattery").checked ? 16 : 0) +
+			((parseInt($("exttmpsmb").value) & 7) << 5);
+		} else {
+			ext.big_number = Math.round(100.0 * parseFloat($("extbignumb").value));
+			ext.cfg = (parseInt($("extsmiley").value) & 7) +
+			($("extbattery").checked ? 8 : 0) +
+			($("extpersent").checked ? 0x80 : 0) +
+			((parseInt($("exttmpsmb").value) & 0x07) << 4);
+		}
 		ext.vtime = parseInt($("extvtimed").value);
-		if(ext.vtime < 1) ext.vtime = 60;
+		if(ext.vtime < 2) ext.vtime = 2;
 		else if(ext.vtime > 65535) ext.vtime = 65535;
-		ext.cfg = (parseInt($("extsmiley").value) & 7) +
-		($("extpersent").checked ? 8 : 0) +
-		($("extbattery").checked ? 16 : 0) +
-		((parseInt($("exttmpsmb").value) & 7) << 5);
 		addClog("Send cmd (22 + ext data)...");
-		let blk = new Uint8Array([0x22, ext.big_number&0xff, (ext.big_number>>8)&0xff,ext.small_number&0xff,(ext.small_number>>8)&0xff,ext.vtime&0xff,(ext.vtime>>8)&0xff,ext.cfg])
+		let blk;
+		if(hver != 9)
+			blk = new Uint8Array([0x22, ext.big_number&0xff, (ext.big_number>>8)&0xff,ext.small_number&0xff,(ext.small_number>>8)&0xff,ext.vtime&0xff,(ext.vtime>>8)&0xff,ext.cfg])
+		else
+			blk = new Uint8Array([0x22, ext.big_number&0xff, (ext.big_number>>8)&0xff, (ext.big_number>>16)&0xff, (ext.big_number>>24)&0xff, ext.vtime&0xff,(ext.vtime>>8)&0xff,ext.cfg])
 		settingsCharacteristics.writeValue(blk).then(_ => {
 			addAlog('Send Ext data: '+dump(blk, blk.length)+' ok');
 		});
@@ -2197,17 +2265,25 @@ function InfoIntervals() {
 }
 function CustomConfig() {
   menuUpgrade();
+  let hver = cfg.hver & 0x0f;
   let is = '';
   if(cfg.ver >= 0x10) {
-	is = '<hr>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button>';
-	if((cfg.hver & 0x0f)  == 0)
-		is += ' Test: [ <button type="button" onclick="lcd_clock();">Show clock on LCD</button> <button type="button" onclick="lcd_restore();">Repair LCD</button> ]';
-	is += '<br><br><input size="6" title="Big number: -99.5..1999.5" id="extbignumb" maxlength="5" value="123.4">';
-	is += ' <select id="exttmpsmb"><option value="0">&nbsp;&nbsp;</option><option value="1">°Г</option><option value="2">&nbsp;-</option><option value="3">°F</option><option value="4">&nbsp;_</option><option value="5">°C</option><option value="6" selected>&nbsp;=</option><option value="7">°E</option></select>';
-	if(((cfg.hver & 0x0f)  == 2)||((cfg.hver & 0x0f)  == 6)||((cfg.hver & 0x0f)  == 7)) {
+	is = '<hr>Send commands to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button>';
+	if(hver == 0)
+		is += ' Test: [ <button type="button" onclick="lcd_clock();">Show clock on LCD</button> <button type="button" onclick="lcd_restore();">Repair LCD</button> ]<br>';
+	is += '<br>Show on device screen:<br>';
+	if(hver == 2 || hver == 6 || hver == 7){
+		is += '<input size="6" title="Big number: -99.5..1999.5" id="extbignumb" maxlength="5" value="123.4">';
+		is += ' <select id="exttmpsmb"><option value="0">&nbsp;&nbsp;</option><option value="1">°Г</option><option value="2">&nbsp;-</option><option value="3">°F</option><option value="4">&nbsp;_</option><option value="5">°C</option><option value="6" selected>&nbsp;=</option><option value="7">°E</option></select>';
 		is += ' <select id="extsmiley"><option value="0" selected>&nbsp;&nbsp;&nbsp;</option><option value="5">&nbsp;---&nbsp;</option></select>';
 		is += '	<input size="5" title="Small number: -99.5..999.5" id="extsmalnumb" maxlength="5" value="56.7">';
+	}else if(hver == 9){
+		is += '<input size="8" title="Big number: -999.50..19999.50" id="extbignumb" maxlength="8" value="123.45">';
+		is += ' <select id="exttmpsmb"><option value="0">&nbsp;&nbsp;</option><option value="1">°г</option><option value="2">&nbsp;-</option><option value="3">°C</option><option value="4">&nbsp;i</option><option value="5">°Г</option><option value="6" selected>&nbsp;г</option><option value="7">°F</option></select>';
+		is += ' <select id="extsmiley"><option value="0">&nbsp;&nbsp;&nbsp;</option><option value="1">&nbsp;^_^&nbsp;</option><option value="2">&nbsp;-&and;-&nbsp;</option><option value="3">&nbsp;&Delta;&#9651;&Delta;&nbsp;</option><option value="4">(&nbsp;&nbsp;&nbsp;)</option><option value="5">(^_^)</option><option value="6">(-&and;-)</option><option value="7" selected>(&Delta;&#9651;&Delta;)</option></select>';
 	}else{
+		is += '<input size="6" title="Big number: -99.5..1999.5" id="extbignumb" maxlength="5" value="123.4">';
+		is += ' <select id="exttmpsmb"><option value="0">&nbsp;&nbsp;</option><option value="1">°Г</option><option value="2">&nbsp;-</option><option value="3">°F</option><option value="4">&nbsp;_</option><option value="5">°C</option><option value="6" selected>&nbsp;=</option><option value="7">°E</option></select>';
 		is += ' <select id="extsmiley"><option value="0">&nbsp;&nbsp;&nbsp;</option><option value="1">&nbsp;^_^&nbsp;</option><option value="2">&nbsp;-&and;-&nbsp;</option><option value="3">&nbsp;&Delta;&#9651;&Delta;&nbsp;</option><option value="4">(&nbsp;&nbsp;&nbsp;)</option><option value="5">(^_^)</option><option value="6">(-&and;-)</option><option value="7" selected>(&Delta;&#9651;&Delta;)</option></select>';
 		is += '	<input size="5" title="Small number: -9..99" id="extsmalnumb" maxlength="2" value="99">';
 	}
@@ -2217,17 +2293,25 @@ function CustomConfig() {
 	is += '	<button type="button" onclick="sendCustomSetting(&quot;22&quot;);">Get OldData</button>';
 	is += '	<button type="button" id="extsend" onclick="sendExt();">Show</button>';
 	ext.enable = true;
-	is += '<br><br>Temperature: <select id="cfg_flg_cf"><option value="0">°C</option><option value="1">°F</option></select><br><br>';
-	if(((cfg.hver & 0x0f)  == 2)||((cfg.hver & 0x0f)  == 6)||((cfg.hver & 0xf)  == 7)) 
+	is += '<br><br><hr><br><b>Configuration:</b>&nbsp;<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br><br>';
+	is += 'Temperature: <select id="cfg_flg_cf"><option value="0">°C</option><option value="1">°F</option></select>';
+	if(hver == 9)
+		is += '&nbsp;12-hour clock:<input type="checkbox" id="cfg_flg_am_pm">';
+	is += '<br><br>';
+	if((hver == 2)||(hver == 6)||(hver == 7)) 
 		is += 'Line: <select id="cfg_smiley"><option value="0" selected>&nbsp;&nbsp;&nbsp;</option><option value="5">&nbsp;---&nbsp;</option></select>';
+	else if(hver == 9)
+		is += 'Show: <select id="cfg_scr_type"><option value="0">Time</option><option value="1">Temperature</option><option value="2">Humidity</option><option value="3">Battery %</option><option value="4">Battery V</option><option value="5">ExtNumber&Symbols</option></select>';
 	else
 		is += 'Smiley: <select id="cfg_smiley"><option value="0">&nbsp;&nbsp;&nbsp;</option><option value="1">&nbsp;^_^&nbsp;</option><option value="2">&nbsp;-&and;-&nbsp;</option><option value="3">&nbsp;&Delta;&#9651;&Delta;&nbsp;</option><option value="4">(&nbsp;&nbsp;&nbsp;)</option><option value="5">(^_^)</option><option value="6">(-&and;-)</option><option value="7">(&Delta;&#9651;&Delta;)</option></select>';
-
 	is += ', Comfort: <input type="checkbox" id="cfg_flg_comfort">';
-	is += ', Show batt: <input type="checkbox" id="cfg_flg_show_batt">';
-	if(cfg.ver >= 0x18)
-		is += ', Clock: <input type="checkbox" id="cfg_flg_blinking"> <button type="button" onclick="setDevTime();">Set Time</button> <button type="button" onclick="sendCustomSetting(&quot;23&quot;);">Get Time</button>';
-	else
+	if(hver != 9)
+		is += ', Show batt: <input type="checkbox" id="cfg_flg_show_batt">';
+	if(cfg.ver >= 0x18) {
+		if(hver != 9)
+			is += ', Clock: <input type="checkbox" id="cfg_flg_blinking"> ';
+		is += '<button type="button" onclick="setDevTime();">Set Time</button> <button type="button" onclick="sendCustomSetting(&quot;23&quot;);">Get Time</button>';
+	}else
 		is += ', Blinking: <input type="checkbox" id="cfg_flg_blinking">';
 	is += '<br><br>Sensor in "LowPower mode": <input title="Sensor measurements in Low Power mode" type="checkbox" id="cfg_flg_lp_meas">';
 	is += ', Tx measures: <input title="When connected, start transferring measurements" type="checkbox" id="cfg_flg_tx_meas">';
@@ -2235,22 +2319,25 @@ function CustomConfig() {
 	is += ' <button type="button" title="Stop transferring measurements. Only in the current connection." onclick="sendCustomSetting(&quot;3300&quot;);">Stop Tx Measure</button><br><br>';
 	is += 'Temperature offset: <input size="5" title="-12.7..12.7°, default 0" id="cfg_tmp_off" maxlength="5" value="0"> °';
 	is += ', Humidity offset: <input size="5" title="-12.7..12.7%, default 0" id="cfg_hm_off" maxlength="5" value="0"> %<br><br>';
-	if(cfg.ver >= 0x36)
+	if(hver == 9)
+		is += 'LE Long Range: <input title="Enable Extended Advertising Long Range (Coded PHY S8)" type="checkbox" id="longrange_flags"><br><br>';
+	else if(cfg.ver >= 0x36) {
 		if(cfg.ver >= 0x42) 
 			is += 'BT5+ PHY: <input title="Support BT5.0 PHY (LE 2M/1M/500K/125K, CSA2)" type="checkbox" id="bt5_flags">, LE Long Range: <input title="Enable Extended Advertising Long Range (Coded PHY S8)" type="checkbox" id="longrange_flags"><br><br>';
 		else if(cfg.ver >= 0x40) 
 			is += 'BT5+ PHY: <input title="Support BT5.0 PHY (LE 2M/1M/500K/125K, CSA2)" type="checkbox" id="bt5_flags"><br><br>';
 		else
 			is += 'BT5+ PHY: <input title="Support BT5.0 PHY (LE 2M/1M/500K/125K)" type="checkbox" id="bt5_flags">, CSA2: <input title="Channel Selection Algorithm 2 or 1" type="checkbox" id="csa2_flags"><br><br>';
+	}
 	is += 'Advertising type: <select id="cfg_flg_adv_type"><option value="0">ATC1441</option><option value="1">PVVX (Custom)</option><option value="2">MIJIA (MiHome)</option><option value="3" selected>';
 	if(cfg.ver >= 0x37)
 		is += 'BTHome v1</option></select>';
 	else
 		is += 'All</option></select>';
-	if(cfg.ver >= 0x30)
+	if(hver != 9 && cfg.ver >= 0x30)
 		is += ', AdFlags: <input title="Toggle support for third-party software" type="checkbox" id="adv_flags">';
 	if(cfg.ver >= 0x22)
-		is += ', Encrypted beacon: <input title="Bindkey encrypted beacon" type="checkbox" id="mi_beacon">';
+		is += ', Encrypted beacon: <input title="Bindkey encrypted beacon" type="checkbox" id="cfg_adv_crypto">';
 	is += '<br><br>Advertising interval: <input size="5" title="62.5 ms .. 10 000 ms, step: 62.5 ms, default 2500 ms" id="cfg_adv_int" maxlength="6" value="40"> ms, step: 62.5 ms<br><br>';
 	is += 'Measure interval: <input size="5" title="1..25 (62.5 ms .. 250 sec), default 4 (10 sec)" id="cfg_meas_int" maxlength="2" value="4"> x(Advertising interval) <span id="cfg_meas_int_val"></span><br><br>';
 	if(cfg.ver > 0x40)
@@ -2259,7 +2346,8 @@ function CustomConfig() {
 		is += 'Connect latency: <input size="5" title="0..4000 ms, default 2500 ms" id="cfg_con_lat" maxlength="4" value="2500"> ms, step 20 ms<br><br>';
 	if(MAX_RF_TX_Power) is += 'RF TX Power: <select id="cfg_rf_tx"><option value="63">VBAT+10.46 dbm</option><option value="61">VBAT+10.29 dbm</option><option value="58">VBAT+10.01 dbm</option><option value="56">VBAT+9.81 dbm</option><option value="53">VBAT+9.48 dbm</option><option value="51">VBAT+9.24 dbm</option><option value="49">VBAT+8.97 dbm</option><option value="47">VBAT+8.73 dbm</option><option value="45">VBAT+8.44 dbm</option><option value="43">VBAT+8.13 dbm</option><option value="41">VBAT+7.79 dbm</option><option value="39">VBAT+7.41 dbm</option><option value="37">VBAT+7.02 dbm</option><option value="35">VBAT+6.60 dbm</option><option value="33">VBAT+6.14 dbm</option><option value="31">VBAT+5.65 dbm</option><option value="29">VBAT+5.13 dbm</option><option value="27">VBAT+4.57 dbm</option><option value="25">VBAT+3.94 dbm</option><option value="23">VBAT+3.23 dbm</option><option value="191" selected>VANT+3.01 dbm</option><option value="189">VANT+2.81 dbm</option><option value="187">VANT+2.61 dbm</option><option value="185">VANT+2.39 dbm</option><option value="182">VANT+1.99 dbm</option><option value="180">VANT+1.73 dbm</option><option value="178">VANT+1.45 dbm</option><option value="176">VANT+1.17 dbm</option><option value="174">VANT+0.90 dbm</option><option value="172">VANT+0.58 dbm</option><option value="169">VANT+0.04 dbm</option><option value="168">VANT-0.14 dbm</option><option value="164">VANT-0.97 dbm</option><option value="162">VANT-1.42 dbm</option><option value="160">VANT-1.89 dbm</option><option value="158">VANT-2.48 dbm</option><option value="156">VANT-3.03 dbm</option><option value="154">VANT-3.61 dbm</option><option value="152">VANT-4.26 dbm</option><option value="150">VANT-5.03 dbm</option><option value="148">VANT-5.81 dbm</option><option value="146">VANT-6.67 dbm</option><option value="144">VANT-7.65 dbm</option><option value="142">VANT-8.65 dbm</option><option value="140">VANT-9.89 dbm</option><option value="138">VANT-11.4 dbm</option><option value="136">VANT-13.29 dbm</option><option value="134">VANT-15.88 dbm</option><option value="132">VANT-19.27 dbm</option><option value="130">VANT-25.18 dbm</option></select><br><br>';
 	else is += 'RF TX Power: <select id="cfg_rf_tx"><option value="191" selected>VANT+3.01 dbm</option><option value="189">VANT+2.81 dbm</option><option value="187">VANT+2.61 dbm</option><option value="185">VANT+2.39 dbm</option><option value="182">VANT+1.99 dbm</option><option value="180">VANT+1.73 dbm</option><option value="178">VANT+1.45 dbm</option><option value="176">VANT+1.17 dbm</option><option value="174">VANT+0.90 dbm</option><option value="172">VANT+0.58 dbm</option><option value="169">VANT+0.04 dbm</option><option value="168">VANT-0.14 dbm</option><option value="164">VANT-0.97 dbm</option><option value="162">VANT-1.42 dbm</option><option value="160">VANT-1.89 dbm</option><option value="158">VANT-2.48 dbm</option><option value="156">VANT-3.03 dbm</option><option value="154">VANT-3.61 dbm</option><option value="152">VANT-4.26 dbm</option><option value="150">VANT-5.03 dbm</option><option value="148">VANT-5.81 dbm</option><option value="146">VANT-6.67 dbm</option><option value="144">VANT-7.65 dbm</option><option value="142">VANT-8.65 dbm</option><option value="140">VANT-9.89 dbm</option><option value="138">VANT-11.4 dbm</option><option value="136">VANT-13.29 dbm</option><option value="134">VANT-15.88 dbm</option><option value="132">VANT-19.27 dbm</option><option value="130">VANT-25.18 dbm</option></select><br><br>';
-	is += 'Minimum LCD refresh rate: <input size="5" title="0.5..12.75 sec, step: 0.05 s, default 2.45 s" id="cfg_lcd_tint" maxlength="6" value="2.45"> s, step: 0.05 s<br><br>';
+	if(hver != 9) 
+		is += 'Minimum LCD refresh rate: <input size="5" title="0.5..12.75 sec, step: 0.05 s, default 2.45 s" id="cfg_lcd_tint" maxlength="6" value="2.45"> s, step: 0.05 s<br><br>';
 	if(cfg.ver == 0x19) {
 		is += 'Recording measurements to flash memory <input type="checkbox" id="cfg_flg2_memo" title="Recording measurements to flash memory (cyclic buffer for 19632 measurements)">';
 		is += ' <button type="button" onclick="sendGetMemo(50);">Get the last 50 records</button> <a href="GraphMemo.html">GraphMemo.html</a><br><br>';
@@ -2271,9 +2359,8 @@ function CustomConfig() {
 		is += '<a href="GraphMemo.html">GraphMemo.html</a> <button type="button" onclick="setDevTime();">Set Time</button> <button type="button" onclick="sendGetMemo(50);">Get the last 50 records</button><br><br>';
 	}
 	is += '<button type="button" onclick="SendCustomConfig()">Send Config</button>';
-	is += ' <button type="button" onclick="sendCustomSetting(&quot;56&quot;);">Set default</button>';
-	is += ' <button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>';
-	if(cfg.ver >= 0x24) {
+	is += ' <button type="button" onclick="sendCustomSetting(&quot;56&quot;);">Set default</button><br>';
+	if(cfg.ver >= 0x24 && hver != 9) {
 		is += '<hr><button type="button" title="Get time clock delta" onclick="sendCustomSetting(&quot;24&quot;);">Get delta time</button>';
 		is += ' Adjust time clock delta: <input size="5" title="-32767..32767, in 1/16 us for 1 sec, default 0" id="cfg_time_step" maxlength="6" value="0">';
 		is += ' <button type="button" onclick="sendDeltaTime();">Set delta time</button>';
@@ -2282,15 +2369,11 @@ function CustomConfig() {
 		else
 			is += '<br>';
 	}
-	if(cfg.ver >= 0x11) {
-		is += '<hr><input size="6" maxlength="6" type="text" title="000000..999999, 6 decimal digits, 000000 - PinCode Disable. Warning: If the PinCode is forgotten - only a hardware flasher!" id="pincode" value="000000"> <button title="Warning: If the PinCode is forgotten - only a hardware flasher!" type="button" onclick="sendPinCode();">!Set PinCode!</button><br>';
-		pincode.enable = true;
-		if(cfg.ver >= 0x14) {
-			is += '<br><button type="button" onclick="sendCustomSetting(&quot;01&quot;);">Get device Name</button> <input size="10" maxlength="10" type="text" title="Device Name: 1..10 chars" id="dev_name" value=""> <button type="button" title="Set New Name" onclick="sendDevName();">Set New Name</button> <button title="Clean Name: ATC_xxxx" type="button" onclick="CleanDevName();">Set default Name</button><br>';
-			dnm.enable = true;
-		}
-	}
-	is += '<hr>Management GPIO_TRG (mark "reset"):<br>';
+	if((hver == 0)||(hver == 3)||(hver == 4)||(hver == 5))
+		is += '<hr><b>Management GPIO_TRG</b> (mark "reset"):';
+	else
+		is += '<hr><b>Management GPIO_TRG:</b>';
+	is += '&nbsp;<button type="button" title="Get/read current setings" onclick="sendCustomSetting(&quot;44&quot;);">Get TRG</button><br>';
 	if(cfg.ver >= 0x26) {
 		is += 'Temperature hysteresis: <input size="8" title="Step 0.01°, default -0.55°, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="trg_tmp_hst" maxlength="7" value="-0.55"> °';
 		is += ', Humidity hysteresis: <input size="8" title="Step 0.01%, default 0, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="trg_hm_hst" maxlength="7" value="0.0"> %<br>';
@@ -2299,18 +2382,18 @@ function CustomConfig() {
 		is += ', Humidity hysteresis: <input size="8" title="-12.7..12.7%, default 0, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="trg_hm_hst" maxlength="5" value="0.0"> %<br>';
 	}
 	is += 'Temperature threshold: <input size="8" title="-40.00..80.00°C, default 21.00°C" id="trg_tmp_thr" maxlength="6" value="21.00"> °';
-	is += ', Humidity threshold: <input size="8" title="0..99.00%, default 50.00%" id="trg_hm_thr" maxlength="6" value="50.00"> %<br>';
+	is += ', Humidity threshold: <input size="8" title="0..99.00%, default 50.00%" id="trg_hm_thr" maxlength="6" value="50.00"> %<br><br>';
 	if(cfg.ver >= 0x37) {
-		is += '<hr>Management GPIO_RS (Reed Switch):<br>';
+		is += '<b>Management GPIO_RS (Reed Switch):</b><br><br>';
 		is += 'RS mode: <select id="rds_type"><option value="0" selected>None</option><option value="1">Switch</option><option value="2">Counter</option></select>';
 		if(cfg.ver >= 0x39)	is += ', Invert RS event: <input type="checkbox" id="rds_invert">';
 		is += '<br>RS report interval: <input size="8" title="0 - Off, 1..65535 sec, default 3600 sec" id="rds_rpint" maxlength="6" value="3600"> sec'; 
 	}
-	is += '<hr> <button type="button" title="Get/read current setings" onclick="sendCustomSetting(&quot;44&quot;);">Get TRG</button>';
-	is += ' <button type="button" title="Set/save current setings" onclick="sendTrg();">Set TRG</button>';
+	is += '<br> <button type="button" title="Set/save current setings" onclick="sendTrg();">Set TRG</button>';
 	is += ' <button type="button" title="GPIO_TRG PullUp 10 kOm. Work only TRG off!" onclick="sendCustomSetting(&quot;4501&quot;);">Set pin to "1"</button>';
 	is += ' <button type="button" title="GPIO_TRG PullDown 100 kOm. Work only TRG off!" onclick="sendCustomSetting(&quot;4500&quot;);">Set pin to "0"</button><br><hr>';
 	if(cfg.ver >= 0x13) {
+		is += '<b>Comfort parameters:</b>&nbsp;';
 		is += '<button type="button" title="Get current comfort parameters. The parameters are processed if the configuration is set to &quot;Comfort: On&quot;." onclick="sendCustomSetting(&quot;20&quot;);">Get current comfort parameters</button><br>';
 		is += 'Temperature Lo:<input size="8" title="-40.00..125.00°C, default 21.00°C" id="cmf_tmp_lo" maxlength="6" value="21.00">, ';
 		is += 'Hi: <input size="8" title="-40.00..125.00°C, default 26.00°C" id="cmf_tmp_hi" maxlength="6" value="26.00"> °C<br>';
@@ -2320,7 +2403,16 @@ function CustomConfig() {
 		cmf.enable = true;
 	}
 	trg.enable = true;
-	is += '<button type="button" onclick="sendCustomSetting(&quot;15&quot;);">Show all mi keys</button><br>';
+	is += '<b>Keys and Codes:</b>&nbsp;<button type="button" onclick="sendCustomSetting(&quot;15&quot;);">Show all mi keys</button><br>';
+	if(cfg.ver >= 0x11) {
+		is += '<input size="6" maxlength="6" type="text" title="000000..999999, 6 decimal digits, 000000 - PinCode Disable. Warning: If the PinCode is forgotten - only a hardware flasher!" id="pincode" value="000000"> <button title="Warning: If the PinCode is forgotten - only a hardware flasher!" type="button" onclick="sendPinCode();">!Set PinCode!</button><br>';
+		pincode.enable = true;
+		if(cfg.ver >= 0x14) {
+			is += '<br><button type="button" onclick="sendCustomSetting(&quot;01&quot;);">Get device Name</button> <input size="10" maxlength="10" type="text" title="Device Name: 1..10 chars" id="dev_name" value=""> <button type="button" title="Set New Name" onclick="sendDevName();">Set New Name</button> <button title="Clean Name: ATC_xxxx" type="button" onclick="CleanDevName();">Set default Name</button><br>';
+			dnm.enable = true;
+		}
+	}
+	
 	if(mikeys.mac) {
 		is +='Device MAC [+ 2 Rand]:<br><input size="40" maxlength="16" type="text" id="mi_mac" title="Must be 6 hex MAC digits [+ 2 hex RandMAC digits]!" value="'+hex(mikeys.mac[5],2)+hex(mikeys.mac[4],2)+hex(mikeys.mac[3],2)+hex(mikeys.mac[2],2)+hex(mikeys.mac[1],2)+hex(mikeys.mac[0],2)+hex(mikeys.mac[7],2)+hex(mikeys.mac[6],2)+'">';
 		// ', C0'+hex(mikeys.mac[7],2)+hex(mikeys.mac[6],2)+hex(mikeys.mac[2],2)+hex(mikeys.mac[1],2)+hex(mikeys.mac[0],2)'
@@ -2351,31 +2443,36 @@ function CustomConfig() {
 	$("custcfg").innerHTML = is;
 	$("cfg_flg_adv_type").value = cfg.flg&3;
 	$("cfg_flg_comfort").checked = (cfg.flg&4) != 0;
-	$("cfg_flg_blinking").checked = (cfg.flg&8) != 0;
+	if(hver != 9) {
+		$("cfg_flg_blinking").checked = (cfg.flg&8) != 0;
+		$("cfg_flg_show_batt").checked = (cfg.flg&32) != 0;
+		$("cfg_smiley").value = cfg.flg2&7;
+		if(cfg.ver == 0x19)
+			$("cfg_flg2_memo").checked = (cfg.flg2&8) != 0;
+		if(cfg.ver >= 0x30)
+			$("adv_flags").checked = (cfg.flg2&0x10) != 0;
+		if(cfg.ver >= 0x36) {
+			$("bt5_flags").checked = (cfg.flg2&0x20) != 0;
+			if(cfg.ver >= 0x42)
+				$("longrange_flags").checked = (cfg.flg2&0x40) != 0;
+			else if(cfg.ver < 0x40)
+				$("csa2_flags").checked = (cfg.flg2&0x40) != 0;
+		}
+		$("cfg_lcd_tint").value = String((cfg.lcd_tint * 0.05).toFixed(2));
+	} else {
+		$("cfg_flg_am_pm").checked = (cfg.flg&32) != 0;
+		$("cfg_scr_type").value = cfg.flg2&7;
+		$("longrange_flags").checked = (cfg.flg2&0x40) != 0;
+	}
 	$("cfg_flg_cf").value = ((cfg.flg&16) != 0 ? 1 : 0);
-	$("cfg_flg_show_batt").checked = (cfg.flg&32) != 0;
 	$("cfg_flg_tx_meas").checked = (cfg.flg&64) != 0;
 	$("cfg_flg_lp_meas").checked = (cfg.flg&128) != 0;
-	$("cfg_smiley").value = cfg.flg2&7;
-	if(cfg.ver == 0x19)
-		$("cfg_flg2_memo").checked = (cfg.flg2&8) != 0;
 	if(cfg.ver >= 0x22)
-		$("mi_beacon").checked = (cfg.flg2&0x08) != 0;
-	if(cfg.ver >= 0x30)
-		$("adv_flags").checked = (cfg.flg2&0x10) != 0;
+		$("cfg_adv_crypto").checked = (cfg.flg2&0x08) != 0;
 	if(cfg.ver >= 0x20) {
 		$("cfg_av_meas_mem").value = String(cfg.av_meas_mem);
 		$("cfg_av_meas_mem").onchange = function() {InfoIntervals();}
 	}
-	if(cfg.ver >= 0x36) {
-		$("bt5_flags").checked = (cfg.flg2&0x20) != 0;
-		if(cfg.ver >= 0x42) {
-			$("longrange_flags").checked = (cfg.flg2&0x40) != 0;
-		} else if(cfg.ver < 0x40) {
-			$("csa2_flags").checked = (cfg.flg2&0x40) != 0;
-		}
-	}
-
 	$("cfg_tmp_off").value = String((cfg.temp_offset / 10.0).toFixed(1));
 	$("cfg_hm_off").value = String((cfg.humi_offset / 10.0).toFixed(1));
 	$("cfg_adv_int").value = String((cfg.advertising_interval * 62.5).toFixed(1));
@@ -2384,7 +2481,6 @@ function CustomConfig() {
 	$("cfg_meas_int").onchange = function() {InfoIntervals();}
 	$("cfg_rf_tx").value = String(cfg.rf_tx_power);
 	$("cfg_con_lat").value = String((cfg.connect_latency + 1) * 20);
-	$("cfg_lcd_tint").value = String((cfg.lcd_tint * 0.05).toFixed(2));
 	InfoIntervals();
 	cfg.enable = true;
   } else
@@ -2396,27 +2492,40 @@ function hex(number, len) {
 	return str;
 }
 function SendCustomConfig() {
-	cfg.flg = ($("cfg_flg_adv_type").value & 3)+
-	(($("cfg_flg_comfort").checked) ? 4 : 0) +
-	(($("cfg_flg_blinking").checked) ? 8 : 0) +
-	(($("cfg_flg_cf").value != 0) ? 16 : 0) +
-	(($("cfg_flg_show_batt").checked) ? 32 : 0) +
-	(($("cfg_flg_tx_meas").checked) ? 64 : 0) +
-	(($("cfg_flg_lp_meas").checked) ? 128 : 0);
-	cfg.flg2 = (parseInt($("cfg_smiley").value) & 7);
-	if(cfg.ver == 0x19)
-		cfg.flg2 += (($("cfg_flg2_memo").checked) ? 8 : 0);
-	if(cfg.ver >= 0x22)
-		cfg.flg2 += (($("mi_beacon").checked) ? 0x08 : 0);
-	if(cfg.ver >= 0x30)
-		cfg.flg2 += (($("adv_flags").checked) ? 0x10 : 0);
-	if(cfg.ver >= 0x36) {
-		cfg.flg2 += (($("bt5_flags").checked) ? 0x20 : 0);
-		if(cfg.ver >= 0x42) {
-			cfg.flg2 += (($("longrange_flags").checked) ? 0x40 : 0);
-		} else if(cfg.ver < 0x40) {
-			cfg.flg2 += (($("csa2_flags").checked) ? 0x40 : 0);
+	let hver = cfg.hver & 0x0f;
+	if(hver != 9) {
+		cfg.flg = ($("cfg_flg_adv_type").value & 3)+
+		(($("cfg_flg_comfort").checked) ? 4 : 0) +
+		(($("cfg_flg_blinking").checked) ? 8 : 0) +
+		(($("cfg_flg_cf").value != 0) ? 16 : 0) +
+		(($("cfg_flg_show_batt").checked) ? 32 : 0) +
+		(($("cfg_flg_tx_meas").checked) ? 64 : 0) +
+		(($("cfg_flg_lp_meas").checked) ? 128 : 0);
+		cfg.flg2 = (parseInt($("cfg_smiley").value) & 7);
+		if(cfg.ver == 0x19)
+			cfg.flg2 += (($("cfg_flg2_memo").checked) ? 8 : 0);
+		if(cfg.ver >= 0x22)
+			cfg.flg2 += (($("cfg_adv_crypto").checked) ? 0x08 : 0);
+		if(cfg.ver >= 0x36) {
+			cfg.flg2 += (($("bt5_flags").checked) ? 0x20 : 0);
+			if(cfg.ver >= 0x42)
+				cfg.flg2 += (($("longrange_flags").checked) ? 0x40 : 0);
+			else if(cfg.ver < 0x40)
+				cfg.flg2 += (($("csa2_flags").checked) ? 0x40 : 0);
 		}
+		cfg.lcd_tint = Math.round(parseFloat($("cfg_lcd_tint").value) / 0.05);
+		if(cfg.lcd_tint < 10) cfg.lcd_tint = 10;
+		else if(cfg.lcd_tint > 255) cfg.lcd_tint = 255;
+	} else {
+		cfg.flg = ($("cfg_flg_adv_type").value & 3)+
+		(($("cfg_flg_comfort").checked) ? 4 : 0) +
+		(($("cfg_flg_cf").value != 0) ? 16 : 0) +
+		(($("cfg_flg_am_pm").checked) ? 32 : 0) +
+		(($("cfg_flg_tx_meas").checked) ? 64 : 0) +
+		(($("cfg_flg_lp_meas").checked) ? 128 : 0);
+		cfg.flg2 = (parseInt($("cfg_scr_type").value) & 7);
+		cfg.flg2 += (($("cfg_adv_crypto").checked) ? 0x08 : 0);
+		cfg.flg2 += (($("longrange_flags").checked) ? 0x40 : 0);
 	}
 	if(cfg.ver >= 0x20)
 		cfg.av_meas_mem = parseInt($("cfg_av_meas_mem").value);
@@ -2448,9 +2557,6 @@ function SendCustomConfig() {
 	  else
 		  if(cfg.connect_latency > 200) cfg.connect_latency = 200;
 	}
-	cfg.lcd_tint = Math.round(parseFloat($("cfg_lcd_tint").value) / 0.05);
-	if(cfg.lcd_tint < 10) cfg.lcd_tint = 10;
-	else if(cfg.lcd_tint > 255) cfg.lcd_tint = 255;
 	if(cfg.ver < 0x20) {
 		let s = 'New custom config: ['+cfg.flg+', '+cfg.flg2+', '+cfg.temp_offset+', '+cfg.humi_offset+', '+cfg.advertising_interval+', '+cfg.measure_interval+', '+cfg.rf_tx_power+', '+cfg.connect_latency+', '+cfg.lcd_tint+']';
 		addAlog(s);
@@ -2460,7 +2566,7 @@ function SendCustomConfig() {
 		addAlog(s);
 		sendCustomSetting('55'+hex(cfg.flg,2)+hex(cfg.flg2,2)+hex(cfg.temp_offset&0xff,2)+hex(cfg.humi_offset&0xff,2)+hex(cfg.advertising_interval,2)+hex(cfg.measure_interval,2)+hex(cfg.rf_tx_power,2)+hex(cfg.connect_latency,2)+hex(cfg.lcd_tint,2)+hex(cfg.hver,2)+hex(cfg.av_meas_mem,2));
 	}
-	$("custcfg").innerHTML = '<hr><button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
+	$("custcfg").innerHTML = '<hr><button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send commands to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
 }
 </script>
 <h1>Telink Flasher for Mi Thermostat</h1>
@@ -2473,9 +2579,8 @@ function SendCustomConfig() {
 		  <span class="line line3"></span>
 		</div>  
 	  <div class="menu-items">
-
 			<li> GitHub </li>
-			<li><a style="font-size: 12px" href="https://github.com/atc1441/ATC_MiThermometer">©</a> <a style="font-size: 12px" href="https://github.com/pvvx/ATC_MiThermometer">&#9432;</a></li>
+			<li><a href="https://github.com/atc1441/ATC_MiThermometer">© atc1441</a> <a href="https://github.com/pvvx/ATC_MiThermometer">&#9432; pvvx</a></li>
 			<li> Live Data </li>
 			<li><a href="GraphAtc.html">Graph Atc 1</a></li>
 			<li><a href="GraphAtc1.html">Graph Atc 2</a></li>
