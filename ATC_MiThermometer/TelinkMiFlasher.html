@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v5.4</title>
+<title>Telink Flasher v5.5</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -44,6 +44,7 @@ var miEnabled = false,
 	devInfEnabled = false,
 	miConnected = false,
 	devIdEnabled = false,
+	bigOtaEnabled = false,
 	mode_activation;
 //Login values
 var mi_random_key, mi_random_key_recv, mi_device_info_recv, mi_device_info_send, device_known_id, expected_device_infos, is_logged_in = false;
@@ -52,6 +53,7 @@ var keypair, is_activated, own_public_key, device_public_key, shared_key, derive
 var device_new_id = "00626c742e332e31323976" + makeRandomID(6) + "415443"; // 0+"blt.3.129v"+rand[6]+"ATC"
 var $ = function(id) { return document.getElementById(id);}
 function resetVariables() {
+	fwmaxsize = 0x20000;
 	busy = false;
 	gattServer = null;
 	Theservice = null;
@@ -73,6 +75,7 @@ function resetVariables() {
 	writeCharacteristic = null;
 	settingsCharacteristics = null;
 	miConnected = false;
+	bigOtaEnabled = false;
 	is_logged_in = false;
 	//fwname = '';
 	devtime = {};
@@ -761,7 +764,7 @@ function CustomBlkParse(value) {
 		else if(hw_id == 6) s +='CGDK2';
 		else if(hw_id == 7) s +='CGG1-M';
 		else if(hw_id == 8) s +='MHO-C401N';
-		else if(hw_id == 9) s +='MJWSD05MMC';
+		else if(hw_id == 9) { s +='MJWSD05MMC'; bigOtaEnabled = true; }
 		else s += 'Unknown'
 		if(devHWstr) s += ' ' + devHWstr;
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
@@ -794,12 +797,12 @@ function CustomBlkParse(value) {
 		$("tempHumiData").innerHTML = s;
 	    addClog(s);
 	} else if(blkid == 0x22 && len >= 7) {
-		if((cfg.hver & 0x0f) != 9) {
-			ext.big_number = value.getInt16(1, true); // -995..19995, x0.1
-			ext.small_number = value.getInt16(3, true); // -9..99, x1
-		} else {
+		if((cfg.hver & 0x0f) == 9) {
 			ext.big_number = value.getInt32(1, true); // -9950..199950, x0.01
 			ext.small_number = 0;
+		} else {
+			ext.big_number = value.getInt16(1, true); // -995..19995, x0.1
+			ext.small_number = value.getInt16(3, true); // -9..99, x1
 		}
 		ext.vtime = value.getUint16(5, true); // in sec
 		ext.flg = value.getUint8(7);
@@ -1001,6 +1004,21 @@ function CustomBlkParse(value) {
 		cmf.hm_hi = value.getUint16(7, true); // humi lo
 		let s = 'Comfort Temp: '+(cmf.tmp_lo/100.0).toFixed(2)+'..'+(cmf.tmp_hi/100.0).toFixed(2)+'°C, Humi: '+(cmf.hm_lo/100.0).toFixed(2)+'..'+(cmf.hm_hi/100.0).toFixed(2)+'%';
 		addAlog(s); UpdCmf();
+	} else if(blkid == 0x73 && len >= 9) {
+		let e = value.getUint8(1);
+		let faddr = value.getUint32(2, true);
+		let fszk = value.getUint32(6, true); // in kbytes
+		let s = 'OTA region: 0x'+hex(faddr,6)+', size: '+fszk+' kbytes';
+		if(e == 1) s += ' -> OTA works';
+		else if(e == 2) s += ' -> Ext.OTA busy';
+		else if(e == 3) s += ' -> Ext.OTA ready';
+		else if(e > 0x80) s += ' -> Ext.OTA error';
+		else e += ' ('+e+')';
+		if(e == 3) {
+			addAlog(s);
+			fwmaxsize = fszk << 10;
+		 	if(bigOtaEnabled) setTimeout(updateBegin(),100);
+		} else	addClog(s);
 	} else if(blkid == 0x01 && len >= 1) {
 		dnm.name = new TextDecoder("utf-8").decode(value.buffer.slice(1));
 		if($("dev_name"))
@@ -1400,8 +1418,7 @@ function doConnect() {
 			addLog("Detected Mi device");
 			setStatus("Detected Mi device");
 			$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
-		 	if (bluetoothDevice.name.substr(0,10) == "MJWSD05MMC")
-			 	fwmaxsize = 0x28000;
+		 	if (bluetoothDevice.name.substr(0,10) == "MJWSD05MMC") fwmaxsize = 0x34000;
 			miAction();
 		} else if (customEnabled) {
 			let s = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send commands to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
@@ -1481,8 +1498,7 @@ function detectMi() {
 			addLog("Detected Mi device");
 			setStatus("Detected Mi device");
 			$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
-		 	if (bluetoothDevice.name.substr(0,10) == "MJWSD05MMC")
-			 	fwmaxsize = 0x28000;
+		 	if (bluetoothDevice.name.substr(0,10) == "MJWSD05MMC") fwmaxsize = 0x34000;
 			miAction();
 		} else if (customEnabled) {
 			let s = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send commands to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
@@ -1535,6 +1551,22 @@ function startDFU() {
 	if ((miConnected==true) && (is_logged_in==false)){
 		addLog("Please do the Activation first!");
 		return;
+	}
+	if (blockCount*16 > fwmaxsize){
+		let szk = fwmaxsize >> 10;
+		if(bigOtaEnabled && settingsCharacteristics){
+			if(!confirm('OTA size over '+szk+'k! Clean the whole story "Memo"?')) return;
+			szk = blockCount*16 >> 10;
+			addAlog('Clear Ext.OTA region...');
+			settingsCharacteristics.writeValue(new Uint8Array([0x73, 0,0,4,0, szk&0xff, (szk>>8)&0xff, (szk>>16)&0xff, (szk>>24)&0xff]));
+			return;
+		} else {
+			let s = 'Big OTA (size over '+szk+'k) is not supported!'; 
+			alert(s);
+			setStatus(s);
+			addAlog(s);
+			return;
+		}
 	}
 	updateBegin();
 }
@@ -1644,9 +1676,13 @@ var crc32 = (function() {
 function testOTAFirmware(data) {
 	let fsize = data.byteLength;
 	addClog("File size = 0x"+ fsize.toString(16));
-	if (fsize < 0x800 || fsize > fwmaxsize) {
+	if (fsize < 64)
 		return "Wrong binary Telink OTA firmware size!";
-	}
+	if(bigOtaEnabled) {
+		if(fsize > 208*1024)
+			return "Size firmware is more 208 kbytes!";
+	} else if(fsize > fwmaxsize)
+			return "Size firmware is more "+fwmaxsize+" bytes!";
 	let head = new DataView(data, 0, 0x20);
 	if(head.getUint32(0x08, true) != 0x544c4e4b){
 		return "Incorrect head in Telink OTA binary firmware";
@@ -1771,6 +1807,9 @@ window.onload = function() {
 function updateBegin() {
 	if (blockCount <= 0) {
 		addLog("No file selected aborting");
+		return;
+	} else if (blockCount*16 >= fwmaxsize) {
+		alert('Big OTA is not supported!');
 		return;
 	}
 	if (miEnabled && writeCharacteristicSpeed != null) mainCharSend("1e0000", writeCharacteristicSpeed); // this makes the upload faster
@@ -2296,7 +2335,7 @@ function CustomConfig() {
 	is += '<br><br><hr><br><b>Configuration:</b>&nbsp;<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br><br>';
 	is += 'Temperature: <select id="cfg_flg_cf"><option value="0">°C</option><option value="1">°F</option></select>';
 	if(hver == 9)
-		is += '&nbsp;12-hour clock:<input type="checkbox" id="cfg_flg_am_pm">';
+		is += '&nbsp;&nbsp;12-hour clock:<input type="checkbox" id="cfg_flg_am_pm">&nbsp;&nbsp;T&H 2 decimal places<input type="checkbox" id="cfg_flg_x100">';
 	is += '<br><br>';
 	if((hver == 2)||(hver == 6)||(hver == 7)) 
 		is += 'Line: <select id="cfg_smiley"><option value="0" selected>&nbsp;&nbsp;&nbsp;</option><option value="5">&nbsp;---&nbsp;</option></select>';
@@ -2461,6 +2500,7 @@ function CustomConfig() {
 		$("cfg_lcd_tint").value = String((cfg.lcd_tint * 0.05).toFixed(2));
 	} else {
 		$("cfg_flg_am_pm").checked = (cfg.flg&32) != 0;
+		$("cfg_flg_x100").checked = (cfg.flg&8) != 0;
 		$("cfg_scr_type").value = cfg.flg2&7;
 		$("longrange_flags").checked = (cfg.flg2&0x40) != 0;
 	}
@@ -2519,6 +2559,7 @@ function SendCustomConfig() {
 	} else {
 		cfg.flg = ($("cfg_flg_adv_type").value & 3)+
 		(($("cfg_flg_comfort").checked) ? 4 : 0) +
+		(($("cfg_flg_x100").checked != 0) ? 8 : 0) +
 		(($("cfg_flg_cf").value != 0) ? 16 : 0) +
 		(($("cfg_flg_am_pm").checked) ? 32 : 0) +
 		(($("cfg_flg_tx_meas").checked) ? 64 : 0) +
