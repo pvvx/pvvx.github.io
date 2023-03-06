@@ -1017,7 +1017,7 @@ function CustomBlkParse(value) {
 		if(e == 3) {
 			addAlog(s);
 			fwmaxsize = fszk << 10;
-		 	if(bigOtaEnabled) setTimeout(updateBegin(),100);
+		 	if(bigOtaEnabled) setTimeout(updateBegin(),5000);
 		} else	addClog(s);
 	} else if(blkid == 0x01 && len >= 1) {
 		dnm.name = new TextDecoder("utf-8").decode(value.buffer.slice(1));
@@ -2358,9 +2358,7 @@ function CustomConfig() {
 	is += ' <button type="button" title="Stop transferring measurements. Only in the current connection." onclick="sendCustomSetting(&quot;3300&quot;);">Stop Tx Measure</button><br><br>';
 	is += 'Temperature offset: <input size="5" title="-12.7..12.7°, default 0" id="cfg_tmp_off" maxlength="5" value="0"> °';
 	is += ', Humidity offset: <input size="5" title="-12.7..12.7%, default 0" id="cfg_hm_off" maxlength="5" value="0"> %<br><br>';
-	if(hver == 9)
-		is += 'LE Long Range: <input title="Enable Extended Advertising Long Range (Coded PHY S8)" type="checkbox" id="longrange_flags"><br><br>';
-	else if(cfg.ver >= 0x36) {
+	if(cfg.ver >= 0x36) {
 		if(cfg.ver >= 0x42) 
 			is += 'BT5+ PHY: <input title="Support BT5.0 PHY (LE 2M/1M/500K/125K, CSA2)" type="checkbox" id="bt5_flags">, LE Long Range: <input title="Enable Extended Advertising Long Range (Coded PHY S8)" type="checkbox" id="longrange_flags"><br><br>';
 		else if(cfg.ver >= 0x40) 
@@ -2502,6 +2500,7 @@ function CustomConfig() {
 		$("cfg_flg_am_pm").checked = (cfg.flg&32) != 0;
 		$("cfg_flg_x100").checked = (cfg.flg&8) != 0;
 		$("cfg_scr_type").value = cfg.flg2&7;
+		$("bt5_flags").checked = (cfg.flg2&0x20) != 0;
 		$("longrange_flags").checked = (cfg.flg2&0x40) != 0;
 	}
 	$("cfg_flg_cf").value = ((cfg.flg&16) != 0 ? 1 : 0);
@@ -2566,6 +2565,7 @@ function SendCustomConfig() {
 		(($("cfg_flg_lp_meas").checked) ? 128 : 0);
 		cfg.flg2 = (parseInt($("cfg_scr_type").value) & 7);
 		cfg.flg2 += (($("cfg_adv_crypto").checked) ? 0x08 : 0);
+		cfg.flg2 += (($("bt5_flags").checked) ? 0x20 : 0);
 		cfg.flg2 += (($("longrange_flags").checked) ? 0x40 : 0);
 	}
 	if(cfg.ver >= 0x20)
