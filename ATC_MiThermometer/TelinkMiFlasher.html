@@ -2545,6 +2545,8 @@ function SendCustomConfig() {
 			cfg.flg2 += (($("cfg_flg2_memo").checked) ? 8 : 0);
 		if(cfg.ver >= 0x22)
 			cfg.flg2 += (($("cfg_adv_crypto").checked) ? 0x08 : 0);
+		if(cfg.ver >= 0x30)
+			cfg.flg2 += (($("adv_flags").checked )? 0x10 : 0);
 		if(cfg.ver >= 0x36) {
 			cfg.flg2 += (($("bt5_flags").checked) ? 0x20 : 0);
 			if(cfg.ver >= 0x42)
