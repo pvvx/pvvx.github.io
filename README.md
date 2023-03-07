@@ -24,6 +24,8 @@ Web files for projects:
 
 [MJWSD05MMC](https://pvvx.github.io/MJWSD05MMC)
 
+[SJWS01LM](https://pvvx.github.io/SJWS01LM)
+
 [CGDK2](https://pvvx.github.io/CGDK2)
 
 [CGDK2-2](https://pvvx.github.io/CGDK2/CGDK2-2)
