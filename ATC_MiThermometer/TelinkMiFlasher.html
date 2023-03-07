@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v5.5</title>
+<title>Telink Flasher v5.6</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -108,6 +108,7 @@ function disconnect() {
 	$("MAC").innerHTML = '';
 	$("ldfile").hidden = true;
 	cfg.hver = null;
+	hwver_id = null;
 	devHWstr = null;
 	resetVariables();
 }
@@ -117,6 +118,7 @@ function onDisconnected() {
 	$("MAC").innerHTML = '';
 	$("ldfile").hidden = true;
 	cfg.hver = null;
+	hwver_id = null;
 	devHWstr = null;
 	resetVariables();
 }
@@ -757,14 +759,14 @@ function CustomBlkParse(value) {
 		} else if(cfg.hver == null) cfg.hver = 0x80;
 		if(len >= 12) cfg.av_meas_mem = value.getUint8(12); else cfg.av_meas_mem = 0;
 		let s = 'Hardware Version: ';
-		let hw_id = cfg.hver & 0x0F;
-		if((hw_id == 0)||(hw_id == 3)||(hw_id == 4)||(hw_id == 5)) s +='LYWSD03MMC';
-		else if(hw_id == 1) s +='MHO-C401';
-		else if(hw_id == 2) s +='CGG1';
-		else if(hw_id == 6) s +='CGDK2';
-		else if(hw_id == 7) s +='CGG1-M';
-		else if(hw_id == 8) s +='MHO-C401N';
-		else if(hw_id == 9) { s +='MJWSD05MMC'; bigOtaEnabled = true; }
+		hwver_id = cfg.hver & 0x0F;
+		if((hwver_id == 0)||(hwver_id == 3)||(hwver_id == 4)||(hwver_id == 5)) s +='LYWSD03MMC';
+		else if(hwver_id == 1) s +='MHO-C401';
+		else if(hwver_id == 2) s +='CGG1';
+		else if(hwver_id == 6) s +='CGDK2';
+		else if(hwver_id == 7) s +='CGG1-M';
+		else if(hwver_id == 8) s +='MHO-C401N';
+		else if(hwver_id == 9) { s +='MJWSD05MMC'; bigOtaEnabled = true; }
 		else s += 'Unknown'
 		if(devHWstr) s += ' ' + devHWstr;
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
@@ -797,7 +799,7 @@ function CustomBlkParse(value) {
 		$("tempHumiData").innerHTML = s;
 	    addClog(s);
 	} else if(blkid == 0x22 && len >= 7) {
-		if((cfg.hver & 0x0f) == 9) {
+		if(hwver_id == 9) {
 			ext.big_number = value.getInt32(1, true); // -9950..199950, x0.01
 			ext.small_number = 0;
 		} else {
@@ -1012,12 +1014,20 @@ function CustomBlkParse(value) {
 		if(e == 1) s += ' -> OTA works';
 		else if(e == 2) s += ' -> Ext.OTA busy';
 		else if(e == 3) s += ' -> Ext.OTA ready';
+		else if(e == 4) s += ' -> Ext.OTA event';
 		else if(e > 0x80) s += ' -> Ext.OTA error';
 		else e += ' ('+e+')';
-		if(e == 3) {
-			addAlog(s);
+		addClog(s);
+		if(e == 4) {
+			s = 'Erase the Flash sector at: 0x'+hex(faddr,6)+'...';
+			setStatus(s);
+			addClog(s);
+		} else if(e == 3) {
+			s = 'Clean Flash OTA region: 0x'+hex(faddr,6)+', size: '+fszk+' kbytes. Go OTA...';
+			setStatus(s);
+			addLog(s);
 			fwmaxsize = fszk << 10;
-		 	if(bigOtaEnabled) setTimeout(updateBegin(),5000);
+		 	if(bigOtaEnabled) setTimeout(updateBegin(), 1000);
 		} else	addClog(s);
 	} else if(blkid == 0x01 && len >= 1) {
 		dnm.name = new TextDecoder("utf-8").decode(value.buffer.slice(1));
@@ -1085,21 +1095,21 @@ function getTestCharacteristic() {
 function menuUpgrade() {
 	let is = "";
 	$("ldfile").hidden = false;
-	if(otafiles.loaded && otafiles.version && cfg.hver != null) {
+	if(otafiles.loaded && otafiles.version && hwver_id != null) {
 		if(otafiles.custom != null) {
-			let f1 = otafiles.custom[cfg.hver & 0x0f];
+			let f1 = otafiles.custom[hwver_id];
 			if(f1 != "" && f1 != "?")
 				is += '<button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>';
 		}
 		if(otafiles.betafw && otafiles.betaver != null) {
-			let f2 = otafiles.betafw[cfg.hver & 0x0f];
+			let f2 = otafiles.betafw[hwver_id];
 			if(f2 != "" && f2 != "?")
 				is += ' <button type="button" id="btfrmupg" onclick="BetaFirmwareUpgrade();">Beta Firmware ver '+(otafiles.betaver>>4)+'.'+(otafiles.betaver&0x0f)+'</button><br>';
 		}
 		if(otafiles.original != null) {
-			let f3 = otafiles.original[cfg.hver & 0x0f];
+			let f3 = otafiles.original[hwver_id];
 			if(f3 != "" && f3 != "?")
-				is +=' <button type="button" id="btorupg" onclick="BackToOriginal();">' + otafiles.original[cfg.hver & 0x0f] +'</button>';
+				is +=' <button type="button" id="btorupg" onclick="BackToOriginal();">' + otafiles.original[hwver_id] +'</button>';
 		}
 	}
 	if(fwname != "" && firmwareArray != "") {
@@ -1333,6 +1343,8 @@ function miAuthorization() {
 						cfg.hver = null;
 						$("ldfile").hidden = false;
 					}
+					if(cfg.hver != null)
+						hwver_id = cfg.hver & 0x0f;
 					let s=bluetoothDevice.name;
 					if (devHWstr) s+=" HW:"+devHWstr+" ";
 					s+="Connected, you can now Do the Activation to either get the Token or flash a new Firmware"
@@ -1557,12 +1569,13 @@ function startDFU() {
 		if(bigOtaEnabled && settingsCharacteristics){
 			if(!confirm('OTA size over '+szk+'k! Clean the whole story "Memo"?')) return;
 			szk = blockCount*16 >> 10;
-			addAlog('Clear Ext.OTA region...');
+			let s = 'Clear Ext.OTA region ('+szk+'kib)...'; 
+			addAlog(s);
+			setStatus(s)
 			settingsCharacteristics.writeValue(new Uint8Array([0x73, 0,0,4,0, szk&0xff, (szk>>8)&0xff, (szk>>16)&0xff, (szk>>24)&0xff]));
 			return;
 		} else {
 			let s = 'Big OTA (size over '+szk+'k) is not supported!'; 
-			alert(s);
 			setStatus(s);
 			addAlog(s);
 			return;
@@ -1768,22 +1781,22 @@ function getOtaJson(d, name) {
 }
 
 function FirmwareUpgrade() {
-	if(cfg.hver != null) {
-		let fn = otafiles.custom[cfg.hver & 0x0f];
+	if(hwver_id != null) {
+		let fn = otafiles.custom[hwver_id];
 		addAlog("Load firmware file '"+fn+"'...");
 		ajax_file(fn, getFirmwareArray);
 	}
 }
 function BetaFirmwareUpgrade() {
-	if(cfg.hver != null) {
-		let fn = otafiles.betafw[cfg.hver & 0x0f];
+	if(hwver_id != null) {
+		let fn = otafiles.betafw[hwver_id];
 		addAlog("Load firmware file '"+fn+"'...");
 		ajax_file(fn, getFirmwareArray);
 	}
 }
 function BackToOriginal() {
-	if(cfg.hver != null) {
-		let fn = otafiles.original[cfg.hver & 0x0f];
+	if(hwver_id != null) {
+		let fn = otafiles.original[hwver_id];
 		addAlog("Load firmware file '"+fn+"'...");
 		ajax_file(fn, getFirmwareArray);
 	}
@@ -2092,15 +2105,14 @@ function sendMAC() {
 
 function UpdExt() {
 	if(ext.enable && $("extbignumb").value) {
-		let hver = cfg.hver & 0x0f;
-		if(hver == 9) {
+		if(hwver_id == 9) {
 			$("extbignumb").value = (ext.big_number / 100.0).toFixed(2);
 			$("exttmpsmb").value = (ext.flg >> 4) & 0x07;
 			$("extpersent").checked = ((ext.flg & 0x80) !=0 ? 1 : 0);
 			$("extbattery").checked = ((ext.flg & 8) !=0 ? 1 : 0);
 		} else { 
 			$("extbignumb").value = (ext.big_number / 10.0).toFixed(1);
-			if(hver == 2 || hver == 6 || hver == 7)  // CGG1 & CGDK2
+			if(hwver_id == 2 || hwver_id == 6 || hwver_id == 7)  // CGG1 & CGDK2
 				$("extsmalnumb").value = (ext.small_number / 10.0).toFixed(1);
 			else
 				$("extsmalnumb").value = ext.small_number.toFixed(0);
@@ -2115,10 +2127,15 @@ function UpdExt() {
 
 function sendExt() {
 	if(ext.enable) {
-		let hver = cfg.hver & 0x0f;
-		if(hver != 9)  {
+		if(hwver_id == 9)  {
+			ext.big_number = Math.round(100.0 * parseFloat($("extbignumb").value));
+			ext.cfg = (parseInt($("extsmiley").value) & 7) +
+			($("extbattery").checked ? 8 : 0) +
+			($("extpersent").checked ? 0x80 : 0) +
+			((parseInt($("exttmpsmb").value) & 0x07) << 4);
+		} else {
 			ext.big_number = Math.round(10.0 * parseFloat($("extbignumb").value));
-			if(hver == 2 || hver == 6 || hver == 7) // CGG1 & CGDK2
+			if(hwver_id == 2 || hwver_id == 6 || hwver_id == 7) // CGG1 & CGDK2
 				ext.small_number = Math.round(10.0 * parseFloat($("extsmalnumb").value));
 			else
 				ext.small_number = parseInt($("extsmalnumb").value);
@@ -2126,22 +2143,17 @@ function sendExt() {
 			($("extpersent").checked ? 8 : 0) +
 			($("extbattery").checked ? 16 : 0) +
 			((parseInt($("exttmpsmb").value) & 7) << 5);
-		} else {
-			ext.big_number = Math.round(100.0 * parseFloat($("extbignumb").value));
-			ext.cfg = (parseInt($("extsmiley").value) & 7) +
-			($("extbattery").checked ? 8 : 0) +
-			($("extpersent").checked ? 0x80 : 0) +
-			((parseInt($("exttmpsmb").value) & 0x07) << 4);
 		}
 		ext.vtime = parseInt($("extvtimed").value);
 		if(ext.vtime < 2) ext.vtime = 2;
 		else if(ext.vtime > 65535) ext.vtime = 65535;
 		addClog("Send cmd (22 + ext data)...");
 		let blk;
-		if(hver != 9)
-			blk = new Uint8Array([0x22, ext.big_number&0xff, (ext.big_number>>8)&0xff,ext.small_number&0xff,(ext.small_number>>8)&0xff,ext.vtime&0xff,(ext.vtime>>8)&0xff,ext.cfg])
-		else
-			blk = new Uint8Array([0x22, ext.big_number&0xff, (ext.big_number>>8)&0xff, (ext.big_number>>16)&0xff, (ext.big_number>>24)&0xff, ext.vtime&0xff,(ext.vtime>>8)&0xff,ext.cfg])
+		if(hwver_id == 9){
+			blk = new Uint8Array([0x22, ext.big_number&0xff, (ext.big_number>>8)&0xff, (ext.big_number>>16)&0xff, (ext.big_number>>24)&0xff, ext.vtime&0xff,(ext.vtime>>8)&0xff,ext.cfg]);
+		} else{
+			blk = new Uint8Array([0x22, ext.big_number&0xff, (ext.big_number>>8)&0xff,ext.small_number&0xff,(ext.small_number>>8)&0xff,ext.vtime&0xff,(ext.vtime>>8)&0xff,ext.cfg]);
+		}
 		settingsCharacteristics.writeValue(blk).then(_ => {
 			addAlog('Send Ext data: '+dump(blk, blk.length)+' ok');
 		});
@@ -2303,20 +2315,19 @@ function InfoIntervals() {
 		}
 }
 function CustomConfig() {
-  menuUpgrade();
-  let hver = cfg.hver & 0x0f;
+  menuUpgrade(); 
   let is = '';
   if(cfg.ver >= 0x10) {
 	is = '<hr>Send commands to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button>';
-	if(hver == 0)
+	if(hwver_id == 0)
 		is += ' Test: [ <button type="button" onclick="lcd_clock();">Show clock on LCD</button> <button type="button" onclick="lcd_restore();">Repair LCD</button> ]<br>';
 	is += '<br>Show on device screen:<br>';
-	if(hver == 2 || hver == 6 || hver == 7){
+	if(hwver_id == 2 || hwver_id == 6 || hwver_id == 7){
 		is += '<input size="6" title="Big number: -99.5..1999.5" id="extbignumb" maxlength="5" value="123.4">';
 		is += ' <select id="exttmpsmb"><option value="0">&nbsp;&nbsp;</option><option value="1">°Г</option><option value="2">&nbsp;-</option><option value="3">°F</option><option value="4">&nbsp;_</option><option value="5">°C</option><option value="6" selected>&nbsp;=</option><option value="7">°E</option></select>';
 		is += ' <select id="extsmiley"><option value="0" selected>&nbsp;&nbsp;&nbsp;</option><option value="5">&nbsp;---&nbsp;</option></select>';
 		is += '	<input size="5" title="Small number: -99.5..999.5" id="extsmalnumb" maxlength="5" value="56.7">';
-	}else if(hver == 9){
+	}else if(hwver_id == 9){
 		is += '<input size="8" title="Big number: -999.50..19999.50" id="extbignumb" maxlength="8" value="123.45">';
 		is += ' <select id="exttmpsmb"><option value="0">&nbsp;&nbsp;</option><option value="1">°г</option><option value="2">&nbsp;-</option><option value="3">°C</option><option value="4">&nbsp;i</option><option value="5">°Г</option><option value="6" selected>&nbsp;г</option><option value="7">°F</option></select>';
 		is += ' <select id="extsmiley"><option value="0">&nbsp;&nbsp;&nbsp;</option><option value="1">&nbsp;^_^&nbsp;</option><option value="2">&nbsp;-&and;-&nbsp;</option><option value="3">&nbsp;&Delta;&#9651;&Delta;&nbsp;</option><option value="4">(&nbsp;&nbsp;&nbsp;)</option><option value="5">(^_^)</option><option value="6">(-&and;-)</option><option value="7" selected>(&Delta;&#9651;&Delta;)</option></select>';
@@ -2334,20 +2345,20 @@ function CustomConfig() {
 	ext.enable = true;
 	is += '<br><br><hr><br><b>Configuration:</b>&nbsp;<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br><br>';
 	is += 'Temperature: <select id="cfg_flg_cf"><option value="0">°C</option><option value="1">°F</option></select>';
-	if(hver == 9)
+	if(hwver_id == 9)
 		is += '&nbsp;&nbsp;12-hour clock:<input type="checkbox" id="cfg_flg_am_pm">&nbsp;&nbsp;T&H 2 decimal places<input type="checkbox" id="cfg_flg_x100">';
 	is += '<br><br>';
-	if((hver == 2)||(hver == 6)||(hver == 7)) 
+	if((hwver_id == 2)||(hwver_id == 6)||(hwver_id == 7)) 
 		is += 'Line: <select id="cfg_smiley"><option value="0" selected>&nbsp;&nbsp;&nbsp;</option><option value="5">&nbsp;---&nbsp;</option></select>';
-	else if(hver == 9)
+	else if(hwver_id == 9)
 		is += 'Show: <select id="cfg_scr_type"><option value="0">Time</option><option value="1">Temperature</option><option value="2">Humidity</option><option value="3">Battery %</option><option value="4">Battery V</option><option value="5">ExtNumber&Symbols</option></select>';
 	else
 		is += 'Smiley: <select id="cfg_smiley"><option value="0">&nbsp;&nbsp;&nbsp;</option><option value="1">&nbsp;^_^&nbsp;</option><option value="2">&nbsp;-&and;-&nbsp;</option><option value="3">&nbsp;&Delta;&#9651;&Delta;&nbsp;</option><option value="4">(&nbsp;&nbsp;&nbsp;)</option><option value="5">(^_^)</option><option value="6">(-&and;-)</option><option value="7">(&Delta;&#9651;&Delta;)</option></select>';
 	is += ', Comfort: <input type="checkbox" id="cfg_flg_comfort">';
-	if(hver != 9)
+	if(hwver_id != 9)
 		is += ', Show batt: <input type="checkbox" id="cfg_flg_show_batt">';
 	if(cfg.ver >= 0x18) {
-		if(hver != 9)
+		if(hwver_id != 9)
 			is += ', Clock: <input type="checkbox" id="cfg_flg_blinking"> ';
 		is += '<button type="button" onclick="setDevTime();">Set Time</button> <button type="button" onclick="sendCustomSetting(&quot;23&quot;);">Get Time</button>';
 	}else
@@ -2371,7 +2382,7 @@ function CustomConfig() {
 		is += 'BTHome v1</option></select>';
 	else
 		is += 'All</option></select>';
-	if(hver != 9 && cfg.ver >= 0x30)
+	if(hwver_id != 9 && cfg.ver >= 0x30)
 		is += ', AdFlags: <input title="Toggle support for third-party software" type="checkbox" id="adv_flags">';
 	if(cfg.ver >= 0x22)
 		is += ', Encrypted beacon: <input title="Bindkey encrypted beacon" type="checkbox" id="cfg_adv_crypto">';
@@ -2383,7 +2394,7 @@ function CustomConfig() {
 		is += 'Connect latency: <input size="5" title="0..4000 ms, default 2500 ms" id="cfg_con_lat" maxlength="4" value="2500"> ms, step 20 ms<br><br>';
 	if(MAX_RF_TX_Power) is += 'RF TX Power: <select id="cfg_rf_tx"><option value="63">VBAT+10.46 dbm</option><option value="61">VBAT+10.29 dbm</option><option value="58">VBAT+10.01 dbm</option><option value="56">VBAT+9.81 dbm</option><option value="53">VBAT+9.48 dbm</option><option value="51">VBAT+9.24 dbm</option><option value="49">VBAT+8.97 dbm</option><option value="47">VBAT+8.73 dbm</option><option value="45">VBAT+8.44 dbm</option><option value="43">VBAT+8.13 dbm</option><option value="41">VBAT+7.79 dbm</option><option value="39">VBAT+7.41 dbm</option><option value="37">VBAT+7.02 dbm</option><option value="35">VBAT+6.60 dbm</option><option value="33">VBAT+6.14 dbm</option><option value="31">VBAT+5.65 dbm</option><option value="29">VBAT+5.13 dbm</option><option value="27">VBAT+4.57 dbm</option><option value="25">VBAT+3.94 dbm</option><option value="23">VBAT+3.23 dbm</option><option value="191" selected>VANT+3.01 dbm</option><option value="189">VANT+2.81 dbm</option><option value="187">VANT+2.61 dbm</option><option value="185">VANT+2.39 dbm</option><option value="182">VANT+1.99 dbm</option><option value="180">VANT+1.73 dbm</option><option value="178">VANT+1.45 dbm</option><option value="176">VANT+1.17 dbm</option><option value="174">VANT+0.90 dbm</option><option value="172">VANT+0.58 dbm</option><option value="169">VANT+0.04 dbm</option><option value="168">VANT-0.14 dbm</option><option value="164">VANT-0.97 dbm</option><option value="162">VANT-1.42 dbm</option><option value="160">VANT-1.89 dbm</option><option value="158">VANT-2.48 dbm</option><option value="156">VANT-3.03 dbm</option><option value="154">VANT-3.61 dbm</option><option value="152">VANT-4.26 dbm</option><option value="150">VANT-5.03 dbm</option><option value="148">VANT-5.81 dbm</option><option value="146">VANT-6.67 dbm</option><option value="144">VANT-7.65 dbm</option><option value="142">VANT-8.65 dbm</option><option value="140">VANT-9.89 dbm</option><option value="138">VANT-11.4 dbm</option><option value="136">VANT-13.29 dbm</option><option value="134">VANT-15.88 dbm</option><option value="132">VANT-19.27 dbm</option><option value="130">VANT-25.18 dbm</option></select><br><br>';
 	else is += 'RF TX Power: <select id="cfg_rf_tx"><option value="191" selected>VANT+3.01 dbm</option><option value="189">VANT+2.81 dbm</option><option value="187">VANT+2.61 dbm</option><option value="185">VANT+2.39 dbm</option><option value="182">VANT+1.99 dbm</option><option value="180">VANT+1.73 dbm</option><option value="178">VANT+1.45 dbm</option><option value="176">VANT+1.17 dbm</option><option value="174">VANT+0.90 dbm</option><option value="172">VANT+0.58 dbm</option><option value="169">VANT+0.04 dbm</option><option value="168">VANT-0.14 dbm</option><option value="164">VANT-0.97 dbm</option><option value="162">VANT-1.42 dbm</option><option value="160">VANT-1.89 dbm</option><option value="158">VANT-2.48 dbm</option><option value="156">VANT-3.03 dbm</option><option value="154">VANT-3.61 dbm</option><option value="152">VANT-4.26 dbm</option><option value="150">VANT-5.03 dbm</option><option value="148">VANT-5.81 dbm</option><option value="146">VANT-6.67 dbm</option><option value="144">VANT-7.65 dbm</option><option value="142">VANT-8.65 dbm</option><option value="140">VANT-9.89 dbm</option><option value="138">VANT-11.4 dbm</option><option value="136">VANT-13.29 dbm</option><option value="134">VANT-15.88 dbm</option><option value="132">VANT-19.27 dbm</option><option value="130">VANT-25.18 dbm</option></select><br><br>';
-	if(hver != 9) 
+	if(hwver_id != 9) 
 		is += 'Minimum LCD refresh rate: <input size="5" title="0.5..12.75 sec, step: 0.05 s, default 2.45 s" id="cfg_lcd_tint" maxlength="6" value="2.45"> s, step: 0.05 s<br><br>';
 	if(cfg.ver == 0x19) {
 		is += 'Recording measurements to flash memory <input type="checkbox" id="cfg_flg2_memo" title="Recording measurements to flash memory (cyclic buffer for 19632 measurements)">';
@@ -2397,7 +2408,7 @@ function CustomConfig() {
 	}
 	is += '<button type="button" onclick="SendCustomConfig()">Send Config</button>';
 	is += ' <button type="button" onclick="sendCustomSetting(&quot;56&quot;);">Set default</button><br>';
-	if(cfg.ver >= 0x24 && hver != 9) {
+	if(cfg.ver >= 0x24 && hwver_id != 9) {
 		is += '<hr><button type="button" title="Get time clock delta" onclick="sendCustomSetting(&quot;24&quot;);">Get delta time</button>';
 		is += ' Adjust time clock delta: <input size="5" title="-32767..32767, in 1/16 us for 1 sec, default 0" id="cfg_time_step" maxlength="6" value="0">';
 		is += ' <button type="button" onclick="sendDeltaTime();">Set delta time</button>';
@@ -2406,7 +2417,7 @@ function CustomConfig() {
 		else
 			is += '<br>';
 	}
-	if((hver == 0)||(hver == 3)||(hver == 4)||(hver == 5))
+	if((hwver_id == 0)||(hwver_id == 3)||(hwver_id == 4)||(hwver_id == 5))
 		is += '<hr><b>Management GPIO_TRG</b> (mark "reset"):';
 	else
 		is += '<hr><b>Management GPIO_TRG:</b>';
@@ -2480,7 +2491,13 @@ function CustomConfig() {
 	$("custcfg").innerHTML = is;
 	$("cfg_flg_adv_type").value = cfg.flg&3;
 	$("cfg_flg_comfort").checked = (cfg.flg&4) != 0;
-	if(hver != 9) {
+	if(hwver_id == 9) {
+		$("cfg_flg_am_pm").checked = (cfg.flg&32) != 0;
+		$("cfg_flg_x100").checked = (cfg.flg&8) != 0;
+		$("cfg_scr_type").value = cfg.flg2&7;
+		$("bt5_flags").checked = (cfg.flg2&0x20) != 0;
+		$("longrange_flags").checked = (cfg.flg2&0x40) != 0;
+	} else {
 		$("cfg_flg_blinking").checked = (cfg.flg&8) != 0;
 		$("cfg_flg_show_batt").checked = (cfg.flg&32) != 0;
 		$("cfg_smiley").value = cfg.flg2&7;
@@ -2496,12 +2513,6 @@ function CustomConfig() {
 				$("csa2_flags").checked = (cfg.flg2&0x40) != 0;
 		}
 		$("cfg_lcd_tint").value = String((cfg.lcd_tint * 0.05).toFixed(2));
-	} else {
-		$("cfg_flg_am_pm").checked = (cfg.flg&32) != 0;
-		$("cfg_flg_x100").checked = (cfg.flg&8) != 0;
-		$("cfg_scr_type").value = cfg.flg2&7;
-		$("bt5_flags").checked = (cfg.flg2&0x20) != 0;
-		$("longrange_flags").checked = (cfg.flg2&0x40) != 0;
 	}
 	$("cfg_flg_cf").value = ((cfg.flg&16) != 0 ? 1 : 0);
 	$("cfg_flg_tx_meas").checked = (cfg.flg&64) != 0;
@@ -2531,8 +2542,7 @@ function hex(number, len) {
 	return str;
 }
 function SendCustomConfig() {
-	let hver = cfg.hver & 0x0f;
-	if(hver != 9) {
+	if(hwver_id != 9) {
 		cfg.flg = ($("cfg_flg_adv_type").value & 3)+
 		(($("cfg_flg_comfort").checked) ? 4 : 0) +
 		(($("cfg_flg_blinking").checked) ? 8 : 0) +
@@ -2570,8 +2580,7 @@ function SendCustomConfig() {
 		cfg.flg2 += (($("bt5_flags").checked) ? 0x20 : 0);
 		cfg.flg2 += (($("longrange_flags").checked) ? 0x40 : 0);
 	}
-	if(cfg.ver >= 0x20)
-		cfg.av_meas_mem = parseInt($("cfg_av_meas_mem").value);
+	if(cfg.ver >= 0x20)	cfg.av_meas_mem = parseInt($("cfg_av_meas_mem").value);
 	cfg.temp_offset = Math.round(10.0 * parseFloat($("cfg_tmp_off").value));
 	if(cfg.temp_offset < -127) cfg.temp_offset = -127;
 	else if(cfg.temp_offset > 127) cfg.temp_offset = 127;
