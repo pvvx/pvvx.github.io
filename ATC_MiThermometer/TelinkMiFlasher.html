@@ -2371,11 +2371,11 @@ function CustomConfig() {
 	is += ', Humidity offset: <input size="5" title="-12.7..12.7%, default 0" id="cfg_hm_off" maxlength="5" value="0"> %<br><br>';
 	if(cfg.ver >= 0x36) {
 		if(cfg.ver >= 0x42) 
-			is += 'BT5+ PHY: <input title="Support BT5.0 PHY (LE 2M/1M/500K/125K, CSA2)" type="checkbox" id="bt5_flags">, LE Long Range: <input title="Enable Extended Advertising Long Range (Coded PHY S8)" type="checkbox" id="longrange_flags"><br><br>';
+			is += 'BT5+ PHY: <input title="Support BT5.0+ PHY (LE 2M/1M/500K/125K, CSA2)" type="checkbox" id="bt5_flags">, LE Long Range (only for BT5.0+ adapters!): <input title="Enable Extended Advertising Long Range (Coded PHY S8)" type="checkbox" id="longrange_flags"><br><br>';
 		else if(cfg.ver >= 0x40) 
-			is += 'BT5+ PHY: <input title="Support BT5.0 PHY (LE 2M/1M/500K/125K, CSA2)" type="checkbox" id="bt5_flags"><br><br>';
+			is += 'BT5+ PHY: <input title="Support BT5.0+ PHY (LE 2M/1M/500K/125K, CSA2)" type="checkbox" id="bt5_flags"><br><br>';
 		else
-			is += 'BT5+ PHY: <input title="Support BT5.0 PHY (LE 2M/1M/500K/125K)" type="checkbox" id="bt5_flags">, CSA2: <input title="Channel Selection Algorithm 2 or 1" type="checkbox" id="csa2_flags"><br><br>';
+			is += 'BT5+ PHY: <input title="Support BT5.0+ PHY (LE 2M/1M/500K/125K)" type="checkbox" id="bt5_flags">, CSA2: <input title="Channel Selection Algorithm 2 or 1" type="checkbox" id="csa2_flags"><br><br>';
 	}
 	is += 'Advertising type: <select id="cfg_flg_adv_type"><option value="0">ATC1441</option><option value="1">PVVX (Custom)</option><option value="2">MIJIA (MiHome)</option><option value="3" selected>';
 	if(cfg.ver >= 0x37)
