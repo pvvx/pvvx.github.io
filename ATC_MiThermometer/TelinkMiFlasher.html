@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v5.6</title>
+<title>Telink Flasher v5.7</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -50,7 +50,7 @@ var miEnabled = false,
 var mi_random_key, mi_random_key_recv, mi_device_info_recv, mi_device_info_send, device_known_id, expected_device_infos, is_logged_in = false;
 //Activation values
 var keypair, is_activated, own_public_key, device_public_key, shared_key, derived_key, mi_write_did;
-var device_new_id = "00626c742e332e31323976" + makeRandomID(6) + "415443"; // 0+"blt.3.129v"+rand[6]+"ATC"
+var device_new_id = "00626c742e332e31323976" + makeRandomID(6) + "616364"; // 0+"blt.3.129v"+rand[6]+"abc"
 var $ = function(id) { return document.getElementById(id);}
 function resetVariables() {
 	fwmaxsize = 0x20000;
@@ -732,11 +732,12 @@ function dump(ar, len) {
 var atc_mac, atc_rmac;
 function CustomBlkParse(value) {
 	let len = value.byteLength;
+	let s = '';
 	if(len == 0) return;
-	len--;
+	len--;  // size from cmd
 	let blkid = value.getUint8(0);
 	if(devTest) {
-		let s = 'Custom (0xffe1) Notifications id: 0x'+hex(blkid,2)+' ['+bytesToHex(value.buffer.slice(1))+']';
+		s = 'Custom (0xffe1) Notifications id: 0x'+hex(blkid,2)+' ['+bytesToHex(value.buffer.slice(1))+']';
 		addAlog(s);
 		return;
 	}
@@ -808,7 +809,7 @@ function CustomBlkParse(value) {
 		}
 		ext.vtime = value.getUint16(5, true); // in sec
 		ext.flg = value.getUint8(7);
-		let s = 'ExtShow: big_number: '+ext.big_number+', small_number: '+ext.small_number+', ext.vtime: '+ext.vtime+' s, flg: '+hex(ext.flg,2);
+		s = 'ExtShow: big_number: '+ext.big_number+', small_number: '+ext.small_number+', ext.vtime: '+ext.vtime+' s, flg: '+hex(ext.flg,2);
 	    addAlog(s); UpdExt();
 	} else if(blkid == 0x44 && len >= 7) {
 		trg.tmp_thr = value.getInt16(1, true) / 100.0; // temp threshold
@@ -848,7 +849,7 @@ function CustomBlkParse(value) {
 				buf11[cnt_buf11++] = value.getUint8(i+2);
 			if(len == lb) {
 				if(cnt_buf11 == buf11.length) {
-					let s = '';
+					s = '';
 					if(blkid == 0x14)  {
 						if(cnt_delkeys == 0) {
 							mikeys.delkeys = [];
@@ -925,7 +926,7 @@ function CustomBlkParse(value) {
 				$("cbind_key").value = '?';
 		}
 	} else if(blkid == 0x60 && len >= 6) {
-		let s = 'LCD data: '+bytesToHex(value.buffer.slice(1));
+		s = 'LCD data: '+bytesToHex(value.buffer.slice(1));
 		addAlog(s);
 	} else if(blkid == 0x61 && len >= 1) {
 		let s = 'LCD flg: '+hex(value.getUint8(1), 2);
@@ -1034,6 +1035,41 @@ function CustomBlkParse(value) {
 		if($("dev_name"))
 			$("dev_name").value = dnm.name;
 		addAlog("DevName: ["+dnm.name+"]");
+	} else if(blkid == 0x02 && len > 1) {
+		let addr = value.getUint8(1);
+		s = 'Sensor: ';
+		if(addr != 0)
+			s += 'I2C addres 0x'+hex(addr >> 1,2);
+		else
+			s += 'None!';
+		s += ', LCD driver: ';
+		addr = value.getUint8(2);
+		if(addr != 0)
+			s += 'I2C addres 0x'+hex(addr >> 1,2);
+		else
+			s += 'SPI or None';
+		if(len > 2) {
+			addr = value.getUint8(3);
+			s += ', RTC: ';
+			if(addr != 0)
+				s += 'I2C addres 0x'+hex(addr >> 1,2);
+			else
+				s += 'Unknown';
+		}
+		addAlog(s);
+	} else if(blkid == 0x04 && len > 0) {
+		let wr = value.getUint8(1);
+		if(len == 1) 
+				s = 'I2C Read/Write fault! ('+wr+')';
+		else {
+			let addr = value.getUint8(2);
+			s = 'I2C addres 0x'+hex(addr,2);
+			if(wr != 0)
+				s += ', write '+wr+' bytes';
+			if(len > 2)
+				s += ', read: '+bytesToHex(value.buffer.slice(3));
+		}
+		addAlog(s);
 	} else {
 		let s = 'Custom (0x1f1f) Notifications id: 0x'+hex(blkid,2)+' ['+bytesToHex(value.buffer.slice(1))+']';
 		addClog(s);
