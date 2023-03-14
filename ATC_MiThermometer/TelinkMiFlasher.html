@@ -2270,8 +2270,10 @@ function sendTrg() {
 			if(cfg.ver >= 0x37) {
 				trg.rds_rpint = parseInt($("rds_rpint").value);
 				trg.rds_type = $("rds_type").value & 3;
-				if(cfg.ver >= 0x39)
-					trg.rds_type += (($("rds_invert").checked)? 0x10 : 0);
+				if(cfg.ver >= 0x39) {
+					if(trg.rds_type == 3) trg.rds_type += 0x10;
+					else trg.rds_type += (($("rds_invert").checked)? 0x10 : 0);
+				}
 				blk = new Uint8Array([0x44, trg.tmp_thr&0xff, (trg.tmp_thr>>8)&0xff,trg.hm_thr&0xff,(trg.hm_thr>>8)&0xff,trg.tmp_hst&0xff,(trg.tmp_hst>>8)&0xff,trg.hm_hst&0xff,(trg.hm_hst>>8)&0xff,trg.rds_rpint&0xff,(trg.rds_rpint>>8)&0xff,trg.rds_type]);
 			} else {
 				blk = new Uint8Array([0x44, trg.tmp_thr&0xff, (trg.tmp_thr>>8)&0xff,trg.hm_thr&0xff,(trg.hm_thr>>8)&0xff,trg.tmp_hst&0xff,(trg.tmp_hst>>8)&0xff,trg.hm_hst&0xff,(trg.hm_hst>>8)&0xff]);
@@ -2469,8 +2471,10 @@ function CustomConfig() {
 	is += ', Humidity threshold: <input size="8" title="0..99.00%, default 50.00%" id="trg_hm_thr" maxlength="6" value="50.00"> %<br><br>';
 	if(cfg.ver >= 0x37) {
 		is += '<b>Management GPIO_RS (Reed Switch):</b><br><br>';
-		is += 'RS mode: <select id="rds_type"><option value="0" selected>None</option><option value="1">Switch</option><option value="2">Counter</option></select>';
-		if(cfg.ver >= 0x39)	is += ', Invert RS event: <input type="checkbox" id="rds_invert">';
+		is += 'RS mode: <select id="rds_type"><option value="0" selected>None</option><option value="1">Switch</option><option value="2">Counter</option>';
+		if(cfg.ver >= 0x42 && hwver_id != 9)
+			is += '<option value="3" selected>Connect</option>';
+		if(cfg.ver >= 0x39)	is += '</select>, Invert RS event: <input type="checkbox" id="rds_invert">';
 		is += '<br>RS report interval: <input size="8" title="0 - Off, 1..65535 sec, default 3600 sec" id="rds_rpint" maxlength="6" value="3600"> sec'; 
 	}
 	is += '<br> <button type="button" title="Set/save current setings" onclick="sendTrg();">Set TRG</button>';
