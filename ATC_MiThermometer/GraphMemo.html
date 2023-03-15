@@ -158,6 +158,8 @@
 		<input type="button" id="butConnect" value="Connect" class="ok">	
 	  	<label for="namePrefix">BLE device name prefix filter(s)</label>
   		<input type="text" id="namePrefix" value="" placeholder="LYWSD03,ATC">
+	  	<label for="namePrefix">Number of Samples</label>
+  		<input type="text" id="LoadSamples" value="" placeholder="All">
 		<input type="button" id="butSave" value="Save data to .csv file">
 		<br><br>
 		<input type="checkbox" id="setDevTime" checked>
@@ -177,9 +179,18 @@ var $ = function(id) {
 	return document.getElementById(id);
 }
 // Вывод в терминал
-function log(data) {$('info').innerHTML=data} // console.log(data);
-var devcnn = 0;
+function log(data) {$('info').innerHTML=data};
+function Clog(data) {$('info').innerHTML=data; console.log(data)};
+var deviceName;
+var devcnn = 0, redevcnn = 0;
+var memogetcont = 19632;
 var deviceConnected = '';
+$("LoadSamples").onchange = function() {
+	memogetcont = parseInt($("LoadSamples").value);
+	if(isNaN(memogetcont) || memogetcont > 19632) memogetcont = 19632;
+	else if(memogetcont < 3) memogetcont = 3;
+	$("LoadSamples").value = memogetcont;
+}
 function ShowConnect() {
 	if(devcnn==0)  {
 		$("butConnect").value = "Connect";
@@ -195,6 +206,7 @@ $("butConnect").onclick =  function() {
 	else {$("butConnect").value = "Connect..."; connect();};
 }
 var localOffset = (new Date()).getTimezoneOffset() * 60000;
+var show_on = 0;
 // Буфер входящих данных
 var datau = [];
 var memo = [];
@@ -204,7 +216,7 @@ function ShowGrfTH() {
 		$("div_v"),
 	    datau,
 		{
-			title: 'Stored data for: ' + deviceCache?.name,
+			title: 'Stored data from: ' + deviceName,
 			showRangeSelector: true,
 			showRoller: true,
 			rollPeriod: 0,
@@ -224,7 +236,7 @@ function ShowGrfU() {
 		$("div_v"),
 	    datau,
 		{
-			title: 'Memo Battery voltage',
+			title: 'Battery voltage history from: ' + deviceName,
 			showRangeSelector: true,
 			showRoller: true,
 			rollPeriod: 0,
@@ -248,23 +260,9 @@ function convertArrayOfObjectsToCSV(value){
 	lineDelimiter = value.lineDelimiter || '\n';
 	keys = Object.keys(data[1]);
 	result = '';
-	//result += keys.join(columnDelimiter);
-	//result += lineDelimiter;
-	result = 'Time-Data=(A2/86400)+25569'+columnDelimiter+'Temp'+columnDelimiter+'Humi'+columnDelimiter+'Vbat'+lineDelimiter;
-/*
-	data.forEach(function(item){
-		ctr = 0;
-		keys.forEach(function(key){
-			if (ctr > 0) {
-				result += columnDelimiter;
-				result += item[key];
-			} else
-				result += item[key];
-			ctr++;
-		});
-		result += lineDelimiter;
-	});
-*/
+	if(deviceName != null)
+		result += deviceName+lineDelimiter;
+	result += 'Time-Data=(A2/86400)+25569'+columnDelimiter+'Temp'+columnDelimiter+'Humi'+columnDelimiter+'Vbat'+lineDelimiter;
 	data.reduceRight(function(a, i) {
 		ctr = 0;
 		keys.forEach(function(key){
@@ -316,14 +314,14 @@ function dump(ar, len) {
 	}
 	return s;
 }
-function ResponsePkt(head, value) {
+function ResponsePkt(value) {
 	let ds = value.byteLength;
 	let s = 'msg: ';
     for(let i=0; i < ds; i++) {
 		s+=' '+hex(value.getUint8(i),2);
 		if(i<ds-1) s+=',';
 	}
-	log(s);
+	Clog(s);
 }	
 function show_graph() {
 	if(memo.length > 1) {
@@ -342,12 +340,12 @@ function show_graph() {
 			} else datau.push([new Date(b[0]*1000.0+localOffset), b[1], b[2]]);
 			return a+1;}, 1 );
 		}
-		log('Load '+ datau.length + ' samples.')
+		Clog('Loaded '+ datau.length + ' samples.')
 		if(datau.length > 1) {
 			if($('thvbat').checked) ShowGrfU();
 			else ShowGrfTH();
-			log('Load '+ datau.length + ' samples.')
-		} else log('No samples!')
+			Clog('Loaded '+ datau.length + ' samples.')
+		} else Clog('No samples!')
 	}
 }
 $('hideLoDate').onchange = function() {show_graph();};
@@ -359,16 +357,19 @@ let deviceCache = null;
 var characteristicVTH = null;
 function DevConnected() {
 		devcnn = 1;
-		log('Device connected ok.');
+		redevcnn = 66;
+		Clog('Device connected ok.');
 		ShowConnect()
        	stage_read = 0;
 }
 // Запустить выбор Bluetooth устройства и подключиться к выбранному
 function connect() {
+	devcnn = 0;
+	redevcnn = 0;
 	return (deviceCache ? Promise.resolve(deviceCache) :
 		requestBluetoothDevice()).
 		then(device => connectDeviceAndCacheCharacteristic(device)).
-		catch(error => { log(error); ShowConnect();});
+		catch(error => {Clog(error); ShowConnect();});
 }
 // Запрос выбора Bluetooth устройства
 function requestBluetoothDevice() {
@@ -383,10 +384,11 @@ function requestBluetoothDevice() {
 		.split("").map((x) => ({namePrefix:x}));
 	}
 	// deviceOptions.filters.services = [0xfe95, 0x181a, 0x1f10];
-	log('Requesting bluetooth device...');
+	Clog('Requesting bluetooth device...');
 	return navigator.bluetooth.requestDevice(deviceOptions).
 	then(device => {
-		log('"' + device.name + '" bluetooth device selected');
+		Clog('"' + device.name + '" bluetooth device selected');
+		deviceName = device.name;
 		deviceCache = device;
 		deviceConnected = device.name;
 		deviceCache.addEventListener('gattserverdisconnected', handleDisconnection);
@@ -397,42 +399,42 @@ function requestBluetoothDevice() {
 function handleDisconnection(event) {
 	let device = event.target;
     ShowConnect();
-	if(devcnn != 0) {
-		log('"' + device.name + '" bluetooth device disconnected, trying to reconnect...');
+	if(devcnn == 0 && ++redevcnn < 5) {
+		Clog('"' + device.name + '" bluetooth device disconnected, trying to reconnect...');
 		connectDeviceAndCacheCharacteristic(device).
-			then(_ => Connected()).
-			catch(error => log(error));
-	}
+		catch(error => Clog(error));};
 }
+
 var start_time;
 // Подключение к определенному устройству, получение сервиса и характеристики
 function connectDeviceAndCacheCharacteristic(device) {
-  if (device.gatt.connected && characteristicVTH && characteristicVTH) {
+  if (device.gatt.connected && characteristicVTH) {
   	return Promise.resolve(null);
   }
-  log('Connecting to GATT server...');
+  Clog('Connecting to GATT server...');
   return device.gatt.connect().
 	then(server => {
-		log('GATT server connected, getting service...');
+		Clog('GATT server connected, getting service...');
 		return server.getPrimaryService(0x1F10);
-	}).
-	then(service => {
-		log('Service found, getting characteristic...');
+	}).then(service => {
+		Clog('Service found, getting characteristic...');
 		return service.getCharacteristic(0x1F1F);
 	}).
 	then(characteristic => {
-		log('Characteristic found');
+		Clog('Characteristic found');
 		characteristicVTH = characteristic;
 		devcnn = 1;
 		ShowConnect();
-		log('Start Notifications...');
+		Clog('Start Notifications...');
 		return characteristicVTH.startNotifications().
 		then(_ => {
-			log('Notifications Started');
+			Clog('Notifications Started');
 			characteristicVTH.addEventListener('characteristicvaluechanged', event => {
-				var value = event.target.value;
-				let len = value.byteLength;
-				if(value.getUint8(0) == 0x35) {
+			var value = event.target.value;
+			let len = value.byteLength;
+			if(len > 0) {
+				let blkid = value.getUint8(0);
+				if(blkid == 0x35) {
 					if(len >= 13) {
 						let cnt = value.getUint16(1, true);
 						let tc = value.getUint32(3, true);
@@ -445,6 +447,7 @@ function connectDeviceAndCacheCharacteristic(device) {
 						*/
 						log('Read Count: '+cnt);
 						memo.push([tc,tm,hm,vb]);
+						show_on = 1;
 					} else if(len >= 3) {
 						console.log('Read count: '+ memo.length);
 						console.log('Read time: ' + ((Date.now() - start_time)/1000).toFixed(3) + ' sec');
@@ -461,47 +464,66 @@ function connectDeviceAndCacheCharacteristic(device) {
 							console.log('Send new DevTime ok');
 						});
 					}
-				} else if(value.getUint8(0) == 0x23 && len >= 4) {
+				} else if(blkid == 0x23 && len >= 4) {
 					let time = value.getUint32(1,true);
 					console.log('Device Time: 0x' + hex(time,8));
 					let dt = new Date(time*1000);
 					console.log('Device Date: '+(dt.toISOString().slice(0, -1)).replace('T',' '));
 					disconnect();
-					show_graph();
+				} else	if(blkid == 0x55) {
+					if(len >= 12) {
+						memo = new Array();
+						datau = new Array();
+/*						let av_meas_mem = value.getUint8(6) * 62.5 * value.getUint8(7) * value.getUint8(12);
+						if(av_meas_mem == 0) av_meas_mem = 600;
+						av_meas_mem /= 1000;
+						console.log('Memos storage interval: ' + av_meas_mem + ' sec');
+*/
+						memogetcont = parseInt($("LoadSamples").value);
+						if(isNaN(memogetcont) || memogetcont > 19632) memogetcont = 19632;
+						else if(memogetcont < 5) memogetcont = 5;
+						Clog('Send command "get-memo '+memogetcont+' samples"...');
+						start_time = Date.now();
+						characteristicVTH.writeValue(new Uint8Array([0x35,memogetcont&0xff, (memogetcont>>8)&0xff,0,0]))
+						.catch(error => {Clog(error); disconnect();});
+					} else {
+						Clog('Error device config!');
+						disconnect();
+					}
+				} else ResponsePkt(value);
 				}
 			});
 			DevConnected();
-			log('Synchronized Read for low speed BT adapters');
-			return characteristicVTH.readValue().then(value => {
-				memo = new Array();
-				datau = new Array();
-				log('Send command get-memo (0..19632 samples)...');
-				start_time = Date.now();
-				return characteristicVTH.writeValue(new Uint8Array([0x35,0xB0,0x4C,0,0]));
-				});
+			Clog('Get device config...');
+			setTimeout(function() {
+				console.log('Send command "get config"...');
+				characteristicVTH.writeValue(new Uint8Array([0x55])).catch(error => {log(error); disconnect();})
+			}, 1500);
+		  	return Promise.resolve(null);
 		});
 	});
 }
 // Отключиться от подключенного устройства
 function disconnect() {
 	devcnn = 0;
+	redevcnn = 55;
 	if (deviceCache) {
-		log('Disconnecting from "' + deviceCache.name + '" bluetooth device...');
+		Clog('Disconnecting from "' + deviceCache.name + '" bluetooth device...');
 		if (deviceCache.gatt.connected) {
 			if (characteristicVTH) {
 				characteristicVTH.stopNotifications()
                 .then(_ => {
-					log('Notifications stopped');
+					Clog('Notifications stopped');
 					characteristicVTH = null;
 				  	if (deviceCache.gatt.connected) {
 						deviceCache.gatt.disconnect();
 					}
 					deviceCache.removeEventListener('gattserverdisconnected', handleDisconnection);
 					deviceCache = null;
-					log('Disconnected. Load '+memo.length+' samples.' );
+					Clog('Disconnected. Load '+memo.length+' samples.' );
 					ShowConnect();
 				})
-				.catch(error => { log(error); 
+				.catch(error => { Clog(error); 
 					if (characteristicVTH) {
 						characteristicVTH.removeEventListener('characteristicvaluechanged', handleCharacteristicValueChanged);
 						characteristicVTH = null;
@@ -512,9 +534,10 @@ function disconnect() {
 				});
 			}
 		}
+		if (show_on != 0) show_graph();
 	}
 	else
-		log('"' + deviceCache.name + '" bluetooth device is already disconnected');
+		Clog('"' + deviceCache.name + '" bluetooth device is already disconnected');
 }
 
 /*! @license Copyright 2017 Dan Vanderkam (danvdk@gmail.com) MIT-licensed (http://opensource.org/licenses/MIT) */
