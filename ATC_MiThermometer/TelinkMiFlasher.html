@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v5.7</title>
+<title>Telink Flasher v5.8</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -2382,6 +2382,8 @@ function CustomConfig() {
 	is += '	<button type="button" id="extsend" onclick="sendExt();">Show</button>';
 	ext.enable = true;
 	is += '<br><br><hr><br><b>Configuration:</b>&nbsp;<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br><br>';
+	if(cfg.ver >= 0x43)
+		is += 'Screen Off: <input title="Screen Off" type="checkbox" id="cfg_scr_off"><br><br>';
 	is += 'Temperature: <select id="cfg_flg_cf"><option value="0">°C</option><option value="1">°F</option></select>';
 	if(hwver_id == 9)
 		is += '&nbsp;&nbsp;12-hour clock:<input type="checkbox" id="cfg_flg_am_pm">&nbsp;&nbsp;T&H 2 decimal places<input type="checkbox" id="cfg_flg_x100">';
@@ -2529,6 +2531,8 @@ function CustomConfig() {
 		is +=' <button type="button" title="Set new EEP BindKey" onclick="setBKey();">Set EEP BindKey</button><br>';
 	}
 	$("custcfg").innerHTML = is;
+	if(cfg.ver >= 0x43)
+		$("cfg_scr_off").checked = (cfg.flg2&0x80) != 0
 	$("cfg_flg_adv_type").value = cfg.flg&3;
 	$("cfg_flg_comfort").checked = (cfg.flg&4) != 0;
 	if(hwver_id == 9) {
@@ -2599,9 +2603,11 @@ function SendCustomConfig() {
 			cfg.flg2 += (($("adv_flags").checked )? 0x10 : 0);
 		if(cfg.ver >= 0x36) {
 			cfg.flg2 += (($("bt5_flags").checked) ? 0x20 : 0);
-			if(cfg.ver >= 0x42)
+			if(cfg.ver >= 0x42) {
 				cfg.flg2 += (($("longrange_flags").checked) ? 0x40 : 0);
-			else if(cfg.ver < 0x40)
+				if(cfg.ver >= 0x43)
+					cfg.flg2 += (($("cfg_scr_off").checked) ? 0x80 : 0);
+			} else if(cfg.ver < 0x40)
 				cfg.flg2 += (($("csa2_flags").checked) ? 0x40 : 0);
 		}
 		cfg.lcd_tint = Math.round(parseFloat($("cfg_lcd_tint").value) / 0.05);
@@ -2619,6 +2625,8 @@ function SendCustomConfig() {
 		cfg.flg2 += (($("cfg_adv_crypto").checked) ? 0x08 : 0);
 		cfg.flg2 += (($("bt5_flags").checked) ? 0x20 : 0);
 		cfg.flg2 += (($("longrange_flags").checked) ? 0x40 : 0);
+		if(cfg.ver >= 0x43) 
+			cfg.flg2 += (($("cfg_scr_off").checked) ? 0x80 : 0);
 	}
 	if(cfg.ver >= 0x20)	cfg.av_meas_mem = parseInt($("cfg_av_meas_mem").value);
 	cfg.temp_offset = Math.round(10.0 * parseFloat($("cfg_tmp_off").value));
