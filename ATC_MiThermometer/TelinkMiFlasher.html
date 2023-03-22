@@ -2422,7 +2422,7 @@ function CustomConfig() {
 		is += 'BTHome v1</option></select>';
 	else
 		is += 'All</option></select>';
-	if(hwver_id != 9 && cfg.ver >= 0x30)
+	if(cfg.ver >= 0x30)
 		is += ', AdFlags: <input title="Toggle support for third-party software" type="checkbox" id="adv_flags">';
 	if(cfg.ver >= 0x22)
 		is += ', Encrypted beacon: <input title="Bindkey encrypted beacon" type="checkbox" id="cfg_adv_crypto">';
@@ -2539,6 +2539,7 @@ function CustomConfig() {
 		$("cfg_flg_am_pm").checked = (cfg.flg&32) != 0;
 		$("cfg_flg_x100").checked = (cfg.flg&8) != 0;
 		$("cfg_scr_type").value = cfg.flg2&7;
+		$("adv_flags").checked = (cfg.flg2&0x10) != 0;
 		$("bt5_flags").checked = (cfg.flg2&0x20) != 0;
 		$("longrange_flags").checked = (cfg.flg2&0x40) != 0;
 	} else {
@@ -2623,6 +2624,7 @@ function SendCustomConfig() {
 		(($("cfg_flg_lp_meas").checked) ? 128 : 0);
 		cfg.flg2 = (parseInt($("cfg_scr_type").value) & 7);
 		cfg.flg2 += (($("cfg_adv_crypto").checked) ? 0x08 : 0);
+		cfg.flg2 += (($("adv_flags").checked )? 0x10 : 0);
 		cfg.flg2 += (($("bt5_flags").checked) ? 0x20 : 0);
 		cfg.flg2 += (($("longrange_flags").checked) ? 0x40 : 0);
 		if(cfg.ver >= 0x43) 
