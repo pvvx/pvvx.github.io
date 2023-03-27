@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v5.9</title>
+<title>Telink Flasher v6.0</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -1049,7 +1049,7 @@ function CustomBlkParse(value) {
 		if(addr != 0)
 			s += 'I2C addres 0x'+hex(addr >> 1,2);
 		else
-			s += 'SPI or None';
+			s += 'SPI or UART';
 		if(len > 2) {
 			addr = value.getUint8(3);
 			s += ', RTC: ';
@@ -1072,6 +1072,8 @@ function CustomBlkParse(value) {
 				s += ', read: '+bytesToHex(value.buffer.slice(3));
 		}
 		addAlog(s);
+	} else if(blkid == 0x05 && len > 3) {
+		addAlog('Sensor ID: ' + hex(value.getUint32(1,true),8));
 	} else {
 		let s = 'Custom (0x1f1f) Notifications id: 0x'+hex(blkid,2)+' ['+bytesToHex(value.buffer.slice(1))+']';
 		addClog(s);
