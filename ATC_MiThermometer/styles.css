@@ -77,7 +77,7 @@ div#log {
 }
 
 div#MAC {
-  font-style: italic;
+  font-style: smaller;
   margin: 8px;
 }
 
@@ -88,7 +88,7 @@ div#percent {
   background-color: #eef6fc;
   padding-top: 5px;
   padding-bottom: 5px;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 div#tempHumiData{
@@ -111,7 +111,7 @@ select {
 
 .navbar {
   width: 95%;
-  box-shadow: 0 1px 4px rgb(146 161 176 / 15%);
+  /* box-shadow: 0 1px 4px rgb(146 161 176 / 15%);*/
   position: absolute;
   top: 0;
 }
@@ -195,9 +195,9 @@ select {
 
 .navbar .menu-items {
   position: relative;
-  padding-top: 60px;
+  padding-top: 55px;
   box-shadow: 5px 3px 13px 0px rgb(204 204 204 / 80%);
-  height: 100vh;
+  min-height: 100vh;
   width: 60%;
   transform: translate(-150%);
   display: flex;
@@ -209,7 +209,7 @@ select {
 }
 
 .navbar .menu-items li {
-  margin-bottom: 1.2rem;
+  margin-bottom: 12px;
   font-size: 1.2rem;
   font-weight: 800;
 }

@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v6.0</title>
+<title>Telink Flasher v6.1</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -14,9 +14,9 @@ var ServiceMain, writeCharacteristicSpeed = null, nitifiyCharTemp, time_char, en
 //Firmware values
 var fwmaxsize = 0x20000;
 var rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/";
-var otafiles = { loaded: false, version: 65,
-custom: ['ATC_v41.bin','MHO_C401_v41.bin', 'CGG1_v41.bin', 'ATC_v41.bin','ATC_v41.bin','ATC_v41.bin','CGDK2_v41.bin','CGG1M_v41.bin'],
-original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_CGG1_v1.0.0_0130.bin','Original_OTA_CGDK2_v1.1.1_0217.bin','Original_OTA_CGG1N_v2.2.1.bin']};
+var otafiles = { loaded: false, version: 67,
+custom:["ATC_v43.bin", "MHO_C401_v43.bin", "CGG1_v43.bin", "ATC_v43.bin", "ATC_v43.bin", "ATC_v43.bin", "CGDK2_v43.bin", "CGG1M_v43.bin","MHO_C401N_v43.bin","BTH_v43.bin"], 
+original:["Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0130.bin","Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin","Original_OTA_CGG1_v1.0.1_0093.bin","Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0130.bin","Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0130.bin","Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0130.bin", "Original_OTA_CGDK2_v1.1.1_0217.bin", "Original_OTA_CGG1M_v2.2.1.bin","Original_OTA_Xiaomi_MHO_C401_v1.0.0_0016.bin","Original_OTA_Xiaomi_MJWSD05MMC_v2.0.0_0026.bin"]};
 var firmwareArray = "",
 	startTime = 0,
 	blockCount = 0;
@@ -637,7 +637,7 @@ function CGPR1_Action() {
 function CGDK2_Action() {
 	cus017Chr = null;
 	addLog("Detected Qingping CGDK2 device");
-	if(devinfo.frstr && devinfo.frstr.substr(0,5) == "2.2.3") addAlog("Warning! The device with this Firmware Revision is not supported!");	
+	//if(devinfo.frstr && devinfo.frstr.substr(0,5) == "2.2.3") addAlog("Warning! The device with this Firmware Revision is not supported!");	
 	$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value="">';
 	gattServer.getPrimaryService("22210000-554a-4546-5542-46534450464d")
 		.then(service => {
@@ -763,7 +763,7 @@ function CustomBlkParse(value) {
 		if(len >= 12) cfg.av_meas_mem = value.getUint8(12); else cfg.av_meas_mem = 0;
 		let s = 'Hardware Version: ';
 		hwver_id = cfg.hver & 0x0F;
-		if((hwver_id == 0)||(hwver_id == 3)||(hwver_id == 4)||(hwver_id == 5)) s +='LYWSD03MMC';
+		if((hwver_id == 0)||(hwver_id == 3)||(hwver_id == 4)||(hwver_id == 5)||(hwver_id == 10)) s +='LYWSD03MMC';
 		else if(hwver_id == 1) s +='MHO-C401';
 		else if(hwver_id == 2) s +='CGG1';
 		else if(hwver_id == 6) s +='CGDK2';
@@ -1358,6 +1358,7 @@ function miAuthorization() {
 					if(bluetoothDevice.name == 'LYWSD03MMC') {
 						let shwsr = devinfo.hrstr.substr(0,4);
 						if(shwsr == 'B1.4' || shwsr == '0000') cfg.hver = 0x80; // sensor SHTC3
+						else if(shwsr == 'B1.5') cfg.hver = 10;
 						else if(shwsr == 'B1.6') cfg.hver = 3;
 						else if(shwsr == 'B1.9') cfg.hver = 4;
 						else if(shwsr == 'B1.7' || shwsr == 'B2.0') cfg.hver = 5;
@@ -1420,6 +1421,34 @@ function sendLogin() {
 	mainCharSend("24000000", enc_10).then(function(character) {
 		mainCharSend("0000000b0100", enc_19);
 	}).catch(function(err) {updateFail(err);});
+}
+
+function getDevVersion(devInfEnabled) {
+	var infoservice;
+	devinfo.hrstr = null;
+	devinfo.srstr = null;
+	devinfo.frstr = null;
+	devinfo.flg = 0;
+	if (devInfEnabled == true) { return new Promise((resolve, reject) => {
+		gattServer.getPrimaryService(0x180a).then(service => {
+			addClog("Found Device Information Service");
+			infoservice = service;
+			return getStrVersion(infoservice, 0x2a26).then(value => {
+				devinfo.flg |= 1;
+				devinfo.frstr = value;
+				return getStrVersion(infoservice, 0x2a27).then(value => {
+					devinfo.flg |= 2;
+					devinfo.hrstr = value;
+					return getStrVersion(infoservice, 0x2a28).then(value => {
+						devinfo.flg |= 4;
+						devinfo.srstr = value;
+						return resolve(devinfo.flg);
+					}).catch(error => { addClog(error);});
+				}).catch(error => { addClog(error);});
+			}).catch(error => { addClog(error); return resolve(null);});
+		}).catch(error => { addClog(error); return resolve(null);});
+	}).catch(error => { addClog(error); return resolve(null);});
+	} else	return devinfo.flg;
 }
 
 function doConnect() {
@@ -1511,34 +1540,6 @@ function getStrVersion(infoservice, suuid) {
 		}).catch(error => {addClog(error);	return resolve(null); });
 	}).catch(error => {addClog(error);	return resolve(null); });
 })};
-
-function getDevVersion(devInfEnabled) {
-	var infoservice;
-	devinfo.hrstr = null;
-	devinfo.srstr = null;
-	devinfo.frstr = null;
-	devinfo.flg = 0;
-	if (devInfEnabled) return new Promise((resolve, reject) => {
-		gattServer.getPrimaryService(0x180a).then(service => {
-			addClog("Found Device Information Service");
-			infoservice = service;
-			return getStrVersion(infoservice, 0x2a26).then(value => {
-				devinfo.flg |= 1;
-				devinfo.frstr = value;
-				return getStrVersion(infoservice, 0x2a27).then(value => {
-					devinfo.flg |= 2;
-					devinfo.hrstr = value;
-					return getStrVersion(infoservice, 0x2a28).then(value => {
-						devinfo.flg |= 4;
-						devinfo.srstr = value;
-						return resolve(devinfo.flg);
-					}).catch(error => { addClog(error);});
-				}).catch(error => { addClog(error);});
-			}).catch(error => { addClog(error); return resolve(null);});
-		}).catch(error => { addClog(error); return resolve(null);});
-	}).catch(error => { addClog(error); return resolve(null);});
-	else	return devinfo.flg;
-}
 
 function reConnect() {
 	if (bluetoothDevice != null) bluetoothDevice.gatt.disconnect();
@@ -2419,7 +2420,7 @@ function CustomConfig() {
 		else
 			is += '<br>';
 	}
-	if((hwver_id == 0)||(hwver_id == 3)||(hwver_id == 4)||(hwver_id == 5))
+	if((hwver_id == 0)||(hwver_id == 3)||(hwver_id == 4)||(hwver_id == 5)||(hwver_id == 10))
 		is += '<hr><b>Management GPIO_TRG</b> (mark "reset"):';
 	else
 		is += '<hr><b>Management GPIO_TRG:</b>';
