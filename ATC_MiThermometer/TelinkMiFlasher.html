@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v6.1</title>
+<title>Telink Flasher v6.2</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -770,6 +770,7 @@ function CustomBlkParse(value) {
 		else if(hwver_id == 7) s +='CGG1-M';
 		else if(hwver_id == 8) s +='MHO-C401N';
 		else if(hwver_id == 9) { s +='MJWSD05MMC'; bigOtaEnabled = true; }
+		else if(hwver_id == 11) { s +='MHO-C122'; bigOtaEnabled = true; }
 		else s += 'Unknown'
 		if(devinfo.hrstr) s += ' ' + devinfo.hrstr;
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
@@ -1362,7 +1363,7 @@ function miAuthorization() {
 						else if(shwsr == 'B1.6') cfg.hver = 3;
 						else if(shwsr == 'B1.9') cfg.hver = 4;
 						else if(shwsr == 'B1.7' || shwsr == 'B2.0') cfg.hver = 5;
-						else if(shwsr == 'B1.5' || shwsr == 'B1.8') cfg.hver = 0; // ??
+						else if(shwsr == 'B1.8') cfg.hver = 0; // ??
 						else {
 							cfg.hver = null;
 							$("ldfile").hidden = false;
@@ -1376,7 +1377,8 @@ function miAuthorization() {
 							addLog("Found old version of SW:"+swnum+" MHO-C401");
 							cfg.hver = 1;
 						}
-					} else if (bluetoothDevice.name.substr(0,20) == "Qingping Temp & RH M") cfg.hver = 2;
+					} else if (bluetoothDevice.name.substr(0,4) == 'C121') cfg.hver = 11; // MHO-C122
+					else if (bluetoothDevice.name.substr(0,20) == "Qingping Temp & RH M") cfg.hver = 2;
 					else if (bluetoothDevice.name.substr(0,18) == "Qingping Temp RH M") cfg.hver = 7;
 					else if (bluetoothDevice.name.substr(0,21) == "Qingping Temp RH Lite") cfg.hver = 6;
 					else if (bluetoothDevice.name == "MJWSD05MMC") cfg.hver = 9;
