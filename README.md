@@ -4,9 +4,11 @@ Web files for projects:
 
 [ATC_MiThermometer (Xiaomi LYWSD03MMC)](https://pvvx.github.io/ATC_MiThermometer)
 
-[MHO_C401](https://pvvx.github.io/MHO_C401) 
+[MHO-C122](https://pvvx.github.io/MHO_C122)
 
-[MHO_C401 (2022.11)](https://pvvx.github.io/MHO_C401N) 
+[MHO-C401](https://pvvx.github.io/MHO_C401)
+
+[MHO-C401 (2022.11)](https://pvvx.github.io/MHO_C401N) 
 
 [CGG1-M (2020,2021)](https://pvvx.github.io/CGG1)
 
