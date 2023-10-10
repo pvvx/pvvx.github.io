@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v6.2</title>
+<title>Telink Flasher v6.3</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -50,7 +50,7 @@ var miEnabled = false,
 var mi_random_key, mi_random_key_recv, mi_device_info_recv, mi_device_info_send, device_known_id, expected_device_infos, is_logged_in = false;
 //Activation values
 var keypair, is_activated, own_public_key, device_public_key, shared_key, derived_key, mi_write_did;
-var device_new_id = "00626c742e332e31323976" + makeRandomID(6) + "616364"; // 0+"blt.3.129v"+rand[6]+"abc"
+var device_new_id = "00626c742e332e31323976" + makeRandomID(6) + ""; // 0+"blt.6.129v"+rand[6]+"g00"
 var $ = function(id) { return document.getElementById(id);}
 function resetVariables() {
 	fwmaxsize = 0x20000;
