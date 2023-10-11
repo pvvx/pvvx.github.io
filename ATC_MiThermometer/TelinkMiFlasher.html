@@ -1501,7 +1501,13 @@ function doConnect() {
 			setStatus("Detected Mi device");
 			$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
 			if (bluetoothDevice.name.substr(0,10) == "MJWSD05MMC") fwmaxsize = 0x34000;
-			miAction();
+			if ((bluetoothDevice.name.substr(0,10) == "LYWSD03MMC") && (devinfo.frstr.substr(0,2) == "2.")) {
+			    s = "(!) Version: "+devinfo.frstr+" is temporarily not supported (!)";
+				addLog(s);
+				connectTrys = 1000;
+				disconnect();
+			} else
+				miAction();
 		} else if (customEnabled) {
 			let s = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send commands to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
 			if (devTest) {
