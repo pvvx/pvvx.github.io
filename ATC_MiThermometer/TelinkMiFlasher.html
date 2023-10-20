@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v6.5</title>
+<title>Telink Flasher v6.6</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -2413,7 +2413,10 @@ function CustomConfig() {
   if(hwver_id < 15) {
 		is += 'Advertising type: <select id="cfg_flg_adv_type"><option value="0">ATC1441</option><option value="1">PVVX (Custom)</option><option value="2">MIJIA (MiHome)</option><option value="3" selected>';
 	if(cfg.ver >= 0x37)
-		is += 'BTHome v1</option></select>';
+		if(cfg.ver >= 0x45)
+			is += 'BTHome v2</option></select>';
+		else
+			is += 'BTHome v1</option></select>';
 	else
 		is += 'All</option></select>';
 	if(cfg.ver >= 0x30)
