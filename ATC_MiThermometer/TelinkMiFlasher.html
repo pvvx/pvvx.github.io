@@ -775,9 +775,10 @@ function CustomBlkParse(value) {
 			cfg.ext_hw_id = cfg.lcd_tint & 0x7f;
 			if((cfg.lcd_tint & 0x80) != 0) bigOtaEnabled = true;
 			if(cfg.ext_hw_id == 1) s +='TS0201';
-			else s += 'Unknown or DIY'
+			else if(cfg.ext_hw_id == 2) s +='TNKS1';
+			else s += 'Unknown or DIY';
 		}
-		else s += 'Unknown or DIY'
+		else s += 'Unknown or DIY';
 		if(devinfo.hrstr) s += ' ' + devinfo.hrstr;
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
 		setStatus(s);
@@ -848,10 +849,11 @@ function CustomBlkParse(value) {
 		addAlog(s); UpdTrg();
 	} else if(blkid >= 0x10 && blkid <= 0x14 && len >= 1) {
 		let lb = value.getUint8(1);
+		// addClog('id: '+blkid+', lb: '+lb+ ', len: ' + len);
 		if(lb != 0) {
 			len -= 1;
 			if(cnt_buf11 == 0){
-				// addClog('New miKey length: '+lb);
+				//addClog('New miKey length: '+lb);
 				buf11 = new Uint8Array(lb);
 			}
 			for(let i = 0; i < len && i < lb; i++ )
@@ -889,11 +891,14 @@ function CustomBlkParse(value) {
 					} else if(cnt_buf11 == 8) {
 						// * public_mac:		[0][1][2][3][4][5], const: [3]=38;[4]=C1;[5]=A4
 						// * random_static_mac: [0][1][2][6][7]C0
-						s += 'MAC: '+hex(buf11[5],2)+hex(buf11[4],2)+hex(buf11[3],2)+hex(buf11[2],2)+hex(buf11[1],2)+hex(buf11[0],2)+', RandMAC: '+'C0'+hex(buf11[7],2)+hex(buf11[6],2)+hex(buf11[2],2)+hex(buf11[1],2)+hex(buf11[0],2);
+						m = hex(buf11[5],2)+hex(buf11[4],2)+hex(buf11[3],2)+hex(buf11[2],2)+hex(buf11[1],2)+hex(buf11[0],2);
+						s += 'MAC: '+m+', RandMAC: '+'C0'+hex(buf11[7],2)+hex(buf11[6],2)+hex(buf11[2],2)+hex(buf11[1],2)+hex(buf11[0],2);
 						if(blkid == 0x10) {
 							cnt_delkeys = 0;
 							mikeys.mac = buf11;
 							addLog(s);
+							if(hwver_id == 15)
+								$("mi_mac").value = m + hex(buf11[7],2)+hex(buf11[6],2);
 						}
 					} else if(cnt_buf11 == 4) {
 						s += 'miCfg: '+dump(buf11, 4);
@@ -2110,7 +2115,10 @@ function sendMAC() {
 				addClog(blk);
 				addClog("Send cmd New MAC ("+dump(blk, blk.length)+")...");
 				settingsCharacteristics.writeValue(blk).then(_ => {
-					addAlog("Send New MAC: "+dump(mac, 6)+" RAND:" +dump(mac.slice(6), 2)+" ok");
+					s = "Send New MAC: "+dump(mac, 6);
+					if(len == 8)
+						s += " RAND:" +dump(mac.slice(6), 2);
+					addAlog(s+" ok");
 				});
 			}
 		}
@@ -2581,9 +2589,15 @@ function CustomConfig() {
 	is +=' Adjust time clock delta: <input size="5" title="-32767..32767, in 1/16 us for 1 sec, default 0" id="cfg_time_step" maxlength="6" value="0">';
 	is +=' <button type="button" onclick="sendDeltaTime();">Set delta time</button>';
 	is +=' <button type="button" title="The minimum period for calculation is 3 hours!" onclick="calkDeltaTime();">Calk delta time</button><br>';
-	is +='<hr>EEP BindKey:<br><input size="40" maxlength="32" title="Bind Key must be 16 hex digits" type="text" id="cbind_key" value="?">';
+	is +='<hr><b>Keys and Codes:</b><br><br>EEP BindKey:<br><input size="40" maxlength="32" title="Bind Key must be 16 hex digits" type="text" id="cbind_key" value="?">';
 	is +=' <button type="button" title="Get EEP BindKey" onclick="getBKey();">Get EEP BindKey</button>';
 	is +=' <button type="button" title="Set new EEP BindKey" onclick="setBKey();">Set EEP BindKey</button><br>';
+	is += '<input size="6" maxlength="6" type="text" title="000000..999999, 6 decimal digits, 000000 - PinCode Disable. Warning: If the PinCode is forgotten - only a hardware flasher!" id="pincode" value="000000"> <button title="Warning: If the PinCode is forgotten - only a hardware flasher!" type="button" onclick="sendPinCode();">!Set PinCode!</button><br>';
+	pincode.enable = true;
+	is += '<br><button type="button" onclick="sendCustomSetting(&quot;01&quot;);">Get device Name</button> <input size="10" maxlength="10" type="text" title="Device Name: 1..10 chars" id="dev_name" value=""> <button type="button" title="Set New Name" onclick="sendDevName();">Set New Name</button> <button title="Clean Name: DEV_xxxx" type="button" onclick="CleanDevName();">Set default Name</button><br><br>';
+	dnm.enable = true;
+	is +='Device MAC [+ 2 Rand]:<br><button type="button" title="Get MAC" onclick="sendCustomSetting(&quot;10&quot;);">Get MAC</button> <input size="40" maxlength="16" type="text" id="mi_mac" title="Must be 6 hex MAC digits [+ 2 hex RandMAC digits]!" value="?">';
+	is +=' <button type="button" title="Set Custom MAC. Warning: If the pin code is set, restart all Soft & Hard for the next connection!" onclick="sendMAC();">!Set MAC!</button> <button type="button" title="Clean MAC - Set Standart Random MAC: A4C138******. Warning: If the pin code is set, restart all Soft & Hard for the next connection!" onclick="CleanMAC();">!Clean MAC!</button><br>';
 	$("custcfg").innerHTML = is;
 	$("cfg_flg_adv_type").value = cfg.flg&3;
 	$("adv_flags").checked = (cfg.flg2&0x10) != 0;
