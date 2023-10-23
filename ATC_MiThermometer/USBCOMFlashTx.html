@@ -6,7 +6,7 @@
 	<title>TLSR825x USB-COM Flash Writer (TX-SWS only!)</title>
   </head>
   <body>
-	<h3>TLSR825x USB-COM Flash Writer v0.2 (TX-SWS only!)</h3>
+	<h3>TLSR825x USB-COM Flash Writer v0.3 (TX-SWS only!)</h3>
 	<div><br>
 	1. USB-COM: <input type="button" id="butOpen" value="Open">
 	Baud: <select id="ubaud" title="Optimal: 460800 baud"><option value="115200">115200</option><option value="230400">230400</option><option value="460800" selected>460800</option><option value="921600">921600</option><option value="1500000">1500000</option><option value="2000000">2000000</option></select>
@@ -98,6 +98,13 @@ async function WriteFifo(addr, data) { // send all data to one register (no incr
 	await serialController.write_raw(sws_wr_addr(addr, data)); // send all data to one register (no increment address - fifo mode)
 	return await serialController.write_raw(sws_wr_addr(0x00b3, new Uint8Array([0x00]))); // [0xb3]=0x00 ext.SWS into normal(ram) mode
 }
+async function FlashWriteStatus(value) { // send flash cmd 0x01 write Status register flash
+	await FlashWriteEnable();
+	await serialController.write_raw(sws_wr_addr(0x0d, new Uint8Array([0x00]))); // cns low
+	await serialController.write_raw(sws_wr_addr(0x0c, new Uint8Array([0x01]))); // Flash cmd write Status register
+	await serialController.write_raw(sws_wr_addr(0x0c, new Uint8Array([value & 0xff, 0x01]]))); // value + cns high
+	return await delay(3);
+}
 async function SectorErase(addr) {
 	await FlashWriteEnable();
 	await serialController.write_raw(sws_wr_addr(0x0d, new Uint8Array([0x00]))); // cns low
@@ -150,6 +157,10 @@ async function FlashWrite() {
 	await Activate(uatime.value);
 	log('Write ' + firmwareArray.byteLength + ' bytes in to Flash...');
 	let len = firmwareArray.byteLength;
+	if(len > 0) {
+		await FlashWriteStatus(0);
+		await FlashWriteStatus(0);
+	}
 	let addr = 0;
 	let sblk = 256; // max spi-flash fifo = 256
 	while(len > 0) {
