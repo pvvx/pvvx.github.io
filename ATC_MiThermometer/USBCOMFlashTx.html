@@ -6,7 +6,7 @@
 	<title>TLSR825x USB-COM Flash Writer (TX-SWS only!)</title>
   </head>
   <body>
-	<h3>TLSR825x USB-COM Flash Writer v0.3 (TX-SWS only!)</h3>
+	<h3>TLSR825x USB-COM Flash Writer v0.4 (TX-SWS only!)</h3>
 	<div><br>
 	1. USB-COM: <input type="button" id="butOpen" value="Open">
 	Baud: <select id="ubaud" title="Optimal: 460800 baud"><option value="115200">115200</option><option value="230400">230400</option><option value="460800" selected>460800</option><option value="921600">921600</option><option value="1500000">1500000</option><option value="2000000">2000000</option></select>
@@ -212,6 +212,8 @@ berase.onclick = async function() {
 	await Activate(uatime.value);
    	swrite.innerHTML = 'Erased!';
 	log('Flash Erase All (3.5 sec)...');
+	await FlashWriteStatus(0);
+	await FlashWriteStatus(0);
 	await FlashWriteEnable();
 	await FlashEraseAll();
 	await delay(3500);
