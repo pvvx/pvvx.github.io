@@ -102,7 +102,7 @@ async function FlashWriteStatus(value) { // send flash cmd 0x01 write Status reg
 	await FlashWriteEnable();
 	await serialController.write_raw(sws_wr_addr(0x0d, new Uint8Array([0x00]))); // cns low
 	await serialController.write_raw(sws_wr_addr(0x0c, new Uint8Array([0x01]))); // Flash cmd write Status register
-	await serialController.write_raw(sws_wr_addr(0x0c, new Uint8Array([value & 0xff, 0x01]]))); // value + cns high
+	await serialController.write_raw(sws_wr_addr(0x0c, new Uint8Array([value & 0xff, 0x01]))); // value + cns high
 	return await delay(3);
 }
 async function SectorErase(addr) {
