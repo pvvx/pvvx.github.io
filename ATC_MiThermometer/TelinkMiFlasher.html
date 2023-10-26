@@ -1192,22 +1192,22 @@ function miAuthorization() {
 					var value = bytesToHex(event.target.value.buffer);
 					addClog("Enc_10: " + value);
 					if (value == "11000000") { // REG_SUCCESS
-						setStatus("Registration successfull");
-						addLog("Registration successfull");
+						setStatus("Registration successful");
+						addLog("Registration successful");
 						sendLogin();
 					} else if (value == "12000000") { // REG_FAILED
 						addLog("Registration failed!");
 						setStatus("Registration failed!");
 					} else if (value == "13000000") { // REG_VERIFY_SUCC
-						addLog("Registration verify successfull");
-						setStatus("Registration verify successfull");
+						addLog("Registration verify successful");
+						setStatus("Registration verify successful");
 					} else if (value == "14000000") { // REG_VERIFY_FAIL
 						addLog("Registration verify failed!");
 						setStatus("Registration verify failed!");
 					} else if (value == "21000000") { // LOG_SUCCESS
 						is_logged_in = true;
-						addLog("Login successfull");
-						setStatus("Login successfull");
+						addLog("Login successful");
+						setStatus("Login successful");
 						menuUpgrade();
 					} else if (value == "22000000") { // LOG_INVALID_LTMK
 						addLog("Login invalid LMTK!");
@@ -1306,7 +1306,7 @@ function miAuthorization() {
 							} else if (value == "12000000") {
 								addLog("Register Failed!");
 							} else if (value == "11000000") {
-								addLog("Register successfull");
+								addLog("Register successful");
 							}
 						} else { //Mode Login
 							if ((state == 0) && (value == "00000101")) {
