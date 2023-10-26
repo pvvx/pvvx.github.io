@@ -190,14 +190,14 @@ function miAuthorization() {
 					if (value == "12000000") {
 						addLog("Activation Failed!");
 					} else if (value == "11000000") {
-						addLog("Activation successfull");
+						addLog("Activation successful");
 						sendLogin();
 					}
 					if (value == "23000000") {
 						addLog("Login Failed!");
 					} else if (value == "21000000") {
 						is_logged_in = true;
-						addLog("Login successfull");
+						addLog("Login successful");
 					}
 				});
 			}).then(characteristic => {
@@ -286,7 +286,7 @@ function miAuthorization() {
 							} else if (value == "12000000") {
 								addLog("Register Failed!");
 							} else if (value == "11000000") {
-								addLog("Register successfull");
+								addLog("Register successful");
 							}
 						} else { //Mode Login
 							if ((state == 0) && (value == "00000101")) {
