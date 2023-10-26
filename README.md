@@ -40,6 +40,8 @@ Web files for projects:
 
 [TS0201](https://pvvx.github.io/TS0201)
 
+[THB2](https://pvvx.github.io/THB2)
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
