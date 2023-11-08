@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v6.6</title>
+<title>Telink Flasher v6.7</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -1159,10 +1159,15 @@ function menuUpgrade() {
 				if(f2 != "" && f2 != "?")
 					is += ' <button type="button" id="btfrmupg" onclick="BetaFirmwareUpgrade();">Beta Firmware ver '+(otafiles.betaver>>4)+'.'+(otafiles.betaver&0x0f)+'</button><br>';
 			}
+			if(otafiles.zigbee != null) {
+				let f3 = otafiles.zigbee[hwver_id];
+				if(f3 != "" && f3 != "?")
+					is +=' <button type="button" id="btzrupg" onclick="FirmwareZigbee();">Zigbee Firmware: '  + otafiles.zigbee[hwver_id] +'</button><br>';
+			}
 			if(otafiles.original != null) {
 				let f3 = otafiles.original[hwver_id];
 				if(f3 != "" && f3 != "?")
-					is +=' <button type="button" id="btorupg" onclick="BackToOriginal();">' + otafiles.original[hwver_id] +'</button>';
+					is +=' <button type="button" id="btorupg" onclick="BackToOriginal();">' + otafiles.original[hwver_id] +'</button><br>';
 			}
 		}
 	}
@@ -1800,6 +1805,13 @@ function getOtaJson(d, name) {
 	}
 }
 
+function FirmwareZigbee() {
+	if(hwver_id != null) {
+		let fn = otafiles.zigbee[hwver_id];
+		addAlog("Load firmware file '"+fn+"'...");
+		ajax_file(fn, getFirmwareArray);
+	}
+}
 function FirmwareUpgrade() {
 	if(hwver_id != null) {
 		let fn = otafiles.custom[hwver_id];
