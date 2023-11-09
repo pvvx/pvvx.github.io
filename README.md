@@ -40,6 +40,8 @@ Web files for projects:
 
 [TS0201_TZ3000](https://pvvx.github.io/TS0201_TZ3000)
 
+[TS0202_TZ3000](https://pvvx.github.io/TS0202_TZ3000)
+
 [TS0601_TZE200](https://pvvx.github.io/TS0601_TZE200)
 
 [THB2](https://pvvx.github.io/THB2)
