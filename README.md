@@ -38,7 +38,9 @@ Web files for projects:
 
 [iSearching](https://pvvx.github.io/iSearching)
 
-[TS0201](https://pvvx.github.io/TS0201)
+[TS0201_TZ3000](https://pvvx.github.io/TS0201_TZ3000)
+
+[TS0601_TZE200](https://pvvx.github.io/TS0601_TZE200)
 
 [THB2](https://pvvx.github.io/THB2)
 
