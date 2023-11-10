@@ -1,0 +1,23 @@
+table.nodestab{
+border-collapse:collapse;
+border-spacing: 0;
+border:#aaa 2px solid;
+text-align:center;
+font-size:12px;
+margin:0 0 10px 0;
+background:#fff;}
+table.nodestab th{
+color:#247;
+border:#aaa 1px solid;
+font-size:12px;
+padding:2px 2px;
+background:#fec;}
+table.nodestab td{
+border:#aaa 1px solid;
+padding:2px 2px;}
+table#curpar{
+font-size:11px;
+width:100%;
+border-collapse:collapse;
+margin:8px 0 8px 0;}
+
