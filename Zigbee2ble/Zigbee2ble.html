@@ -957,7 +957,7 @@ function cfghandleChanged(event) {
 					hci_write(0x0031, new Uint8Array([(srcAddr>>8),srcAddr&0xff, startIdx&0xff]), 0x8031);
 				}
 			}
-		} else { // 0x8031  ZBHCI_CMD_MGMT_LQI_RSP
+		} else { // ZBHCI_CMD_MGMT_LQI_RSP
 			//          0 1  2 3 4  5  6  7  8  0 1 2 3 4 5 6 7  8 9 101112131415 1617 1819 2021
 		 	// blk[31]:8030 709B 6A 00 01 00 01 A4C138713769342F A4C138713769342F 0000 0402 0073
 			log("<b> MGMT LQI response:</b>"+ s);
