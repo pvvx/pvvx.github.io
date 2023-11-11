@@ -1057,7 +1057,7 @@ function onReJoinAll() {
 	Send commands:<br><input size="120" type="text" id="cmdTXT" value="">
 	<button type="button" onclick="sendCustomCommand($(&quot;cmdTXT&quot;).value, zbCharacteristic);">Send</button><br><br>
 	<button type="button" onclick="sendCustomCommand(&quot;0001&quot;, zbCharacteristic);">Start network</button>
-	<button type="button" onclick="sendCustomCommand(&quot;0034fffff001&quot;, zbCharacteristic);">Permit join 250 sec</button>
+	<button type="button" onclick="sendCustomCommand(&quot;0034fffcf001&quot;, zbCharacteristic);">Permit join 250 sec</button>
 	First Config: <button type="button" onclick="SetChannel($(&quot;selchnl&quot;).value)">Set channel</button>
 	<select id="selchnl">
 	<option value="11" selected>11</option>

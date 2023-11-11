@@ -44,6 +44,8 @@ Web files for projects:
 
 [TS0601_TZE200](https://pvvx.github.io/TS0601_TZE200)
 
+[TS0601_TZE204](https://pvvx.github.io/TS0601_TZE204)
+
 [THB2](https://pvvx.github.io/THB2)
 
 ---
