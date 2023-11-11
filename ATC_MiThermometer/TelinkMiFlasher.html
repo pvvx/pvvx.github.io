@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v6.8</title>
+<title>Telink Flasher v6.9</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -779,6 +779,7 @@ function CustomBlkParse(value) {
 			else s += 'Unknown or DIY';
 		}
 		else s += 'Unknown or DIY';
+		if(cfg.ver > 0x45 && hwver_id <= 15) bigOtaEnabled = true;
 		if(devinfo.hrstr) s += ' ' + devinfo.hrstr;
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
 		setStatus(s);
@@ -1592,7 +1593,7 @@ function startDFU() {
 	if (blockCount*16 > fwmaxsize){
 		let szk = fwmaxsize >> 10;
 		if(bigOtaEnabled && settingsCharacteristics){
-			if(!confirm('OTA size over '+szk+'k! Clean the whole story "Memo"?')) return;
+			if(!confirm('OTA size over '+szk+'k! All data for MiHome and measurement memory will be erased?')) return;
 			szk = blockCount*16 >> 10;
 			let s = 'Clear Ext.OTA region ('+szk+'kib)...';
 			addAlog(s);
@@ -1807,7 +1808,7 @@ function getOtaJson(d, name) {
 
 function FirmwareZigbee() {
 	if(hwver_id != null) {
-		if(!confirm("Attention: Zigbee firmware converts the thermometer to the Zigbee protocol. All data for MiHome and measurement memory will be erased."))
+		if(!confirm("Attention: Zigbee firmware converts the thermometer to the Zigbee protocol! All data for MiHome and measurement memory will be erased?"))
 		   return;
 		let fn = otafiles.zigbee[hwver_id];
 		addAlog("Load firmware file '"+fn+"'...");
