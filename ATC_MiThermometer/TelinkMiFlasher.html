@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v6.7</title>
+<title>Telink Flasher v6.8</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -1807,6 +1807,8 @@ function getOtaJson(d, name) {
 
 function FirmwareZigbee() {
 	if(hwver_id != null) {
+		if(!confirm("Attention: Zigbee firmware converts the thermometer to the Zigbee protocol. All data for MiHome and measurement memory will be erased."))
+		   return;
 		let fn = otafiles.zigbee[hwver_id];
 		addAlog("Load firmware file '"+fn+"'...");
 		ajax_file(fn, getFirmwareArray);
