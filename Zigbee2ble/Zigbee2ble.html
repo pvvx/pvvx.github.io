@@ -675,7 +675,7 @@ function cfghandleChanged(event) {
 								console.log("id: "+hex(srcAddr,4)+ " addrList["+n+"] add name: " + str);
 								updateJoinedNodeTab();
 								if(join_nodes_on) {
-									if(str == "LYWSD03MMC" || str == "TS0201") {
+									if(str == "LYWSD03MMC" || str == "TS0201" || str == "CGDK2") {
 										nodes.addrList[n].bing = 1;
 										bind_req(0x402, nodes.addrList[n].ieeeAddr, 0);
 									} else if(str == "TS011F") {
@@ -1039,6 +1039,9 @@ function onReJoinAll() {
 	   	join_all_nodes_on = 1;
 		$("chkbJoin").checked = true;
 		onToggleJoin();
+	    nodes.totalCnt = 0;
+		nodes.addrList = new Array();
+		hci_write(0x0045, new Uint8Array(), 0x8045);
    	}
 }
 
