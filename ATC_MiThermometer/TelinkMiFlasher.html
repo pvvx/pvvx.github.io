@@ -1808,7 +1808,7 @@ function getOtaJson(d, name) {
 
 function FirmwareZigbee() {
 	if(hwver_id != null) {
-		if(!confirm("Attention: Zigbee firmware converts the thermometer to the Zigbee protocol! All data for MiHome and measurement memory will be erased?"))
+		if(!confirm("Attention: This firmware is a Beta version for testing! Zigbee firmware converts the thermometer to the Zigbee protocol! All data for MiHome and measurement memory will be erased?"))
 		   return;
 		let fn = otafiles.zigbee[hwver_id];
 		addAlog("Load firmware file '"+fn+"'...");
