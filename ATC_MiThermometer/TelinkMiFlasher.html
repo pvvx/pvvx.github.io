@@ -578,7 +578,7 @@ function CustomQingpingParse(value) {
 
 function CGPR1_Action() {
 	addLog("Detected Qingping CGPR1 device");
-	$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>Press and hold the button on the back of CGG1-M for 2 seconds until the Bluetooth icon starts blinking on the e-ink display, and then click the "Connect" and "Do Activation" buttons on the TeLink Flasher.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>	 <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br><button type="button" onclick="sendCmdClear();">Clear all settings and reset device (into Qingping mode)</button><br><br>MTimer: <input type="text" id="mtimer" value="?"> ms <button type="button" onclick="getMTimer();">Get</button> <button type="button" onclick="setMTimer();">Set</button><br>';
+	$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>Press and hold the button on the device the device for 2 seconds until the LED starts flashing, and then press the "Connect" and "Activate" buttons on the TeLinkMiFlasher.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>	 <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br><button type="button" onclick="sendCmdClear();">Clear all settings and reset device (into Qingping mode)</button><br><br>MTimer: <input type="text" id="mtimer" value="?"> ms <button type="button" onclick="getMTimer();">Get</button> <button type="button" onclick="setMTimer();">Set</button><br>';
 	gattServer.getPrimaryService("22210000-554a-4546-5542-46534450464d")
 		.then(service => {
 			addClog("Found Custom service");
@@ -1444,6 +1444,15 @@ function sendLogin() {
 	}).catch(function(err) {updateFail(err);});
 }
 
+function getStrVersion(infoservice, suuid) {
+ return new Promise((resolve, reject) => {
+	infoservice.getCharacteristic(suuid).then(characteristic => {
+		characteristic.readValue().then(value => {
+			return resolve(new TextDecoder("utf-8").decode(value));
+		}).catch(error => {addClog(error);	return resolve(null); });
+	}).catch(error => {addClog(error);	return resolve(null); });
+})};
+
 function getDevVersion(devInfEnabled) {
 	var infoservice;
 	devinfo.hrstr = null;
@@ -1464,8 +1473,8 @@ function getDevVersion(devInfEnabled) {
 						devinfo.flg |= 4;
 						devinfo.srstr = value;
 						return resolve(devinfo.flg);
-					}).catch(error => { addClog(error);});
-				}).catch(error => { addClog(error);});
+					}).catch(error => { addClog(error); return resolve(null);});
+				}).catch(error => { addClog(error); return resolve(null);});
 			}).catch(error => { addClog(error); return resolve(null);});
 		}).catch(error => { addClog(error); return resolve(null);});
 	}).catch(error => { addClog(error); return resolve(null);});
@@ -1511,7 +1520,7 @@ function doConnect() {
 		addClog("Found Telink OTA write characteristic");
 		writeCharacteristic = characteristic;
 
-	getDevVersion(devInfEnabled).then(hwstr => {
+	getDevVersion(devInfEnabled).then(_ => {
 		if (devinfo.hrstr) addLog('Hardware Revision String: ' + devinfo.hrstr);
 		if (devinfo.srstr) addLog('Software Revision String: ' + devinfo.srstr);
 		if (devinfo.frstr) addLog('Firmware Revision String: ' + devinfo.frstr);
@@ -1555,18 +1564,9 @@ function doConnect() {
 			$("ldfile").hidden = false;
 			$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>	 <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
 		}}).catch(handleError);
-	}).catch(handleError);
+	}).catch(error => {addClog(error); addAlog("Not found Telink UUID service!"); connectTrys = 1000; disconnect();});
  }
 }
-
-function getStrVersion(infoservice, suuid) {
- return new Promise((resolve, reject) => {
-	infoservice.getCharacteristic(suuid).then(characteristic => {
-		characteristic.readValue().then(value => {
-			return resolve(new TextDecoder("utf-8").decode(value));
-		}).catch(error => {addClog(error);	return resolve(null); });
-	}).catch(error => {addClog(error);	return resolve(null); });
-})};
 
 function reConnect() {
 	if (bluetoothDevice != null) bluetoothDevice.gatt.disconnect();
