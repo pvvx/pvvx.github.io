@@ -2,18 +2,19 @@
 <html>
   <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zigbee2BLE v0.1</title>
+  <title>Zigbee2BLE v0.002</title>
   <link href="site.css" rel="stylesheet" type="text/css" />
   </head>
 <script type="text/javascript">
 const PServ = '00010203-0405-0607-0809-0a0b0c0d1912';
 const PChar = '00010203-0405-0607-0809-0a0b0c0d2b12';
 
-const hcitimeot = 7000;
-const hciretry = 4;
+const hcitimeot = 25000;
+const hciretry = 2;
 
 var gw = {};
 var nodes = { addrList:[] };
+var hci_cmd = [];
 
 var cfg = {tmp_thr:0,tmp_hst:0,hm_thr:0,hm_hst:0,hm_thr:0,hm_hst:0,m_tim:0,flg:0};
 var info = {temp:0,humi:0,lumi:0,mtimer:0,motion:0,jlight:0,flg:0};
@@ -88,7 +89,7 @@ function dump8(ar, len) {
 	return s;
 }
 
-function getSwVersion() {
+async function getSwVersion() {
  return new Promise((resolve, reject) => {
 	devServer.getPrimaryService(0x180a).then(service => { 
  		log("Found Device Information Service");
@@ -176,8 +177,8 @@ function sendCustomCommand(data, settingsCharacteristics){
 function onDisconnectButtonClick() {
   if(bluetoothDevice && bluetoothDevice.gatt.connected) {
    bluetoothDevice.gatt.disconnect();
-   log('BLE Device Disconnected');
   }
+  log('BLE Device Disconnected');
   bluetoothDevice = null;
   zbCharacteristic = null;
   devServer = null;
@@ -191,7 +192,6 @@ function onDisconnectButtonClick() {
 function onDisconnected() {
   onDisconnectButtonClick();
 }
-
 
 function log(data) {
     var time = new Date().toLocaleTimeString();
@@ -207,12 +207,30 @@ function arraysIsEqual(a, b) {
     return true;
 }
 
-function GetNodeName(ntwAddr) {
-	hci_write(0x0100, new Uint8Array([2,(ntwAddr>>8)&0xff,ntwAddr&0xff,1,1,1,4,0,0,0,2,0,4,0,5]), 0x8100);
+async function SetReportConfig(ntwAddr, profileID, direction, clusterID, attr, data) {
+	let dir = 0;
+	let head = new Uint8Array([2,(ntwAddr>>8)&0xff,ntwAddr&0xff,1,1,(profileID>>8)&0xff,profileID&0xff,dir,(clusterID>>8)&0xff,clusterID&0xff,1,direction,(attr>>8)&0xff, attr&0xff]);
+	let blk = new Uint8Array(head.byteLength + data.byteLength);
+	blk.set(head,0);
+	blk.set(data,head.byteLength);
+	await hci_write(0x0102, blk, 0x8102);
 }
-function getMGMTBinding(ntwAddr){
-	hci_write(0x0031, new Uint8Array([(ntwAddr>>8),ntwAddr&0xff, 0]), 0x8031);
+
+async function GetReportConfig(ntwAddr, profileID, direction, clusterID, attr) {
+	let dir = 0;
+	await hci_write(0x0103, new Uint8Array([2,(ntwAddr>>8)&0xff,ntwAddr&0xff,1,1,(profileID>>8)&0xff,profileID&0xff,dir,(clusterID>>8)&0xff,clusterID&0xff,1,direction,(attr>>8)&0xff, attr&0xff]), 0x8103);
 }
+async function AttrRead(ntwAddr, profileID, direction, clusterID, attr) {
+	let dir = 0;
+	await hci_write(0x0100, new Uint8Array([2,(ntwAddr>>8)&0xff,ntwAddr&0xff,1,1,(profileID>>8)&0xff,profileID&0xff,dir,(clusterID>>8)&0xff,clusterID&0xff,1,(attr>>8)&0xff, attr&0xff]), 0x8100);
+}
+async function GetNodeName(ntwAddr) {
+	await hci_write(0x0100, new Uint8Array([2,(ntwAddr>>8)&0xff,ntwAddr&0xff,1,1,1,4,0,0,0,2,0,4,0,5]), 0x8100);
+}
+async function getMGMTBinding(ntwAddr){
+	await hci_write(0x0031, new Uint8Array([(ntwAddr>>8),ntwAddr&0xff, 0]), 0x8031);
+}
+
 
 function getNodeNameClick() {
 	GetNodeName(this.nwkAddr);
@@ -221,14 +239,26 @@ function getMGMTBindingClick() {
 	getMGMTBinding(this.nwkAddr);
 }
 
+function getNodeVerClick() {
+	AttrRead(this.nwkAddr, 0x104, 0, 0x0019, 2);
+}
+
+function srcAddrClick() {
+	$("txtntwAddr").value = hex(this.nwkAddr,4);
+}
+
 function updateJoinedNodeTab() {
 	let rowCount = document.all.tbls.rows.length;
 	while(rowCount > 1)	document.all.tbls.deleteRow(--rowCount);
 	for(i = 0; i < nodes.addrList.length; i++){
 		r=document.all.tbls.insertRow(i+1);
-		(r.insertCell(0)).innerHTML=dump8(nodes.addrList[i].ieeeAddr,8);
-		(r.insertCell(1)).innerHTML=hex(nodes.addrList[i].nwkAddr,4);
-		let c = r.insertCell(2);
+		let c =	r.insertCell(0);
+		c.innerHTML = dump8(nodes.addrList[i].ieeeAddr,8);
+		c = r.insertCell(1);
+		c.nwkAddr = nodes.addrList[i].nwkAddr;
+		c.innerHTML = hex(c.nwkAddr,4);
+		c.onclick = srcAddrClick;
+		c = r.insertCell(2);
 		if(nodes.addrList[i].name === undefined)
 			c.innerHTML = "getNodeName";
 		else
@@ -237,16 +267,23 @@ function updateJoinedNodeTab() {
 		c.ondblclick = getNodeNameClick;
 		(r.insertCell(3)).innerHTML=nodes.addrList[i].man;
 		c = r.insertCell(4);
+		c.nwkAddr = nodes.addrList[i].nwkAddr;
+		if(nodes.addrList[i].ver === undefined)
+			c.innerHTML = "getVer";
+		else
+			c.innerHTML = nodes.addrList[i].ver;
+		c.ondblclick = getNodeVerClick;
+		c = r.insertCell(5);
 		if(nodes.addrList[i].note === undefined)
 			c.innerHTML = "getMGMTBinding";
 		else
 			c.innerHTML = nodes.addrList[i].note;
 		c.nwkAddr = nodes.addrList[i].nwkAddr;
 		c.ondblclick = getMGMTBindingClick;
-		(r.insertCell(5)).innerHTML=(nodes.addrList[i].temp / 100.0).toFixed(2);
-		(r.insertCell(6)).innerHTML=(nodes.addrList[i].humi / 100.0).toFixed(2);
-		(r.insertCell(7)).innerHTML=(nodes.addrList[i].batl / 2.0).toFixed(1);
-		(r.insertCell(8)).innerHTML=(nodes.addrList[i].vbat / 10.0).toFixed(1);
+		(r.insertCell(6)).innerHTML=(nodes.addrList[i].temp / 100.0).toFixed(2);
+		(r.insertCell(7)).innerHTML=(nodes.addrList[i].humi / 100.0).toFixed(2);
+		(r.insertCell(8)).innerHTML=(nodes.addrList[i].batl / 2.0).toFixed(1);
+		(r.insertCell(9)).innerHTML=(nodes.addrList[i].vbat / 10.0).toFixed(1);
 	}
 }
 
@@ -275,6 +312,7 @@ var hci_old = { retry:0, cmd_res:0, timerId: null, cmd:0, blk: []};
 
 function hci_timeout() {
 	if(hci_old.timerId != 0 && hci_old.retry > 0) {
+		clearTimeout(hci_old.timerId);
 		console.log("hci timeout"+hci_old.retry);
 		hci_old.timerId = setTimeout(hci_timeout, hcitimeot);
 		zbCharacteristic.writeValue(hci_old.blk);
@@ -298,19 +336,19 @@ function hci_test_timeout(cmd) {
 	return 0;
 }
 
-function SetChannel(chl) {
-	hci_write(0x0007, new Uint8Array([chl&0x1F]), 0);
+async function SetChannel(chl) {
+	await hci_write(0x0007, new Uint8Array([chl&0x1F]), 0);
 }
 
 
-function getLocalNwkInfo() {
+async function getLocalNwkInfo() {
     log('Get Local Network Info...');
     nodes.totalCnt = 0;
 	nodes.addrList = new Array();
-	hci_write(0x0045, new Uint8Array(), 0x8045);
+	await hci_write(0x0045, new Uint8Array(), 0x8045);
 }
 
-function timeout(ms) {
+async function timeout(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
@@ -577,7 +615,7 @@ function zcl_getAttrSize(dataType, dlen)
 	return dataLen;
 }
 
-function cfghandleChanged(event) {
+async function cfghandleChanged(event) {
 	let value = event.target.value.buffer ? event.target.value : new DataView(event.target.value);
 	let len = value.byteLength;
 	console.log("read blk:"+dump8(value,len));
@@ -607,7 +645,7 @@ function cfghandleChanged(event) {
 		log("<b> Local Network Info:</b> devType: "+gw.devType +", capability: "+gw.capability+", onANetwork: "+gw.onANetwork+", nwkAddr: "+hex(gw.nwkAddr,4)+", ieeeAddr: "+dump8(gw.ieeeAddr,8))
 		log("@ <b>Get Joned Nodes...</b>")
 		nodes.addrList = [];
-		hci_write(0x0040, new Uint8Array([0,0]), 0x8040);
+		await hci_write(0x0040, new Uint8Array([0,0]), 0x8040);
 	} else if (blkid == 0x8040 && len >= 8) {
 	   // blk[28]:8040 0002 0000 02 00 70B3D52B600335C0 376A A4C138508CCA0724 BB70
 	   // blk[18]:8040 0002 0001 01 00 70B3D52B600335C0 700A
@@ -636,7 +674,7 @@ function cfghandleChanged(event) {
 				}
 				if(join_all_nodes_on && startIdx == nodes.totalCnt) {
 					log("@ <b>Get Nodes Names...</b>");
-					hci_write(0x0100, new Uint8Array([2,0xff,0xff,1,1,1,4,0,0,0,2,0,4,0,5]), 0x8100);
+					await hci_write(0x0100, new Uint8Array([2,0xff,0xff,1,1,1,4,0,0,0,2,0,4,0,5]), 0x8100);
 					join_all_nodes_on = 0;
 				}
 		 	} else if(nodes.totalCnt == 0)
@@ -653,13 +691,19 @@ function cfghandleChanged(event) {
 		let clusterId = value.getUint16(7, false);
 		let numAttr = value.getUint8(9);
 		let s = " srcAddr: "+hex(srcAddr,4)+", srcEp: "+srcEp+", dstEp: "+dstEp+", seqNum: "+seqNum+", clusterId: "+hex(clusterId,4)+", numAttr: "+ numAttr;
+		if(blkid != 0x8104) {
+			$("txtntwAddr").value = hex(srcAddr,4);
+			$("txtCluster").value = hex(clusterId,4);
+		}
 		if(blkid == 0x8100) {
 			log( "<b> Read Attr:</b>"+s);
 			if(len > 8 && numAttr > 0) {
 		 		let dList = new DataView(value.buffer.slice(10));
 		 		len -= 8;
+		 		$("resp").innerHTML = "";
 		 		while(dList.byteLength >= 4 && numAttr > 0) {
 			 		let attrID = dList.getUint16(0, false);
+					$("txtAttr").value = hex(attrID,4);
 			 		let status = dList.getUint8(2);
 			 		let dataType = dList.getUint8(3);
 					let s=" * attrID: "+hex(attrID,4)+", status: "+zcl_status(status)+", dataType: "+zcl_data_type(dataType);
@@ -667,31 +711,28 @@ function cfghandleChanged(event) {
 					let	len = zcl_getAttrSize(dataType, n);
 			 		if(dataType == ZCL_DATA_TYPE_CHAR_STR && attrID < 0xff00) {
 				 		let str = new TextDecoder('utf-8').decode(dList.buffer.slice(5, 5+n))
-				 		log(s + ", String: <b>"+ str + "</b>");
-				 		if(attrID == 0x0005) {
+				 		s += ", String: <b>"+ str + "</b>";
+						$("txtDataVal").value = str;
+				 		if(clusterId == 0 && attrID == 0x0005) {
 					 		let n = nodes.addrList.findIndex((element, index) => element.nwkAddr == srcAddr);
 					 		if(n >= 0) {
 								nodes.addrList[n].name = str;
 								console.log("id: "+hex(srcAddr,4)+ " addrList["+n+"] add name: " + str);
 								updateJoinedNodeTab();
 								if(join_nodes_on) {
-									if(str == "LYWSD03MMC" || str == "TS0201" || str == "CGDK2") {
+									if(str == "LYWSD03MMC" || str == "TS0201" || str == "TS0601") {
 										nodes.addrList[n].bing = 1;
 										bind_req(0x402, nodes.addrList[n].ieeeAddr, 0);
 									} else if(str == "TS011F") {
 										// 010002376A01010104000b04030508050b0505 RMSCurrent, ActivePower, RMSVoltage
-										hci_write(0x0100, new Uint8Array([2, (nodes.addrList[n].nwkAddr>>8)&0xff, nodes.addrList[n].nwkAddr&0xff,1,1,1,4,0,0x0b,4,3,5,8,5,0x0b,5,5]), 0x8100);
+										await hci_write(0x0100, new Uint8Array([2, (nodes.addrList[n].nwkAddr>>8)&0xff, nodes.addrList[n].nwkAddr&0xff,1,1,1,4,0,0x0b,4,3,5,8,5,0x0b,5,5]), 0x8100);
 									} else if(str == "TS0202") {
 										nodes.addrList[n].bing = 1000;
 										bind_req(0x500, nodes.addrList[n].ieeeAddr, 0);
-//									} else if(str == "TS0201") {
-//							 			nodes.addrList[n].note = "auto: 402, 405, 001"
-//										updateJoinedNodeTab();
-//										log("@ Device auto join clasters: 402, 405, 001");
 									}
 								}
 							}
-				 		} else if(attrID == 0x0004) {
+				 		} else if(clusterId == 0 && attrID == 0x0004) {
 					 		let n = nodes.addrList.findIndex((element, index) => element.nwkAddr == srcAddr);
 					 		if(n >= 0) {
 								nodes.addrList[n].man = str;
@@ -700,12 +741,33 @@ function cfghandleChanged(event) {
 							}
 				 		}
 					} else if(dataType == ZCL_DATA_TYPE_UINT16) {
-						log(s + ", Data: " + dList.getUint16(4, false));
+						s += ", Data: " + dList.getUint16(4, false);
+						$("txtDataVal").value = dList.getUint16(4, false);
 					} else if(dataType == ZCL_DATA_TYPE_INT16) {
-						log(s + ", Data: " + dList.getInt16(2, false));
+						s += ", Data: " + dList.getInt16(4, false);
+						$("txtDataVal").value = dList.getInt16(4, false);
 					} else {
-						log(s + ", Data: 0x" + bytesToHex(dList.buffer.slice(4, 4+len)));
+						let vh = bytesToHex(dList.buffer.slice(4, 4+len));
+						s += ", Data: 0x" + vh;
+						$("txtDataVal").value = parseInt(vh,16);
+				 		if(clusterId == 0x0019 && attrID == 0x0002) {
+					 		let n = nodes.addrList.findIndex((element, index) => element.nwkAddr == srcAddr);
+					 		if(n >= 0) {
+								nodes.addrList[n].ver = vh;
+								console.log("id: "+hex(srcAddr,4)+ " addrList["+n+"] add ver: " + vh);
+								updateJoinedNodeTab();
+							}
+						}
 					}
+					let options = $("selDType").options;
+					for (let i = 0; i < options.length; i++) {
+					if(options[i].value == dataType) {
+						options[i].selected = true;
+						break;
+						}
+					}
+			 		$("resp").innerHTML += s + "<br>";
+			 		log(s);
 		 			dList = new DataView(dList.buffer.slice(len+4));
 		 			numAttr = numAttr -1;
 				}
@@ -715,11 +777,15 @@ function cfghandleChanged(event) {
 			log("<b> Write Attr:</b>"+s);
 			if(numAttr > 0 && len >= 14) {
 		 		let eltab = new DataView(value.buffer.slice(10));
+		 		$("resp").innerHTML = "";
 		 		while(eltab.byteLength >= 3) {
  	 				let idx = 4;
 					let status = eltab.getUint8(0);
 		 			let attrID = eltab.getUint16(1, false);
-		 			log(" * status: "+ zcl_status(status)+", attrID: "+hex(attrID,4));
+					$("txtAttr").value = hex(attrID,4);
+		 			let s = " * status: "+ zcl_status(status)+", attrID: "+hex(attrID,4);
+			 		$("resp").innerHTML += s + "<br>";
+		 			log(s);
 		 			eltab = new DataView(eltab.buffer.slice(idx));
 		 		}
 		 	}
@@ -730,12 +796,16 @@ function cfghandleChanged(event) {
 			log("<b> Config report:</b>"+s);
 			if(numAttr > 0 && len >= 14) {
 		 		let eltab = new DataView(value.buffer.slice(10));
+		 		$("resp").innerHTML = "";
 		 		while(eltab.byteLength >= 4) {
  	 				let idx = 4;
 					let status = eltab.getUint8(0);
 			 		let direction = eltab.getUint8(1);
 		 			let attrID = eltab.getUint16(2, false);
-		 			log(" * status: "+ zcl_status(status)+", direction: "+direction+", attrID: "+hex(attrID,4));
+					$("txtAttr").value = hex(attrID,4);
+		 			let s = " * status: "+ zcl_status(status)+", direction: "+direction+", attrID: "+hex(attrID,4);
+			 		$("resp").innerHTML += s + "<br>";
+		 			log(s);
 		 			eltab = new DataView(eltab.buffer.slice(idx));
 		 		}
 		 	}
@@ -747,6 +817,7 @@ function cfghandleChanged(event) {
 			log( "<b> Report Config:</b>"+s);
 			if(numAttr > 0 && len >= 14) {
 		 		let eltab = new DataView(value.buffer.slice(10));
+		 		$("resp").innerHTML = "";
 		 		while(eltab.byteLength >= 4) {
  	 				let idx = 4;
 					let status = eltab.getUint8(0);
@@ -759,6 +830,7 @@ function cfghandleChanged(event) {
 							break;
 						}
 						let attrId = eltab.getUint16(2, false);
+						$("txtAttr").value = hex(attrId,4);
 						let dataType = eltab.getUint8(4)
 						let minReportInt = eltab.getUint16(5, false);
 		 				let maxReportInt = eltab.getUint16(7, false);
@@ -773,13 +845,25 @@ function cfghandleChanged(event) {
 							 	log(s + ", Unknown frame(2)!");
 								break;
 		 				 	}
-		 				 	s += ", Data: 0x" + bytesToHex(eltab.buffer.slice(idx, idx + dlen));
+		 				 	let val = eltab.buffer.slice(idx, idx + dlen);
+		 				 	s += ", Data: 0x" + bytesToHex(val);
 		 					idx += dlen;
+							let options = $("selDType").options;
+							for (let i = 0; i < options.length; i++) {
+								if(options[i].value == dataType) {
+									options[i].selected = true;
+									break;
+								}
+							}
+							$("txtMin").value = minReportInt;
+							$("txtMax").value = maxReportInt;
+							$("txtDataVal").value = parseInt(bytesToHex(val),16);
 			 			}
 			 		} else {
 			 			let timeoutPeriod = value.getUint16(2, false);
 			 		}
 			 		log(s);
+			 		$("resp").innerHTML += s + "<br>";
 		 			eltab = new DataView(eltab.buffer.slice(idx));
 				}
 			}
@@ -857,6 +941,9 @@ function cfghandleChanged(event) {
 		let apsCnt = value.getUint8(10);
 		log("<b> Data Confirm:</b>  dstMode: "+dstMode+", dstAddr: "+hex(dstAddr,4)+", srcEp: "+srcEp+", dstEp: "+dstEp+", clusterId: "+hex(clusterId,4)
 		+", status: "+ zcl_status(status)+", apsCnt: "+ apsCnt);
+		if(status != 0) {
+			hci_timeout();
+		}
 /*
 		if(clusterId == 0x500) {
 		 	let n = nodes.addrList.findIndex((element, index) => element.name == "TS011F");
@@ -887,7 +974,7 @@ function cfghandleChanged(event) {
 					} else if(nodes.addrList[n].bing == 3) {
 			 			nodes.addrList[n].bing = 100;
 			 			log("@ <b>Get the binding table information of the target device...</b>")
-						hci_write(0x0031, new Uint8Array([(srcAddr>>8),srcAddr&0xff,0]), 0x8031);
+						await hci_write(0x0031, new Uint8Array([(srcAddr>>8),srcAddr&0xff,0]), 0x8031);
 					} else if(nodes.addrList[n].bing == 1000) {
 			 			nodes.addrList[n].bing = 3;
 						bind_req(0x0001, nodes.addrList[n].ieeeAddr, 0);
@@ -954,10 +1041,10 @@ function cfghandleChanged(event) {
 				}
 				if(startIdx < TabEntries) {
 		 			log("@ Get the next binding table information of the target device...")
-					hci_write(0x0031, new Uint8Array([(srcAddr>>8),srcAddr&0xff, startIdx&0xff]), 0x8031);
+					await hci_write(0x0031, new Uint8Array([(srcAddr>>8),srcAddr&0xff, startIdx&0xff]), 0x8031);
 				}
 			}
-		} else { // ZBHCI_CMD_MGMT_LQI_RSP
+		} else { // 0x8031  ZBHCI_CMD_MGMT_LQI_RSP
 			//          0 1  2 3 4  5  6  7  8  0 1 2 3 4 5 6 7  8 9 101112131415 1617 1819 2021
 		 	// blk[31]:8030 709B 6A 00 01 00 01 A4C138713769342F A4C138713769342F 0000 0402 0073
 			log("<b> MGMT LQI response:</b>"+ s);
@@ -987,7 +1074,7 @@ function cfghandleChanged(event) {
 			 	if(nodes.addrList[n].name === undefined) {
 					join_nodes_on = 1; 				 		
 					log("@ <b>Get Node Name...</b>");
-					hci_write(0x0100, new Uint8Array([2,(nwkAddr>>8)&0xff,nwkAddr&0xff,1,1,1,4,0,0,0,2,0,4,0,5]), 0x8100);
+					await hci_write(0x0100, new Uint8Array([2,(nwkAddr>>8)&0xff,nwkAddr&0xff,1,1,1,4,0,0,0,2,0,4,0,5]), 0x8100);
 				} else {
 					log("@ <b>Name of the already joined node: " + nodes.addrList[n].name+"</b>");
 				}
@@ -1034,20 +1121,113 @@ function onToggleJoin() {
         //Checkbox has been unchecked
     }
 }
-function onReJoinAll() {
+async function onReJoinAll() {
    	if(z2b_connected) {
 	   	join_all_nodes_on = 1;
 		$("chkbJoin").checked = true;
 		onToggleJoin();
+	    log('Get Local Network Info...');
 	    nodes.totalCnt = 0;
 		nodes.addrList = new Array();
-		hci_write(0x0045, new Uint8Array(), 0x8045);
+		await hci_write(0x0045, new Uint8Array(), 0x8045);
    	}
 }
 
+function butGetReportConfig() {
+   	if(z2b_connected) {
+	   	let ntwAddr;
+		if(nodes.totalCnt != 0 && ($('txtntwAddr').value == "" || $('txtntwAddr').value == "?")) {
+			ntwAddr =  nodes.addrList[nodes.totalCnt-1].nwkAddr;
+			$('txtntwAddr').value = hex(ntwAddr,4);
+		} else {
+			ntwAddr = parseInt($('txtntwAddr').value, 16);
+		}
+		let clusterID = parseInt($('txtCluster').value, 16);
+		let Attr = parseInt($('txtAttr').value, 16);
+		GetReportConfig(ntwAddr, 0x104, 0, clusterID, Attr);
+	}
+}
+
+function butSetReportConfig() {
+   	if(z2b_connected) {
+	   	let ntwAddr;
+		if(nodes.totalCnt != 0 && ($('txtntwAddr').value == "" || $('txtntwAddr').value == "?")) {
+			ntwAddr =  nodes.addrList[nodes.totalCnt-1].nwkAddr;
+			$('txtntwAddr').value = hex(ntwAddr,4);
+		} else {
+			ntwAddr = parseInt($('txtntwAddr').value, 16);
+		}
+		let tmin = parseInt($('txtMin').value, 10);
+		let tmax = parseInt($('txtMax').value, 10);
+		let value = parseInt($('txtDataVal').value, 10);
+		let td = $('selDType').value;
+		let clusterID = parseInt($('txtCluster').value, 16);
+		let Attr = parseInt($('txtAttr').value, 16);
+		let datalen = zcl_getDataTypeLen(td);
+		let data;
+		if(datalen == 1)
+		 	data = new Uint8Array([td, (tmin>>8)&0xff, tmin&0xff,(tmax>>8)&0xff, tmax&0xff, value&0xff]);
+		else if(datalen == 2)
+		 	data = new Uint8Array([td, (tmin>>8)&0xff, tmin&0xff,(tmax>>8)&0xff, tmax&0xff, (value>>8)&0xff, value&0xff]);
+		else
+		 	data = new Uint8Array([td, (tmin>>8)&0xff, tmin&0xff,(tmax>>8)&0xff, tmax&0xff, (value>>24)&0xff, (value>>16)&0xff, (value>>8)&0xff, value&0xff]);
+		SetReportConfig(ntwAddr, 0x104, 0, clusterID, Attr, data);
+	}
+}
+function butAttrRead() {
+   	if(z2b_connected) {
+	   	let ntwAddr;
+		if(nodes.totalCnt != 0 && ($('txtntwAddr').value == "" || $('txtntwAddr').value == "?")) {
+			ntwAddr =  nodes.addrList[nodes.totalCnt-1].nwkAddr;
+			$('txtntwAddr').value = hex(ntwAddr,4);
+		} else {
+			ntwAddr = parseInt($('txtntwAddr').value, 16);
+		}
+		let clusterID = parseInt($('txtCluster').value, 16);
+		let Attr = parseInt($('txtAttr').value, 16);
+		AttrRead(ntwAddr, 0x104, 0, clusterID, Attr);
+   	}
+}
+
+function butBindCluster() {
+   	if(z2b_connected) {
+	   	let ntwAddr;
+		if(nodes.totalCnt != 0 && ($('txtntwAddr').value == "" || $('txtntwAddr').value == "?")) {
+			ntwAddr =  nodes.addrList[nodes.totalCnt-1].nwkAddr;
+			$('txtntwAddr').value = hex(ntwAddr,4);
+		} else {
+			ntwAddr = parseInt($('txtntwAddr').value, 16);
+		}
+		let clusterID = parseInt($('txtCluster').value, 16);
+
+ 		let n = nodes.addrList.findIndex((element, index) => element.nwkAddr == ntwAddr);
+ 		if(n >= 0) {
+ 			nodes.addrList[n].bing = 200;
+			bind_req(clusterID, nodes.addrList[n].ieeeAddr, 0);
+		}
+   	}
+}
+function butUnBindCluster() {
+   	if(z2b_connected) {
+	   	let ntwAddr;
+		if(nodes.totalCnt != 0 && ($('txtntwAddr').value == "" || $('txtntwAddr').value == "?")) {
+			ntwAddr =  nodes.addrList[nodes.totalCnt-1].nwkAddr;
+			$('txtntwAddr').value = hex(ntwAddr,4);
+		} else {
+			ntwAddr = parseInt($('txtntwAddr').value, 16);
+		}
+		let clusterID = parseInt($('txtCluster').value, 16);
+
+ 		let n = nodes.addrList.findIndex((element, index) => element.nwkAddr == ntwAddr);
+ 		if(n >= 0) {
+ 			nodes.addrList[n].bing = 200;
+			bind_req(clusterID, nodes.addrList[n].ieeeAddr, 0);
+		}
+   	}
+}
 </script>
   <body>
-	<big><big>Zigbee2BLE (trial version)</big></big> <a href="https://github.com/pvvx/zigbee2ble">&#9432;</a><br>
+	<big><big>Zigbee2BLE (test version 2)</big></big> <a href="https://github.com/pvvx/zigbee2ble">&#9432;</a><br>
 	Web Experimental Features!<br>
  	#enable-experimental-web-platform-features (copy link:
   	<a href=chrome://flags/#enable-experimental-web-platform-features>Chrome</a>,
@@ -1057,10 +1237,10 @@ function onReJoinAll() {
     <input type="button" title="ReJoining all nodes" id="btnReJoin" onclick="onReJoinAll()" value="ReJoining all nodes">
     Auto Joining<input type="checkbox" title="Binding nodes on/off" id="chkbJoin" onclick="onToggleJoin()">
 	<br><hr>
-	Send commands:<br><input size="120" type="text" id="cmdTXT" value="">
+	Send HCI Commands:<br><input size="120" type="text" id="cmdTXT" value="">
 	<button type="button" onclick="sendCustomCommand($(&quot;cmdTXT&quot;).value, zbCharacteristic);">Send</button><br><br>
 	<button type="button" onclick="sendCustomCommand(&quot;0001&quot;, zbCharacteristic);">Start network</button>
-	<button type="button" onclick="sendCustomCommand(&quot;0034fffcf001&quot;, zbCharacteristic);">Permit join 250 sec</button>
+	<button type="button" onclick="sendCustomCommand(&quot;0034fffff001&quot;, zbCharacteristic);">Permit join 250 sec</button>
 	First Config: <button type="button" onclick="SetChannel($(&quot;selchnl&quot;).value)">Set channel</button>
 	<select id="selchnl">
 	<option value="11" selected>11</option>
@@ -1085,8 +1265,31 @@ function onReJoinAll() {
 	<br><br>
 <!--	<input type="button" id="butGetInfo" disabled="true" onclick="getInfo()" value="Get Info"><br> -->
 	<table id="tbls" class="nodestab">
-	<tr><th>ieeeAddr</th><th>nwkAddr</th><th>Name</th><th>Man</th><th>Note</th><th>Temp</th><th>Humi</th><th>Bat%</th><th>Vbat</th></tr>
+	<tr><th>ieeeAddr</th><th>nwkAddr</th><th>Name</th><th>Man</th><th>Ver</th><th>Report</th><th>Temp</th><th>Humi</th><th>Bat%</th><th>Vbat</th></tr>
 	</table><br>
+	ntwAddr <input size="20" type="text" id="txtntwAddr" value="?">
+	ClusterID <input size="20" type="text" id="txtCluster" value="0405">
+	Attr <input size="20" type="text" id="txtAttr" value="0000">
+	<button type="button" onclick="butGetReportConfig()">GetReportConfig</button>
+
+	<button type="button" onclick="butAttrRead()">Read Attr</button>
+	<button type="button" onclick="butBindCluster()">Bind Cluster</button>
+	<button type="button" onclick="butUnBindCluster()">UnBind Cluster</button>
+	<br><br>
+	Min <input size="20" type="text" id="txtMin" value="9">
+	Max <input size="20" type="text" id="txtMax" value="360">
+	Value <select id="selDType">
+	<option value="0x20">UINT8</option>
+	<option value="0x21" selected>UINT16</option>
+	<option value="0x23">UINT32</option>
+	<option value="0x28">INT8</option>
+	<option value="0x29">INT16</option>
+	<option value="0x2B">INT32</option>
+	<option value="0x42">CHAR_STR</option>
+	</select> 
+	<input size="20" type="text" id="txtDataVal" value="10">
+	<button type="button" onclick="butSetReportConfig()">SetReportConfig</button><br>
+	<br><div id="resp">?</div><br>
 	<div id="hcistat">hci ready</div><br>
 	<hr>
     <button type="button" onclick="clearLog();">Clear Log</button>
