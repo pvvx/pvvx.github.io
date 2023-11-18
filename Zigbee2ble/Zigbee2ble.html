@@ -313,12 +313,13 @@ var hci_old = { retry:0, cmd_res:0, timerId: null, cmd:0, blk: []};
 function hci_timeout() {
 	if(hci_old.timerId != 0 && hci_old.retry > 0) {
 		clearTimeout(hci_old.timerId);
-		console.log("hci timeout"+hci_old.retry);
+		console.log("hci timeout "+hci_old.retry);
 		hci_old.timerId = setTimeout(hci_timeout, hcitimeot);
 		zbCharacteristic.writeValue(hci_old.blk);
 		hci_old.retry = hci_old.retry - 1;
 	} else {
-		$('hcistat').innerHTML = "hci timeout: "+hex(hci_old.cmd_res,4);
+		$('hcistat').innerHTML = "<b>hci timeout:</b> "+hex(hci_old.cmd_res,4);
+		$('hcistat').style.color = '#800';
 		hci_old.timerId = null;
 	}
 }
@@ -328,7 +329,8 @@ function hci_test_timeout(cmd) {
 		if(hci_old.timerId != null) {
 			clearTimeout(hci_old.timerId);
 			hci_old.timerId = null;
-			$('hcistat').innerHTML = "hci ok: "+hex(cmd,4);
+			$('hcistat').innerHTML = "<b>hci ok:</b> "+hex(cmd,4);
+			$('hcistat').style.color = '#080';
 			console.log("hci timeout id:"+hex(cmd,4)+" - clean");
 		}
 		return 1;
@@ -365,6 +367,7 @@ async function hci_write(cmd, par, cmd_res) {
 	hci_old.blk.set(par, 2);
 	if(cmd_res != 0) {
 		$('hcistat').innerHTML = "hci busy: "+hex(cmd_res,4);
+		$('hcistat').style.color = '#008';
 		hci_old.retry = hciretry;
 		hci_old.timerId = setTimeout(hci_timeout, hcitimeot);
 	} else {
@@ -706,56 +709,68 @@ async function cfghandleChanged(event) {
 					$("txtAttr").value = hex(attrID,4);
 			 		let status = dList.getUint8(2);
 			 		let dataType = dList.getUint8(3);
-					let s=" * attrID: "+hex(attrID,4)+", status: "+zcl_status(status)+", dataType: "+zcl_data_type(dataType);
-			 		let n = dList.getUint8(4);
-					let	len = zcl_getAttrSize(dataType, n);
+					let s = " * attrID: "+hex(attrID,4)+", status: "+zcl_status(status)+", dataType: "+zcl_data_type(dataType);
+					let el = dList.getUint8(4)
+					let	len = zcl_getAttrSize(dataType, el);
+			 		let n = nodes.addrList.findIndex((element, index) => element.nwkAddr == srcAddr);
 			 		if(dataType == ZCL_DATA_TYPE_CHAR_STR && attrID < 0xff00) {
-				 		let str = new TextDecoder('utf-8').decode(dList.buffer.slice(5, 5+n))
+				 		let str = new TextDecoder('utf-8').decode(dList.buffer.slice(5, 5+el))
 				 		s += ", String: <b>"+ str + "</b>";
 						$("txtDataVal").value = str;
-				 		if(clusterId == 0 && attrID == 0x0005) {
-					 		let n = nodes.addrList.findIndex((element, index) => element.nwkAddr == srcAddr);
-					 		if(n >= 0) {
-								nodes.addrList[n].name = str;
-								console.log("id: "+hex(srcAddr,4)+ " addrList["+n+"] add name: " + str);
-								updateJoinedNodeTab();
-								if(join_nodes_on) {
-									if(str == "LYWSD03MMC" || str == "TS0201" || str == "TS0601") {
-										nodes.addrList[n].bing = 1;
-										bind_req(0x402, nodes.addrList[n].ieeeAddr, 0);
-									} else if(str == "TS011F") {
-										// 010002376A01010104000b04030508050b0505 RMSCurrent, ActivePower, RMSVoltage
-										await hci_write(0x0100, new Uint8Array([2, (nodes.addrList[n].nwkAddr>>8)&0xff, nodes.addrList[n].nwkAddr&0xff,1,1,1,4,0,0x0b,4,3,5,8,5,0x0b,5,5]), 0x8100);
-									} else if(str == "TS0202") {
-										nodes.addrList[n].bing = 1000;
-										bind_req(0x500, nodes.addrList[n].ieeeAddr, 0);
-									}
+				 		if(n >= 0 && clusterId == 0 && attrID == 0x0005 ) {
+							nodes.addrList[n].name = str;
+							console.log("id: "+hex(srcAddr,4)+ " addrList["+n+"] add name: " + str);
+							updateJoinedNodeTab();
+							if(join_nodes_on) {
+								if(str == "LYWSD03MMC" || str == "TS0201" || str == "TS0601") {
+									nodes.addrList[n].bing = 1;
+									bind_req(0x402, nodes.addrList[n].ieeeAddr, 0);
+								} else if(str == "TS011F") {
+									// 010002376A01010104000b04030508050b0505 RMSCurrent, ActivePower, RMSVoltage
+									await hci_write(0x0100, new Uint8Array([2, (nodes.addrList[n].nwkAddr>>8)&0xff, nodes.addrList[n].nwkAddr&0xff,1,1,1,4,0,0x0b,4,3,5,8,5,0x0b,5,5]), 0x8100);
+								} else if(str == "TS0202") {
+									nodes.addrList[n].bing = 1000;
+									bind_req(0x500, nodes.addrList[n].ieeeAddr, 0);
 								}
 							}
-				 		} else if(clusterId == 0 && attrID == 0x0004) {
-					 		let n = nodes.addrList.findIndex((element, index) => element.nwkAddr == srcAddr);
-					 		if(n >= 0) {
-								nodes.addrList[n].man = str;
-								console.log("id: "+hex(srcAddr,4)+ " addrList["+n+"] add man name: " + str);
-								updateJoinedNodeTab();
-							}
+				 		} else if(n >= 0 && clusterId == 0 && attrID == 0x0004) {
+							nodes.addrList[n].man = str;
+							console.log("id: "+hex(srcAddr,4)+ " addrList["+n+"] add man name: " + str);
+							updateJoinedNodeTab();
 				 		}
 					} else if(dataType == ZCL_DATA_TYPE_UINT16) {
-						s += ", Data: " + dList.getUint16(4, false);
-						$("txtDataVal").value = dList.getUint16(4, false);
+						let val = dList.getUint16(4, false);
+						s += ", Data: " + val;
+						$("txtDataVal").value = val;
+						if(n >= 0 && clusterId == 0x405 && attrID == 0x0000) {
+							nodes.addrList[n].humi = val;
+			 		    	updateJoinedNodeTab();
+						}
 					} else if(dataType == ZCL_DATA_TYPE_INT16) {
-						s += ", Data: " + dList.getInt16(4, false);
-						$("txtDataVal").value = dList.getInt16(4, false);
+					    let val = dList.getInt16(4, false);
+						s += ", Data: " + val;
+						$("txtDataVal").value = val;
+						if(n >= 0 && clusterId == 0x402 && attrID == 0x0000) {
+							nodes.addrList[n].temp = val;
+							updateJoinedNodeTab();
+						}
 					} else {
 						let vh = bytesToHex(dList.buffer.slice(4, 4+len));
 						s += ", Data: 0x" + vh;
 						$("txtDataVal").value = parseInt(vh,16);
-				 		if(clusterId == 0x0019 && attrID == 0x0002) {
-					 		let n = nodes.addrList.findIndex((element, index) => element.nwkAddr == srcAddr);
-					 		if(n >= 0) {
+				 		if(n >= 0) {
+					 		if(clusterId == 0x0019 && attrID == 0x0002) {
 								nodes.addrList[n].ver = vh;
 								console.log("id: "+hex(srcAddr,4)+ " addrList["+n+"] add ver: " + vh);
 								updateJoinedNodeTab();
+					 		} else if(clusterId == 0x0001) {
+					 			if(attrID == 0x0020) {
+					 				nodes.addrList[n].vbat = parseInt(vh,16);
+					 				updateJoinedNodeTab();
+					 			} else if(attrID == 0x0021) {
+					 				nodes.addrList[n].batl = parseInt(vh,16);
+									updateJoinedNodeTab();
+					 			}
 							}
 						}
 					}
@@ -1071,12 +1086,14 @@ async function cfghandleChanged(event) {
 	 		if(n >= 0) {
 		 		nodes.addrList[n].nwkAddr = nwkAddr;
 				updateJoinedNodeTab();
-			 	if(nodes.addrList[n].name === undefined) {
-					join_nodes_on = 1; 				 		
-					log("@ <b>Get Node Name...</b>");
-					await hci_write(0x0100, new Uint8Array([2,(nwkAddr>>8)&0xff,nwkAddr&0xff,1,1,1,4,0,0,0,2,0,4,0,5]), 0x8100);
-				} else {
-					log("@ <b>Name of the already joined node: " + nodes.addrList[n].name+"</b>");
+				if(join_nodes_on) {
+				 	if(nodes.addrList[n].name === undefined) {
+						join_nodes_on = 1; 				 		
+						log("@ <b>Get Node Name...</b>");
+						await hci_write(0x0100, new Uint8Array([2,(nwkAddr>>8)&0xff,nwkAddr&0xff,1,1,1,4,0,0,0,2,0,4,0,5]), 0x8100);
+					} else {
+						log("@ <b>Name of the already joined node: " + nodes.addrList[n].name+"</b>");
+					}
 				}
 	 		} else {
 				log("Add Node ieeeAddr: " + dump8(ieeeAddr,8) + ", nwkAddr: "+ hex(nwkAddr,4));
@@ -1096,20 +1113,71 @@ async function cfghandleChanged(event) {
 		let nwkAddr = value.getUint16(14, false);
 		log("<b> Discovery Network address response:</b>  srcAddr: "+hex(srcAddr,4)+", seqNum: "+seqNum+", status: "+ zcl_status(status)+ 
 		", ieeeAddr: "+dump8(ieeeAddr,8)+ ", nwkAddr: "+hex(nwkAddr,4));
-	} else if (blkid == 0x8013 && len >= 9) { // 
-		// blk[9]:8013376A3380FFFF00
-		// blk[33]:8013 376A 4E 00 376A 18 0101040051010800000006000300040005E0010B04070200
+	} else if (blkid == 0x8011 && len >= 9) {
+		log("<b> Discovery ieee addr response:</b> TODO..." );
+	} else if (blkid == 0x8012 && len >= 9) {
 		let srcAddr = value.getUint16(2, false);
 		let seqNum = value.getUint8(4);
 		let status = value.getUint8(5);
 		let nwkAddr = value.getUint16(6, false);
 		let len = value.getUint8(8);
-		let s = "<b> Discovery simple desc response:</b>  srcAddr: "+hex(srcAddr,4)+", seqNum: "+seqNum+", status: "+ zcl_status(status)+ 
+		let s = "<b> Discovery node desc response:</b>  srcAddr: "+hex(srcAddr,4)+", seqNum: "+seqNum+", status: "+ zcl_status(status)+ 
 		", nwkAddr: "+hex(nwkAddr,4);
 		if(len > 0) {
 			s += ", Data["+len+"]: "+ bytesToHex(value.buffer.slice(9,9+len));
 		}
 		log(s);
+	} else if (blkid == 0x8013 && len >= 9) {
+		//          0 1  2 3  4  5  6 7  8  9 1011 1213 14 15   00131C121C1201
+		// blk[33]:8013 376A 4E 00 376A 18 01 0104 0051 01 08 0000 0006 0003 0004 0005 E001 0B04 0702 00
+		// blk[29]:8013 1C12 17 00 1C12 14 01 0104 0302 00 05 0000 0003 0001 0405 0402 01 0019
+		let srcAddr = value.getUint16(2, false);
+		let seqNum = value.getUint8(4);
+		let status = value.getUint8(5);
+		let nwkAddr = value.getUint16(6, false);
+		let dlen = value.getUint8(8);
+		let s = "<b> Discovery simple desc response:</b>  srcAddr: "+hex(srcAddr,4)+", seqNum: "+seqNum+", status: "+ zcl_status(status)+ ", nwkAddr: "+hex(nwkAddr,4);
+		if(status == 0 && dlen > 0 && len >= 9 + dlen)  {
+			s += ", Data["+len+"]: "+ bytesToHex(value.buffer.slice(9,9+dlen));
+			log(s);
+			let x = value.getUint8(9);
+			let profileId = value.getUint16(10, false);
+			let devId = value.getUint16(12, false);
+			let devVer = value.getUint8(14);
+			let iclslen = value.getUint8(15);
+			log(" * profileId: "+hex(profileId,4)+", devId: "+hex(devId,4)+", devVer: "+devVer);
+	 		let n = nodes.addrList.findIndex((element, index) => element.nwkAddr == srcAddr);
+			if(iclslen)	{
+		 		let icls = new DataView(value.buffer.slice(16));
+		 		if(icls.byteLength > 1) {
+		 			s = "* Input Clusters: ";
+			 		nodes.addrList[n].icls = [];
+		 			for(i = 0; i < iclslen; i++) {
+				 		let	clId = icls.getUint16(i*2, false);
+				 		s += hex(clId,4);
+				 		if(i + 1 < iclslen) s += ", "
+		 			 	if(n >= 0) nodes.addrList[n].icls.push(clId);
+		 			}
+		 			log(s); 
+		 		}
+		 	}
+			let oclslen = value.getUint8(16 + iclslen * 2);
+			if(oclslen)	{
+		 		let ocls = new DataView(value.buffer.slice(17 + iclslen * 2));
+		 		if(ocls.byteLength > 1) {
+		 			s = "* Output Clusters: ";
+			 		nodes.addrList[n].ocls = [];
+		 			for(i = 0; i < oclslen; i++) {
+				 		let	clId = ocls.getUint16(i*2, false);
+				 		s += hex(clId,4);
+				 		if(i + 1 < oclslen) s += ", "
+		 			 	if(n >= 0) nodes.addrList[n].icls.push(clId);
+		 			}
+		 			log(s); 
+		 		}
+		 	}
+		} else 
+			log(s);
 	}
 }
 
@@ -1126,7 +1194,7 @@ async function onReJoinAll() {
 	   	join_all_nodes_on = 1;
 		$("chkbJoin").checked = true;
 		onToggleJoin();
-	    log('Get Local Network Info...');
+	    log('@ Get Local Network Info...');
 	    nodes.totalCnt = 0;
 		nodes.addrList = new Array();
 		await hci_write(0x0045, new Uint8Array(), 0x8045);
@@ -1227,7 +1295,7 @@ function butUnBindCluster() {
 }
 </script>
   <body>
-	<big><big>Zigbee2BLE (test version 2)</big></big> <a href="https://github.com/pvvx/zigbee2ble">&#9432;</a><br>
+	<big><big>Zigbee2BLE (test version 3)</big></big> <a href="https://github.com/pvvx/zigbee2ble">&#9432;</a><br>
 	Web Experimental Features!<br>
  	#enable-experimental-web-platform-features (copy link:
   	<a href=chrome://flags/#enable-experimental-web-platform-features>Chrome</a>,
