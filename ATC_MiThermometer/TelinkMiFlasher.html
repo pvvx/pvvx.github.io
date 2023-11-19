@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v6.9</title>
+<title>Telink Flasher v7.0</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -13,10 +13,8 @@ var bluetoothDevice, gattServer, Theservice, writeCharacteristic;
 var ServiceMain, writeCharacteristicSpeed = null, nitifiyCharTemp, time_char, enc_main, enc_10, enc_19;
 //Firmware values
 var fwmaxsize = 0x20000;
-var rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/";
-var otafiles = { loaded: false, version: 67,
-custom:["ATC_v43.bin", "MHO_C401_v43.bin", "CGG1_v43.bin", "ATC_v43.bin", "ATC_v43.bin", "ATC_v43.bin", "CGDK2_v43.bin", "CGG1M_v43.bin","MHO_C401N_v43.bin","BTH_v43.bin"], 
-original:["Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0130.bin","Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin","Original_OTA_CGG1_v1.0.1_0093.bin","Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0130.bin","Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0130.bin","Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0130.bin", "Original_OTA_CGDK2_v1.1.1_0217.bin", "Original_OTA_CGG1M_v2.2.1.bin","Original_OTA_Xiaomi_MHO_C401_v1.0.0_0016.bin","Original_OTA_Xiaomi_MJWSD05MMC_v2.0.0_0026.bin"]};
+var otafiles = { loaded: false };
+var otazfiles = { loaded: false };
 var firmwareArray = "",
 	startTime = 0,
 	blockCount = 0;
@@ -1148,27 +1146,57 @@ function getTestCharacteristic() {
 function menuUpgrade() {
 	let is = "";
 	$("ldfile").hidden = false;
-	if(otafiles.loaded && otafiles.version && hwver_id != null) {
-		if(hwver_id < 15) {
-			if(otafiles.custom != null) {
-				let f1 = otafiles.custom[hwver_id];
-				if(f1 != "" && f1 != "?")
-					is += '<button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>';
-			}
-			if(otafiles.betafw && otafiles.betaver != null) {
-				let f2 = otafiles.betafw[hwver_id];
-				if(f2 != "" && f2 != "?")
-					is += ' <button type="button" id="btfrmupg" onclick="BetaFirmwareUpgrade();">Beta Firmware ver '+(otafiles.betaver>>4)+'.'+(otafiles.betaver&0x0f)+'</button><br>';
-			}
-			if(otafiles.zigbee != null) {
-				let f3 = otafiles.zigbee[hwver_id];
-				if(f3 != "" && f3 != "?")
-					is +=' <button type="button" id="btzrupg" onclick="FirmwareZigbee();">Zigbee Firmware: '  + otafiles.zigbee[hwver_id] +'</button><br>';
-			}
-			if(otafiles.original != null) {
-				let f3 = otafiles.original[hwver_id];
-				if(f3 != "" && f3 != "?")
-					is +=' <button type="button" id="btorupg" onclick="BackToOriginal();">' + otafiles.original[hwver_id] +'</button><br>';
+	if(hwver_id != null) {
+		if(otafiles.loaded && otafiles.version) {
+			if(hwver_id < 15) {
+				if(otafiles.custom != null) {
+					let fn = otafiles.custom[hwver_id];
+					if(fn.slice(0,6) == "https:") {
+						try {
+							fn = (new URL(fn)).pathname.split("/").pop();
+						} catch (error) {
+							console.log(error); 
+						}					
+					}
+					if(fn != "" && fn != "?" && fn != "/")
+						is += '<button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>';
+				}
+				if(otafiles.betafw && otafiles.betaver != null) {
+					let fn = otafiles.betafw[hwver_id];
+					if(fn.slice(0,6) == "https:") {
+						try {
+							fn = (new URL(fn)).pathname.split("/").pop();
+						} catch (error) {
+							console.log(error); 
+						}					
+					}
+					if(fn != "" && fn != "?" && fn != "/")
+						is += ' <button type="button" id="btfrmupg" onclick="BetaFirmwareUpgrade();">Beta Firmware ver '+(otafiles.betaver>>4)+'.'+(otafiles.betaver&0x0f)+'</button><br>';
+				}
+				if(otafiles.zbjson != null && otazfiles.loaded) {
+					let fn = otazfiles.bin[hwver_id];
+					if(fn.slice(0,6) == "https:") {
+						try {
+							fn = (new URL(fn)).pathname.split("/").pop();
+						} catch (error) {
+							console.log(error); 
+						}					
+					}
+					if(fn != "" && fn != "?" && fn != "/")
+						is +=' <button type="button" id="btzrupg" onclick="FirmwareZigbee();">Zigbee Firmware: ' + fn +'</button><br>';
+				}
+				if(otafiles.original != null) {
+					let fn = otafiles.original[hwver_id];
+					if(fn.slice(0,6) == "https:") {
+						try {
+							fn = (new URL(fn)).pathname.split("/").pop();
+						} catch (error) {
+							console.log(error); 
+						}					
+					}
+					if(fn != "" && fn != "?" && fn != "/")
+						is +=' <button type="button" id="btorupg" onclick="BackToOriginal();">' + fn +'</button><br>';
+				}
 			}
 		}
 	}
@@ -1767,7 +1795,7 @@ function getFirmwareArray(data, filename) {
 	menuUpgrade();
 }
 
-function ajax_file(filename, fn) {
+function ajax_file(filename, fn, rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/") {
 	let xhr;
 	if(window.XMLHttpRequest) xhr = new XMLHttpRequest();
 	else if(window.ActiveXObject) xhr = new ActiveXObject("Microsoft.XMLHTTP")
@@ -1788,6 +1816,23 @@ function ajax_file(filename, fn) {
 	xhr.send();
 }
 
+function getZOtaJson(d, name) {
+	if (!d) {
+		addClog("No load index file!");
+	} else {
+		let str = '';
+		if (typeof d === 'string')
+			str = d;
+		else
+			str = new TextDecoder("utf-8").decode(d);
+		let x = JSON.parse(str);
+		if(x.version) {
+			otazfiles = x;
+			otazfiles.loaded = true;
+			addClog(otazfiles);
+		}
+	}
+}
 function getOtaJson(d, name) {
 	if (!d) {
 		addClog("No load index file!");
@@ -1802,17 +1847,23 @@ function getOtaJson(d, name) {
 			otafiles = x;
 			otafiles.loaded = true;
 			addClog(otafiles);
+			if(otafiles.zbjson != null && otafiles.zbjson.slice(0,6) == "https:") {
+				ajax_file(otafiles.zbjson, getZOtaJson, "" );
+			}
 		}
 	}
 }
 
 function FirmwareZigbee() {
 	if(hwver_id != null) {
-		if(!confirm("Attention: This firmware is a Beta version for testing! Zigbee firmware converts the thermometer to the Zigbee protocol! All data for MiHome and measurement memory will be erased?"))
+		if(!confirm("Attention: This firmware is a Beta version for testing! Zigbee firmware converts the thermometer to the Zigbee protocol! All data for MiHome and measurement memory will be erased!"))
 		   return;
-		let fn = otafiles.zigbee[hwver_id];
+		let fn = otazfiles.bin[hwver_id];
 		addAlog("Load firmware file '"+fn+"'...");
-		ajax_file(fn, getFirmwareArray);
+		if(fn.slice(0,6) == "https:")
+			ajax_file(fn, getFirmwareArray, "");
+		else
+			ajax_file(fn, getFirmwareArray);
 	}
 }
 function FirmwareUpgrade() {
@@ -1826,7 +1877,8 @@ function BetaFirmwareUpgrade() {
 	if(hwver_id != null) {
 		let fn = otafiles.betafw[hwver_id];
 		addAlog("Load firmware file '"+fn+"'...");
-		ajax_file(fn, getFirmwareArray);
+		ajax_file
+		(fn, getFirmwareArray);
 	}
 }
 function BackToOriginal() {
