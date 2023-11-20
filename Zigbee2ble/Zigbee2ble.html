@@ -9,8 +9,8 @@
 const PServ = '00010203-0405-0607-0809-0a0b0c0d1912';
 const PChar = '00010203-0405-0607-0809-0a0b0c0d2b12';
 
-const hcitimeot = 25000;
-const hciretry = 2;
+const hcitimeot = 15000;
+const hciretry = 3;
 
 var gw = {};
 var nodes = { addrList:[] };
@@ -207,9 +207,24 @@ function arraysIsEqual(a, b) {
     return true;
 }
 
+async function WriteAttr(ntwAddr, profileID, direction, clusterID, attr, data) {
+	let dir = 0;
+	let head = new Uint8Array([2,(ntwAddr>>8)&0xff,ntwAddr&0xff,1,1,(profileID>>8)&0xff,profileID&0xff,dir,(clusterID>>8)&0xff,clusterID&0xff,
+	1, // number of attribute records in the list
+	(attr>>8)&0xff, attr&0xff]);
+	let blk = new Uint8Array(head.byteLength + data.byteLength);
+	blk.set(head,0);
+	blk.set(data,head.byteLength);
+	await hci_write(0x0101, blk, 0x8101);
+}
 async function SetReportConfig(ntwAddr, profileID, direction, clusterID, attr, data) {
 	let dir = 0;
-	let head = new Uint8Array([2,(ntwAddr>>8)&0xff,ntwAddr&0xff,1,1,(profileID>>8)&0xff,profileID&0xff,dir,(clusterID>>8)&0xff,clusterID&0xff,1,direction,(attr>>8)&0xff, attr&0xff]);
+	let head = new Uint8Array([2,(ntwAddr>>8)&0xff,ntwAddr&0xff,1,1,
+	(profileID>>8)&0xff,profileID&0xff,
+	dir,
+	(clusterID>>8)&0xff,clusterID&0xff,
+	1, // number of attribute records in the list
+	direction,(attr>>8)&0xff, attr&0xff]);
 	let blk = new Uint8Array(head.byteLength + data.byteLength);
 	blk.set(head,0);
 	blk.set(data,head.byteLength);
@@ -246,6 +261,9 @@ function getNodeVerClick() {
 function srcAddrClick() {
 	$("txtntwAddr").value = hex(this.nwkAddr,4);
 }
+function getSimpleDescClick() {
+	DiscoverySimpleDesc(this.nwkAddr);
+}
 
 function updateJoinedNodeTab() {
 	let rowCount = document.all.tbls.rows.length;
@@ -254,6 +272,8 @@ function updateJoinedNodeTab() {
 		r=document.all.tbls.insertRow(i+1);
 		let c =	r.insertCell(0);
 		c.innerHTML = dump8(nodes.addrList[i].ieeeAddr,8);
+		c.ondblclick = getSimpleDescClick;
+		c.nwkAddr = nodes.addrList[i].nwkAddr;
 		c = r.insertCell(1);
 		c.nwkAddr = nodes.addrList[i].nwkAddr;
 		c.innerHTML = hex(c.nwkAddr,4);
@@ -342,6 +362,9 @@ async function SetChannel(chl) {
 	await hci_write(0x0007, new Uint8Array([chl&0x1F]), 0);
 }
 
+async function DiscoverySimpleDesc(ntwAddr) {
+	await hci_write(0x0013, new Uint8Array([(ntwAddr>>8)&0xff,ntwAddr&0xff,(ntwAddr>>8)&0xff,ntwAddr&0xff,0x01]), 0x8013);
+}
 
 async function getLocalNwkInfo() {
     log('Get Local Network Info...');
@@ -692,7 +715,7 @@ async function cfghandleChanged(event) {
 		let dstEp = value.getUint8(5);
 		let seqNum = value.getUint8(6);
 		let clusterId = value.getUint16(7, false);
-		let numAttr = value.getUint8(9);
+		let numAttr = value.getUint8(9); // number of attributes
 		let s = " srcAddr: "+hex(srcAddr,4)+", srcEp: "+srcEp+", dstEp: "+dstEp+", seqNum: "+seqNum+", clusterId: "+hex(clusterId,4)+", numAttr: "+ numAttr;
 		if(blkid != 0x8104) {
 			$("txtntwAddr").value = hex(srcAddr,4);
@@ -789,19 +812,27 @@ async function cfghandleChanged(event) {
 				updateJoinedNodeTab();
 			}
 		} else if(blkid == 0x8101) {
+		//          0 1  2 3  4  5  6  7 8  9 1011
+		// blk[12]:8101 0CC2 01 01 39 0204 00 FFFF
 			log("<b> Write Attr:</b>"+s);
-			if(numAttr > 0 && len >= 14) {
-		 		let eltab = new DataView(value.buffer.slice(10));
+			if(len >= 12) {
+		 		let eltab = new DataView(value.buffer.slice(9));
 		 		$("resp").innerHTML = "";
-		 		while(eltab.byteLength >= 3) {
- 	 				let idx = 4;
+		 		console.log(eltab);
+		 		while(eltab.byteLength > 2) {
+ 	 				let idx = 3;
 					let status = eltab.getUint8(0);
 		 			let attrID = eltab.getUint16(1, false);
-					$("txtAttr").value = hex(attrID,4);
-		 			let s = " * status: "+ zcl_status(status)+", attrID: "+hex(attrID,4);
+					let s = " * status: "+ zcl_status(status);
+					if(attrID != 0xffff) {
+						$("txtAttr").value = hex(attrID,4);
+			 			s += ", attrID: "+hex(attrID,4);
+			 		}
 			 		$("resp").innerHTML += s + "<br>";
-		 			log(s);
-		 			eltab = new DataView(eltab.buffer.slice(idx));
+	 				log(s);
+	 				if(status != 0 )
+	 					break;
+	 				eltab = new DataView(eltab.buffer.slice(idx));
 		 		}
 		 	}
 		} else if(blkid == 0x8102) {
@@ -1136,7 +1167,7 @@ async function cfghandleChanged(event) {
 		let status = value.getUint8(5);
 		let nwkAddr = value.getUint16(6, false);
 		let dlen = value.getUint8(8);
-		let s = "<b> Discovery simple desc response:</b>  srcAddr: "+hex(srcAddr,4)+", seqNum: "+seqNum+", status: "+ zcl_status(status)+ ", nwkAddr: "+hex(nwkAddr,4);
+		let s = "<b> Discovery simple desc response:</b> srcAddr: "+hex(srcAddr,4)+", seqNum: "+seqNum+", status: "+ zcl_status(status)+ ", nwkAddr: "+hex(nwkAddr,4);
 		if(status == 0 && dlen > 0 && len >= 9 + dlen)  {
 			s += ", Data["+len+"]: "+ bytesToHex(value.buffer.slice(9,9+dlen));
 			log(s);
@@ -1145,7 +1176,9 @@ async function cfghandleChanged(event) {
 			let devId = value.getUint16(12, false);
 			let devVer = value.getUint8(14);
 			let iclslen = value.getUint8(15);
-			log(" * profileId: "+hex(profileId,4)+", devId: "+hex(devId,4)+", devVer: "+devVer);
+			s = " * profileId: "+hex(profileId,4)+", devId: "+hex(devId,4)+", devVer: "+devVer;
+	 		$("resp").innerHTML = s + "<br>";
+			log(s);
 	 		let n = nodes.addrList.findIndex((element, index) => element.nwkAddr == srcAddr);
 			if(iclslen)	{
 		 		let icls = new DataView(value.buffer.slice(16));
@@ -1158,7 +1191,8 @@ async function cfghandleChanged(event) {
 				 		if(i + 1 < iclslen) s += ", "
 		 			 	if(n >= 0) nodes.addrList[n].icls.push(clId);
 		 			}
-		 			log(s); 
+			 		$("resp").innerHTML += s + "<br>";
+					log(s);
 		 		}
 		 	}
 			let oclslen = value.getUint8(16 + iclslen * 2);
@@ -1173,6 +1207,7 @@ async function cfghandleChanged(event) {
 				 		if(i + 1 < oclslen) s += ", "
 		 			 	if(n >= 0) nodes.addrList[n].icls.push(clId);
 		 			}
+			 		$("resp").innerHTML += s + "<br>";
 		 			log(s); 
 		 		}
 		 	}
@@ -1216,6 +1251,31 @@ function butGetReportConfig() {
 	}
 }
 
+function butWriteAttr() {
+   	if(z2b_connected) {
+	   	let ntwAddr;
+		if(nodes.totalCnt != 0 && ($('txtntwAddr').value == "" || $('txtntwAddr').value == "?")) {
+			ntwAddr =  nodes.addrList[nodes.totalCnt-1].nwkAddr;
+			$('txtntwAddr').value = hex(ntwAddr,4);
+		} else {
+			ntwAddr = parseInt($('txtntwAddr').value, 16);
+		}
+
+		let value = parseInt($('txtDataVal').value, 10);
+		let td = $('selDType').value;
+		let clusterID = parseInt($('txtCluster').value, 16);
+		let Attr = parseInt($('txtAttr').value, 16);
+		let datalen = zcl_getDataTypeLen(td);
+		let data;
+		if(datalen == 1)
+		 	data = new Uint8Array([td, value&0xff]);
+		else if(datalen == 2)
+		 	data = new Uint8Array([td, (value>>8)&0xff, value&0xff]);
+		else
+		 	data = new Uint8Array([td, (value>>24)&0xff, (value>>16)&0xff, (value>>8)&0xff, value&0xff]);
+		WriteAttr(ntwAddr, 0x104, 0, clusterID, Attr, data);
+	}
+}
 function butSetReportConfig() {
    	if(z2b_connected) {
 	   	let ntwAddr;
@@ -1293,9 +1353,21 @@ function butUnBindCluster() {
 		}
    	}
 }
+
+function createSelDType() {
+	//let option = document.createElement('option');
+	let select = $("selDType").options;
+	for(i=0; i < zcl_data_type_tab.length; i++){
+        select.add(new Option(zcl_data_type_tab[i][2], zcl_data_type_tab[i][0]));
+	};
+}
+function StartFunctions() {
+	createSelDType();
+}
+
 </script>
-  <body>
-	<big><big>Zigbee2BLE (test version 3)</big></big> <a href="https://github.com/pvvx/zigbee2ble">&#9432;</a><br>
+  <body onload="StartFunctions()">
+	<big><big>Zigbee2BLE (test version 4)</big></big> <a href="https://github.com/pvvx/zigbee2ble">&#9432;</a><br>
 	Web Experimental Features!<br>
  	#enable-experimental-web-platform-features (copy link:
   	<a href=chrome://flags/#enable-experimental-web-platform-features>Chrome</a>,
@@ -1347,16 +1419,10 @@ function butUnBindCluster() {
 	Min <input size="20" type="text" id="txtMin" value="9">
 	Max <input size="20" type="text" id="txtMax" value="360">
 	Value <select id="selDType">
-	<option value="0x20">UINT8</option>
-	<option value="0x21" selected>UINT16</option>
-	<option value="0x23">UINT32</option>
-	<option value="0x28">INT8</option>
-	<option value="0x29">INT16</option>
-	<option value="0x2B">INT32</option>
-	<option value="0x42">CHAR_STR</option>
 	</select> 
 	<input size="20" type="text" id="txtDataVal" value="10">
-	<button type="button" onclick="butSetReportConfig()">SetReportConfig</button><br>
+	<button type="button" onclick="butSetReportConfig()">SetReportConfig</button>
+	<button type="button" onclick="butWriteAttr()">Write Attr</button><br>
 	<br><div id="resp">?</div><br>
 	<div id="hcistat">hci ready</div><br>
 	<hr>
