@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v7.0</title>
+<title>Telink Flasher v7.1</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -15,6 +15,7 @@ var ServiceMain, writeCharacteristicSpeed = null, nitifiyCharTemp, time_char, en
 var fwmaxsize = 0x20000;
 var otafiles = { loaded: false };
 var otazfiles = { loaded: false };
+var fzigbeeota = { used : false };
 var firmwareArray = "",
 	startTime = 0,
 	blockCount = 0;
@@ -78,6 +79,7 @@ function resetVariables() {
 	devinfo.hrstr = null;
 	devinfo.srstr = null;
 	devinfo.frstr = null;
+	//fzigbeeota.used = false;
 	//fwname = '';
 	devtime = {};
 	writeCharacteristicSpeed = null;
@@ -1618,10 +1620,10 @@ function startDFU() {
 		addLog("Please do the Activation first!");
 		return;
 	}
-	if (blockCount*16 > fwmaxsize){
+	if (blockCount*16 > fwmaxsize || fzigbeeota.used){
 		let szk = fwmaxsize >> 10;
 		if(bigOtaEnabled && settingsCharacteristics){
-			if(!confirm('OTA size over '+szk+'k! All data for MiHome and measurement memory will be erased?')) return;
+			if(!confirm('OTA size over '+szk+'kB! All data for MiHome and measurement memory will be erased?')) return;
 			szk = blockCount*16 >> 10;
 			let s = 'Clear Ext.OTA region ('+szk+'kib)...';
 			addAlog(s);
@@ -1629,7 +1631,7 @@ function startDFU() {
 			settingsCharacteristics.writeValue(new Uint8Array([0x73, 0,0,4,0, szk&0xff, (szk>>8)&0xff, (szk>>16)&0xff, (szk>>24)&0xff]));
 			return;
 		} else {
-			let s = 'Big OTA (size over '+szk+'k) is not supported!';
+			let s = 'OTA (size over '+szk+'k) is not supported!';
 			setStatus(s);
 			addAlog(s);
 			return;
@@ -1743,14 +1745,37 @@ var crc32 = (function() {
 function testOTAFirmware(data) {
 	let fsize = data.byteLength;
 	addClog("File size = 0x"+ fsize.toString(16));
-	if (fsize < 64)
+	if (fsize < 2048)
 		return "Wrong binary Telink OTA firmware size!";
 	if(bigOtaEnabled) {
-		if(fsize > 208*1024)
-			return "Size firmware is more 208 kbytes!";
+		if(fsize > 216*1024) // 208kB for BLE
+			return "Size firmware is more 216 kbytes!";
 	} else if(fsize > fwmaxsize)
 			return "Size firmware is more "+fwmaxsize+" bytes!";
-	let head = new DataView(data, 0, 0x20);
+	let head = new DataView(data, 0, 0x40);
+	if(head.getUint32(0, true) == 0x0beef11e) { // Zigbee OTA
+		if(head.getUint16(4, true) != 0x100	|| head.getUint16(6, true) != 56)
+			return "Unknown Zigbee OTA header!";
+		fzigbeeota.size = head.getUint32(0x3A, true);
+		if(fzigbeeota.size < 2048 || fzigbeeota.size + 0x3e > fsize)
+			return "Wrong binary Zigbee OTA firmware size!";
+		fzigbeeota.man_code = head.getUint16(0x0a, true);
+		fzigbeeota.image_type = head.getUint16(0x0c, true);
+		fzigbeeota.fwversion = head.getUint32(0x0e, true);
+		fzigbeeota.ota_version = head.getUint8(0x12);
+		fzigbeeota.used = true;
+		fsize = fzigbeeota.size;
+		addAlog("Zigbee OTA Info: ManCode: "+hex(fzigbeeota.man_code, 4)+ ", ImageType: " + hex(fzigbeeota.image_type,4) + ", FwVer: " + hex(fzigbeeota.fwversion, 8));	
+		if(!bigOtaEnabled) {
+			if(fzigbeeota.image_type == 0x0203)
+				return "The current firmware version does not support EXT OTA for image type `"+hex(fzigbeeota.image_type, 4)+"`. Update the new version!";
+			if(fsize > fwmaxsize)
+				return "The current firmware version does not support EXT OTA. Update the new version!";
+		}
+		data = data.slice(0x3e);
+	 	head = new DataView(data, 0, 0x20);
+	} else
+		fzigbeeota.used = false;
 	if(head.getUint32(0x08, true) != 0x544c4e4b){
 		return "Incorrect head in Telink OTA binary firmware";
 	}
@@ -1783,7 +1808,10 @@ function getFirmwareArray(data, filename) {
 		alert(s);
 		return;
 	}
-	firmwareArray = bytesToHex(data);
+	if(fzigbeeota.used) 
+		firmwareArray = bytesToHex(data.slice(0x3E, fzigbeeota.size+0x3E));
+	else
+		firmwareArray = bytesToHex(data);
 	addAlog("File size: " + (firmwareArray.length/2).toString(10) + " bytes");
 	if (firmwareArray.length % 32 !== 0) { // pad last block to 16bytes
 		var padHex = "ffffffffffffffffffffffffffffffff";
@@ -1909,7 +1937,7 @@ function updateBegin() {
 		addLog("No file selected aborting");
 		return;
 	} else if (blockCount*16 >= fwmaxsize) {
-		alert('Big OTA is not supported!');
+		alert('EXT OTA is not supported!');
 		return;
 	}
 	// if Host is IOS = "1e0001"
@@ -2837,7 +2865,7 @@ function SendCustomConfig() {
  <div>
 	<hr>
 	<div id="ldfile" hidden="true">
-		Select Firmware: <input type="file" accept=".bin" id="file"/></div>
+		Select Firmware: <input type="file" accept=".bin,.zigbee" id="file"/></div>
 	<div id="ldfrmw"></div>
  </div>
   <div id="custcfg"></div>
