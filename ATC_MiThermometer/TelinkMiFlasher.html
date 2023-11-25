@@ -1042,7 +1042,7 @@ function CustomBlkParse(value) {
 			s = 'Clean Flash OTA region: 0x'+hex(faddr,6)+', size: '+fszk+' kbytes. Go OTA...';
 			setStatus(s);
 			addLog(s);
-			fwmaxsize = fszk << 10;
+			fwmaxsize = (fszk << 10) + 4096;
 			if(bigOtaEnabled) setTimeout(updateBegin(), 1000);
 		} else	addClog(s);
 	} else if(blkid == 0x01 && len >= 1) {
@@ -1620,17 +1620,17 @@ function startDFU() {
 		addLog("Please do the Activation first!");
 		return;
 	}
-	if (blockCount*16 > fwmaxsize || fzigbeeota.used){
-		let szk = fwmaxsize >> 10;
+	if (fzigbeeota.used || blockCount*16 > fwmaxsize){
 		if(bigOtaEnabled && settingsCharacteristics){
-			if(!confirm('OTA size over '+szk+'kB! All data for MiHome and measurement memory will be erased?')) return;
-			szk = blockCount*16 >> 10;
+			let szk = blockCount*16 >> 10;
+			if(!confirm('All data for MiHome and measurement memory will be erased?')) return;
 			let s = 'Clear Ext.OTA region ('+szk+'kib)...';
 			addAlog(s);
 			setStatus(s)
 			settingsCharacteristics.writeValue(new Uint8Array([0x73, 0,0,4,0, szk&0xff, (szk>>8)&0xff, (szk>>16)&0xff, (szk>>24)&0xff]));
 			return;
 		} else {
+			let szk = fwmaxsize >> 10;
 			let s = 'OTA (size over '+szk+'k) is not supported!';
 			setStatus(s);
 			addAlog(s);
@@ -1936,7 +1936,7 @@ function updateBegin() {
 	if (blockCount <= 0) {
 		addLog("No file selected aborting");
 		return;
-	} else if (blockCount*16 >= fwmaxsize) {
+	} else if (blockCount*16 > fwmaxsize) {
 		alert('EXT OTA is not supported!');
 		return;
 	}
