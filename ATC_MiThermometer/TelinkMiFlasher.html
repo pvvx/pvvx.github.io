@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v7.1</title>
+<title>Telink Flasher v7.2</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -1483,13 +1483,14 @@ function getStrVersion(infoservice, suuid) {
 	}).catch(error => {addClog(error);	return resolve(null); });
 })};
 
+var infoservice;
 function getDevVersion(devInfEnabled) {
-	var infoservice;
+	return new Promise((resolve, reject) => {
 	devinfo.hrstr = null;
 	devinfo.srstr = null;
 	devinfo.frstr = null;
 	devinfo.flg = 0;
-	if (devInfEnabled == true) { return new Promise((resolve, reject) => {
+	if (devInfEnabled == true) {
 		gattServer.getPrimaryService(0x180a).then(service => {
 			addClog("Found Device Information Service");
 			infoservice = service;
@@ -1507,8 +1508,8 @@ function getDevVersion(devInfEnabled) {
 				}).catch(error => { addClog(error); return resolve(null);});
 			}).catch(error => { addClog(error); return resolve(null);});
 		}).catch(error => { addClog(error); return resolve(null);});
+	} else	return resolve(null);
 	}).catch(error => { addClog(error); return resolve(null);});
-	} else	return devinfo.flg;
 }
 
 function doConnect() {
@@ -1594,7 +1595,7 @@ function doConnect() {
 			$("ldfile").hidden = false;
 			$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>	 <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
 		}}).catch(handleError);
-	}).catch(error => {addClog(error); addAlog("Not found Telink UUID service!"); connectTrys = 1000; disconnect();});
+	}).catch(error => {addClog(error);}); 
  }
 }
 
@@ -1765,7 +1766,11 @@ function testOTAFirmware(data) {
 		fzigbeeota.ota_version = head.getUint8(0x12);
 		fzigbeeota.used = true;
 		fsize = fzigbeeota.size;
-		addAlog("Zigbee OTA Info: ManCode: "+hex(fzigbeeota.man_code, 4)+ ", ImageType: " + hex(fzigbeeota.image_type,4) + ", FwVer: " + hex(fzigbeeota.fwversion, 8));	
+		addAlog("Zigbee OTA Info: ManCode: "+hex(fzigbeeota.man_code, 4)+ ", ImageType: " + hex(fzigbeeota.image_type,4) + ", FwVer: " + hex(fzigbeeota.fwversion, 8));
+		addAlog("APP Release: " + ((fzigbeeota.fwversion >> 28)&0x0f) + "." + ((fzigbeeota.fwversion >> 24)&0x0f) 
+		+ " Build: " + ((fzigbeeota.fwversion >> 20)&0x0f) + "." + ((fzigbeeota.fwversion >> 16)&0x0f)
+		+ ", Stack Version: " + ((fzigbeeota.fwversion >> 12)&0x0f) + "." + ((fzigbeeota.fwversion >> 8)&0x0f)
+		+ " Release: " + ((fzigbeeota.fwversion >> 4)&0x0f) + "." + (fzigbeeota.fwversion&0x0f));
 		if(!bigOtaEnabled) {
 			if(fzigbeeota.image_type == 0x0203)
 				return "The current firmware version does not support EXT OTA for image type `"+hex(fzigbeeota.image_type, 4)+"`. Update the new version!";
