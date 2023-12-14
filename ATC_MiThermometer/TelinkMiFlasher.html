@@ -1722,7 +1722,7 @@ function startDFU() {
 			return;
 		} else {
 			let szk = fwmaxsize >> 10;
-			let s = 'OTA (size over '+szk+'k) is not supported!';
+			let s = 'OTA (size over '+szk+'k) is not supported! Use firmware version 4.6 or higher.';
 			setStatus(s);
 			addAlog(s);
 			return;
@@ -1839,8 +1839,8 @@ function testOTAFirmware(data) {
 	if (fsize < 2048)
 		return "Wrong binary Telink OTA firmware size!";
 	if(bigOtaEnabled) {
-		if(fsize > 216*1024) // 208kB for BLE
-			return "Size firmware is more 216 kbytes!";
+		if(fsize > 208*1024) // 208kB for BLE
+			return "Size firmware is more 208 kbytes!";
 	} else if(fsize > fwmaxsize)
 			return "Size firmware is more "+fwmaxsize+" bytes!";
 	let head = new DataView(data, 0, 0x40);
@@ -1863,9 +1863,9 @@ function testOTAFirmware(data) {
 		+ " Release: " + ((fzigbeeota.fwversion >> 4)&0x0f) + "." + (fzigbeeota.fwversion&0x0f));
 		if(!bigOtaEnabled) {
 			if(fzigbeeota.image_type == 0x0203)
-				return "The current firmware version does not support EXT OTA for image type `"+hex(fzigbeeota.image_type, 4)+"`. Update the new version!";
+				return "The current firmware version does not support EXT OTA for image type `"+hex(fzigbeeota.image_type, 4)+"`. Update the new version (4.6 or higher)!";
 			if(fsize > fwmaxsize)
-				return "The current firmware version does not support EXT OTA. Update the new version!";
+				return "The current firmware version does not support EXT OTA. Update the new version (4.6 or higher)!";
 		}
 		data = data.slice(0x3e);
 	 	head = new DataView(data, 0, 0x20);
@@ -2032,7 +2032,7 @@ function updateBegin() {
 		addLog("No file selected aborting");
 		return;
 	} else if (blockCount*16 > fwmaxsize) {
-		alert('EXT OTA is not supported!');
+		alert('EXT OTA is not supported! Update the new version (4.6 or higher)!');
 		return;
 	}
 	// if Host is IOS = "1e0001"
