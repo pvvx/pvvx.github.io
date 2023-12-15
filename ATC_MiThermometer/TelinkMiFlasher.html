@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v7.3</title>
+<title>Telink Flasher v7.4</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -1713,7 +1713,7 @@ function startDFU() {
 	}
 	if (fzigbeeota.used || blockCount*16 > fwmaxsize){
 		if(bigOtaEnabled && settingsCharacteristics){
-			let szk = blockCount*16 >> 10;
+			let szk = (blockCount*16+1023) >> 10;
 			if(!confirm('All data for MiHome and measurement memory will be erased?')) return;
 			let s = 'Clear Ext.OTA region ('+szk+'kib)...';
 			addAlog(s);
