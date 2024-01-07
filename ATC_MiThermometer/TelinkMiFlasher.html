@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Telink Flasher v7.4</title>
 <script type="text/javascript" src="./core.js"></script>
+<script type="text/javascript" src="./argon2-bundled.min.js"></script>
 </head>
 <body>
 <script>
@@ -2407,6 +2408,14 @@ function UpdTrg() {
 			$("rds_invert").checked = ((trg.rds_type & 0x10) != 0);
 	}
 }
+function generateMiBindKeyByPW()
+{
+	let pw=document.getElementById("device_PW").value;
+	let output_field = document.getElementById("mi_bind_key");
+	argon2.hash({pass: pw, salt: '4hzrcv507P5uQ7VmTy4wZY5KxAJNiFY9', mem: 25600, hashLen: 16, time: 10, parallelism: 1, type: argon2.ArgonType.Argon2id})
+	.then (hash => output_field.value = hash.hashHex.toUpperCase())
+	
+}
 function setNewTBKey() {
 	let bk = $("mi_bind_key").value;
 	if(bk.length == 32) {
@@ -2714,6 +2723,8 @@ function CustomConfig() {
 		is +='Mi Token:<br><input size="40" maxlength="24" type="text" id="mi_token" value="'+dump(mikeys.token,12)+'"><br>';
 		is +='Mi Bind Key:<br><input size="40" maxlength="32" type="text" id="mi_bind_key" value="'+dump(mikeys.bindkey,16)+'">';
 		is +=' <button type="button" title="Set new Mi Token and Bind keys" onclick="setNewTBKey();">Set new Token & Bind keys</button><br>';
+		is +='Generate Mi Bind Key by password (you have to click "Set new Token & Bind Keys" to send it do device):<br><input size="40" maxlength="32" type="text" id="device_PW"" value="">' ;
+		is +=' <button type="button" title="Generate Mi bind key by Password" onclick="generateMiBindKeyByPW();">Generate Mi bind key by Password</button><br>';
 		if(cfg.ver >= 0x21)
 			is +=' <button type="button" title="Erase all MiKeys" onclick="sendCustomSetting(&quot;17&quot;);">!Erase all Mi Keys!</button>';
 		if(mikeys.restore) {

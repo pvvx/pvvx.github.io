@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html class="telFlasherClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Telink Flasher v3.1</title>
+<script type="text/javascript" src="./core.js"></script>
+<script type="text/javascript" src="./argon2-bundled.min.js"></script>
+</head>
+<body>
+<script>
+//BLE values
+var bluetoothDevice, gattServer, Theservice, writeCharacteristic;
+var ServiceMain, writeCharacteristicSpeed = null, nitifiyCharTemp, time_char, enc_main, enc_10, enc_19;
+//Firmware values
+var rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/";
+var otafiles = { loaded: false, version: 0x27, custom: ['ATC_Thermometer32.bin','MHO_C401_v32.bin', 'CGG1_v32.bin'], original: ['Original_OTA_Xiaomi_LYWSD03MMC_v1.0.0_0109.bin','Original_OTA_Xiaomi_MHO_C401_v1.0.0_0010.bin','Original_OTA_CGG1_v1.0.1_0093.bin']};
+var firmwareArray = "",
+	startTime = 0,
+	blockCount = 0;
+var flg_memo_act = false;
+var fwname = '';
+//Connection values
+var state = 0,
+	connectTrys = 0;
+//Custom firmware
+var customEnabled;
+var settingsCharacteristics = null;
+// Custom config
+var cfg = {enable: false, ver: 0, hver: 0, flg: 0, flg2: 0, temp_offset: 0, humi_offset: 0, advertising_interval: 32, measure_interval: 5, rf_tx_power: 191, connect_latency: 99, lcd_tint: 55, av_meas_mem: 60, step_time: 16000000};
+var trg = {enable: false, tmp_thr: 2100, hm_thr: 5000, tmp_hst: -1, hm_hst: 0, flg: 0};
+var cmf = {enable: false, tmp_lo: 2100, tmp_hi: 2600, hm_lo: 3000, hm_hi: 6000};
+var dnm = {enable: false, name: ""};
+var pincode = {enable: false, value: 0};
+//Mi values
+var miEnabled = false,
+	miConnected = false,
+	devidEnabled = false,
+	mode_activation;
+//Login values
+var mi_random_key, mi_random_key_recv, mi_device_info_recv, mi_device_info_send, device_known_id, expected_device_infos, is_logged_in = false;
+//Activation values
+var keypair, is_activated, own_public_key, device_public_key, shared_key, derived_key, mi_write_did;
+var device_new_id = "00626c742e332e31323976" + makeRandomID(6) + "415443";
+var $ = function(id) { return document.getElementById(id);}
+function resetVariables() {
+	busy = false;
+	gattServer = null;
+	Theservice = null;
+	mikeys.restore = false;
+	mikeys.mac = null;
+	mikeys.id = null;
+	mikeys.token = null;
+	mikeys.bindkey = null
+	mikeys.cbindkey = null
+	mikeys.cfg = null;
+	mikeys.delkeys = null;
+	ext.enable = false;
+	pincode.enable = false;
+	cfg.enable = false;
+	trg.enable = false;
+	cmf.enable = false;
+	dnm.enable = false;
+	cnt_buf11 = 0;
+	writeCharacteristic = null;
+	settingsCharacteristics = null;
+	miConnected = false;
+	is_logged_in = false;
+	fwname = '';
+	writeCharacteristicSpeed = null;
+	$("ldfrmw").innerHTML ='';
+	$("custcfg").innerHTML = '';
+	$("tempHumiData").innerHTML = "Temp/Humi: waiting notify for data after connecting";
+	$("percent").innerHTML = "Status: Disconnected";
+}
+
+function handleError(error) {
+	addLog(error);
+	resetVariables();
+	if (connectTrys < 5) {
+		connectTrys++;
+		addLog("Reconnect " + connectTrys + " from " + 5);
+		doConnect();
+	} else {
+		addLog("Something went wrong, to many reconnect's");
+		connectTrys = 0;
+	}
+}
+
+function onDisconnected() {
+	addLog('Disconnected.');
+	$("MAC").innerHTML = '';
+	$("ldfile").hidden = true;
+	cfg.hver = null;
+	resetVariables();
+}
+
+function connect() {
+	var deviceOptions = {
+		optionalServices: ['00010203-0405-0607-0809-0a0b0c0d1912', 'ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6', 0x180a, 0xfe95, 0x1f10, 0x181a],
+		acceptAllDevices: true };
+	const hideUnknown = $('hideUnknown').checked;
+	const namePrefix = $('namePrefix').value;
+	if (hideUnknown) {
+		deviceOptions.acceptAllDevices = false;
+		deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz_#@!*';,.<>{}[]"
+			.split("")
+			.map((x) => ({ namePrefix: x }));
+	}
+	if (namePrefix) {
+		deviceOptions.acceptAllDevices = false;
+		deviceOptions.filters = namePrefix.split(",")
+			.map((x) => ({ namePrefix: x }));
+	}
+	addClog(deviceOptions)
+	if (bluetoothDevice != null) bluetoothDevice.gatt.disconnect();
+	resetVariables();
+	addLog("Searching for devices");
+	connectTrys = 0;
+	navigator.bluetooth.requestDevice(deviceOptions).then(device => {
+		bluetoothDevice = device;
+		if($("advmac").checked) 
+	        catchAdvertisement(device);
+		bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
+		addLog("Connecting to: " + bluetoothDevice.name);
+		if(!$("advmac").checked)
+	    	doConnect();
+	}).catch(handleError);
+}
+
+const tabid2name = [
+  { id: 0x01AA, name: "LYWSDCGQ"},
+  { id: 0x0347, name: "CGG1"},
+  { id: 0x0B48, name: "CGG1_ENCRYPTED"},
+  { id: 0x066F, name: "CGDK2"},
+  { id: 0x045B, name: "LYWSD02"},
+  { id: 0x055B, name: "LYWSD03MMC"},
+  { id: 0x0576, name: "CGD1"},
+  { id: 0x06d3, name: "MHO_C303"},
+  { id: 0x0387, name: "MHO_C401"},
+  { id: 0x02DF, name: "JQJCY01YM"},
+  { id: 0x0098, name: "HHCCJCY01"},
+  { id: 0x03BC, name: "GCLS002"},
+  { id: 0x015D, name: "HHCCPOT002"},
+  { id: 0x040A, name: "WX08ZM"},
+  { id: 0x098B, name: "MCCGQ02HL"},
+  { id: 0x0083, name: "YM_K1501"},
+  { id: 0x0113, name: "YM_K1501EU"},
+  { id: 0x045C, name: "V_SK152"},
+  { id: 0x0863, name: "SJWS01LM"},
+  { id: 0x07F6, name: "MJYD02YL"},
+];
+
+function id2name(dev_id) {
+	let did = tabid2name.map(el => el.id); 
+	let i = did.indexOf(dev_id);
+	if(i != -1) return tabid2name[i].name;
+	return "?";
+}
+
+function catchAdvertisement(device) {
+  addAlog("Get Advertising MAC (Web Experimental Features!)");
+  const abortController = new AbortController();
+  device.addEventListener('advertisementreceived', (event) => {
+	addClog('Received advertisement from "' + device.name + '"...');
+	event.serviceData.forEach((b, key) => {
+	const buf = new Uint8Array(b.buffer);
+	addClog(buf, device, event);
+	let s = 'MAC: ?';
+	if(key == '0000fe95-0000-1000-8000-00805f9b34fb') { // mi
+		if(b.byteLength >= 2) { // custom mi
+			let ctrl = b.getUint16(0, true);
+			s = 'MiVer'+ (ctrl>>12);
+			let i = 2;
+			if((ctrl&0xf000) >= 0x2000 && b.byteLength >= i + 3) {
+				let dev_id = b.getUint16(i, true);
+				let frcntr = b.getUint8(i+2);
+				i += 3;
+				s += ', DevID: 0x'+ hex(dev_id, 4);
+				s += "-" + id2name(dev_id);
+				s += ', FnCnt: '+ frcntr;
+				s += ', CtrID: 0x'+ hex(ctrl, 4);
+				if(ctrl & 0x100)
+					s +=' Registered and bound';
+				else
+					s +=' Not bound';
+				if(ctrl & 0x200)
+					s +=', Request APP to register and bind';
+				switch((ctrl>>10)&3) {
+					case 0:
+						s +=', Old version certification';
+						break;
+					case 1:
+						s +=', Safety certification';
+						break;
+					case 2:
+						s +=', Standard certification';
+						break;
+					//case 3:
+					//	s +=' reserved';
+					//	break;
+				}
+				if(ctrl & 0x200)
+					s +=', Request APP to register and bind';
+				if((ctrl & 0x10) && b.byteLength >= i + 6) {
+					s += ', MAC: '+hex(buf[i+5],2)+hex(buf[i+4],2)+hex(buf[i+3],2)+hex(buf[i+2],2)+hex(buf[i+1],2)+hex(buf[i],2);
+					i += 6;
+				}
+				if((ctrl & 0x20) && b.byteLength >= i + 1) {
+					let cap = b.getUint8(i);
+					i += 1;
+					s +=', Capability: 0x'+ hex(cap,2);
+					switch((cap>>3) & 3) {
+						case 0:
+							s +=' - no binding';
+							break;							
+						case 1:
+							s +=' - front binding';
+							break;							
+						case 2:
+							s +=' - back binding';
+							break;							
+						case 3:
+							s +=' - Combo';
+							break;							
+					}
+					if(cap & 0x20 && b.byteLength >= i + 2) {
+						s +=', IO: 0x'+ hex(b.getUint16(i, true), 4);
+						i += 2;
+					}
+				}
+				if((ctrl & 0x40)) {
+					if(b.byteLength >= i + 4) {
+						if(ctrl & 8) {
+								s += ', Data encrypted';
+						} else {
+							let data_id = b.getUint16(i, true);
+							let data_len = b.getUint8(i+2);
+							i += 3;
+							if(b.byteLength >= i + data_len) switch(data_id) {
+								case 0x1006:
+									if(data_len == 2) {
+										let humi = b.getInt16(i, true) / 10.0;
+										s += ', Humi: '+humi+'%';
+									}
+									break;
+								case 0x1004:
+									if(data_len == 2) {
+										let temp = b.getInt16(i, true) / 10.0;
+										s += ', Temp: '+temp+'°C';
+									}
+									break;
+								case 0x100a:
+									if(data_len == 1) {
+										s += ', Bat: '+ b.getUint8(i) + '%';
+										if(b.byteLength >= i + 3 && b.getUint8(i+1) == 2) {
+											let Vbat = b.getUint16(i+2, true);
+											s += ', Vbat: '+ Vbat + ' mV';
+											i += 3;
+										}
+									}
+									break;
+								case 0x100d:
+									if(data_len == 4 && b.byteLength >= i + 3) {
+										let temp = b.getInt16(i, true) / 10.0;
+										let humi = b.getInt16(i+2, true) / 10.0;
+										s += ', Temp: '+temp+'°C Humi: '+humi+'%';
+									}
+									break;
+								default:
+									s += ', DataID: 0x'+hex(data_id,4);
+									let data_value = 0;
+									if(data_len == 1)
+										s += ' Value: 0x'+hex(b.getUint8(i),2);
+									else if(data_len == 2)
+										s += ' Value: 0x'+hex(b.getUint16(i, true),4);
+									else if(data_len == 4)
+										s += ' Value: 0x'+hex(b.getUint32(i, true), 8);
+									else 
+										s += ' DataLen: ' + data_len;
+									break;
+							}
+							i += data_len;
+						}
+					}
+				}
+				if(ctrl & 0x80)
+					s +=', Mesh Data';
+			}
+		}
+	} else if(key == '0000181a-0000-1000-8000-00805f9b34fb') {
+		if(b.byteLength >= 15) { // pvvx
+			// 70 58 56 38 C1 A4 69 0A 60 09 25 0B 48 70 04
+			let temp = b.getInt16(6, true) / 100.0;
+			let humi = b.getInt16(8, true) / 100.0;
+			let vbat = b.getUint16(10, true);
+			let bat = b.getUint8(12);
+			let cnt = b.getUint8(13);
+			let flg = b.getUint8(14);
+			s = 'MAC: '+hex(buf[5],2)+hex(buf[4],2)+hex(buf[3],2)+hex(buf[2],2)+hex(buf[1],2)+hex(buf[0],2);
+			s += ', Bat: '+bat+'%, Vbat: '+vbat+' mV , Temp: '+temp+'°C, Humi: '+humi+'%, Count: '+cnt+', Flg: '+flg;
+		} else if(b.byteLength == 13) { // atc1441
+			// A4 C1 38 56 58 70 01 0A 18 48 0B 25 70
+			let temp = b.getInt16(6, false) / 10.0;
+			let humi = b.getUint8(8);
+			let bat = b.getUint8(9);
+			let vbat = b.getUint16(10, false);
+			let cnt = b.getUint8(12);
+			s = 'MAC: '+hex(buf[0],2)+hex(buf[1],2)+hex(buf[2],2)+hex(buf[3],2)+hex(buf[4],2)+hex(buf[5],2);
+			s += ', Bat: '+bat+'%, Vbat: '+vbat+' mV, Temp: '+temp+'°C, Humi: '+humi+'%, Count: '+cnt;
+		}
+	} else if(key == '0000fff9-0000-1000-8000-00805f9b34fb') { // CGG1 "Goose"
+		// 0801 AE1610342D58 0104 1401 4601 0201 58 
+		if(b.byteLength >= 16 && b.getUint16(0, true) == 0x0108 && b.getUint16(8, true) == 0x0401 && b.getUint16(14, true) == 0x0102) {
+			let temp = b.getInt16(10, true) / 10.0;
+			let humi = b.getInt16(12, true) / 10.0;
+			let bat = b.getUint8(16);
+			let s = 'MAC: '+hex(buf[2],2)+hex(buf[3],2)+hex(buf[4],2)+hex(buf[5],2)+hex(buf[6],2)+hex(buf[7],2);
+			s += ', Bat: '+bat+'%, Temp: '+temp+'°C, Humi: '+humi+'%';
+			log(s); 
+		}
+	}
+	addAlog(s);
+	$("MAC").innerHTML = s+'<hr>';
+	abortController.abort();
+	doConnect();
+	})
+  }, { once: true });
+  addClog('Catching advertisement from "' + device.name + '"...');
+  device.watchAdvertisements({ signal: abortController.signal })
+  .catch(error => {
+	addClog('Error: ' + error);
+  });
+}
+
+function miAction() {
+	gattServer.getPrimaryService('ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6')
+		.then(service => {
+			addClog("Found Main service");
+			ServiceMain = service;
+			return ServiceMain.getCharacteristic('ebe0ccd8-7a0a-4b0c-8a1a-6ff2997da3a6');
+		}).then(characteristic => {
+			addClog("Found Write characteristic Speed");
+			writeCharacteristicSpeed = characteristic;
+			return ServiceMain.getCharacteristic('ebe0ccc1-7a0a-4b0c-8a1a-6ff2997da3a6');
+		}).then(characteristic => {
+			addClog('Found Temp characteristic');
+			nitifiyCharTemp = characteristic;
+			return nitifiyCharTemp.startNotifications().then(() => {
+				nitifiyCharTemp.addEventListener('characteristicvaluechanged', event => {
+					let value = event.target.value;
+					let temp = value.getInt16(0, true) / 100;
+					let hum = value.getUint8(2);
+					let vbat = value.getUint16(3,true);
+					let tempTempString = "Temp: " + temp + "°C, Humi: " + hum + "%, "+vbat+" mV";
+					$("tempHumiData").innerHTML = '<hr>'+tempTempString;
+					addClog(tempTempString);
+				});
+				miAuthorization()
+			});
+		}).catch(handleError);
+}
+var buf11;
+var cnt_buf11 = 0;
+var cnt_delkeys = 0;
+var id_buf11 = 0x1000;
+var mikeys = {mac: null, id: null, token: null, bindkey: null, cfg: null, delkeys: null, restore: false, cbindkey: null};
+var ext = {big_number: 0, small_number: 0, vtime: 180, flg: 0xc7, enable: false};
+
+function concatUint8ArrayArrays(a, b) { // a, b TypedArray of same type
+	let c = new Uint8Array(a.byteLength + b.byteLength);
+	c.set(a, 0);
+	c.set(b, a.byteLength);
+	return c;
+}
+function dump(ar, len) {
+	let s = '';
+	for(let i=0; i < len; i++) {
+		s += hex(ar[i],2);
+	}
+	return s;
+}
+var atc_mac, atc_rmac;
+function CustomBlkParse(value) {
+	let len = value.byteLength;
+	if(len == 0) return;
+	len--;
+	let blkid = value.getUint8(0);
+	//addClog("blk:"+bytesToHex(value.buffer));
+	if(blkid == 0x55 && len >= 9) {
+		cfg.ver = value.getUint8(1);
+		cfg.flg = value.getUint8(2);
+		cfg.flg2 = value.getUint8(3);
+		cfg.temp_offset = value.getInt8(4);
+		cfg.humi_offset = value.getInt8(5);
+		cfg.advertising_interval = value.getUint8(6);
+		cfg.measure_interval = value.getUint8(7);
+		cfg.rf_tx_power = value.getUint8(8);
+		cfg.connect_latency = value.getUint8(9);
+		if(len >= 10) cfg.lcd_tint = value.getUint8(10);
+		else cfg.lcd_tint = 55;
+		if(len >= 11) cfg.hver = value.getUint8(11); else cfg.hver = 0;
+		if(len >= 12) cfg.av_meas_mem = value.getUint8(12); else cfg.av_meas_mem = 0;
+		let s = 'Hardware Version: ';
+		if((cfg.hver & 0x07) == 0) s +='LYWSD03MMC';
+		else if((cfg.hver & 0x07) == 1) s +='MHO-C401';
+		else if((cfg.hver & 0x07) == 2) s +='CGG1';
+		else s += 'Unknown'
+		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
+		setStatus(s);
+		addAlog(s);
+		s = 'Custom config: ['+cfg.flg+', '+cfg.flg2+', '+cfg.temp_offset+', '+cfg.humi_offset+', '+cfg.advertising_interval+', '+cfg.measure_interval+', '+cfg.rf_tx_power+', '+cfg.connect_latency+', '+cfg.lcd_tint+', '+cfg.hver+', '+cfg.av_meas_mem+']';
+		addAlog(s);
+		if(cfg.ver >= 5) CustomConfig();
+		else addLog('Old version - out of service!')
+	} else if(blkid == 0x33 && len >= 8) {
+		let vbat = value.getUint16(1, true);
+		let temp = value.getInt16(3, true) / 100.0;
+		let humi = value.getInt16(5, true) / 100.0;
+		let count = value.getUint16(7, true);
+		let flg = 0;
+		if(len > 8) flg = value.getUint8(9);
+		let s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, Count: '+count+', flg: '+hex(flg,2);
+		$("tempHumiData").innerHTML = s;
+	    addClog(s);
+	} else if(blkid == 0x22 && len >= 7) {
+		ext.big_number = value.getInt16(1, true); // -995..19995, x0.1
+		ext.small_number = value.getInt16(3, true); // -9..99, x1
+		ext.vtime = value.getUint16(5, true); // in sec
+		ext.flg = value.getUint8(7);
+		let s = 'ExtShow: big_number: '+ext.big_number+', small_number: '+ext.small_number+', ext.vtime: '+ext.vtime+' s, flg: '+hex(ext.flg,2);
+	    addAlog(s); UpdExt();
+	} else if(blkid == 0x44 && len >= 7) {
+		trg.tmp_thr = value.getInt16(1, true) / 100.0; // temp threshold
+		trg.hm_thr = value.getInt16(3, true) / 100.0; // humi threshold
+		if(len >= 9) {
+			trg.tmp_hst = value.getInt16(5, true) / 100.0;        // temp hysteresis
+			trg.hm_hst = value.getInt16(7, true) / 100.0;        // humi hysteresis
+			trg.flg = value.getInt8(9);
+		} else {
+			trg.tmp_hst = value.getInt8(5) / 10.0;        // temp hysteresis
+			trg.hm_hst = value.getInt8(6) / 10.0;        // humi hysteresis
+			trg.flg = value.getInt8(7);
+		}
+		let s = 'Threshold Temp/Humi: '+trg.tmp_thr.toFixed(2)+'°C/'+trg.hm_thr.toFixed(2)+'%, Hysteresis T/H: '+trg.tmp_hst.toFixed(2)+'°/'+trg.hm_hst.toFixed(2)+'%, flg: 0x'+hex(trg.flg,2);
+	    addAlog(s); UpdTrg();
+	} else if(blkid >= 0x10 && blkid <= 0x14 && len >= 1) {
+		let lb = value.getUint8(1);
+		if(lb != 0) {
+			len -= 1;
+			if(cnt_buf11 == 0){
+				// addClog('New miKey length: '+lb);
+				buf11 = new Uint8Array(lb);
+			}
+			for(let i = 0; i < len && i < lb; i++ )
+				buf11[cnt_buf11++] = value.getUint8(i+2);
+			if(len == lb) {
+				if(cnt_buf11 == buf11.length) {
+					let s = '';
+					if(blkid == 0x14)  {
+						if(cnt_delkeys == 0) {
+							mikeys.delkeys = [];
+						}
+						s = 'Marked as delete Key'+cnt_delkeys+': ';
+						cnt_delkeys += 1;
+						mikeys.delkeys.push(buf11);
+					}
+					if(cnt_buf11 == 28) {
+	 					s +=  'miToken: '+dump(buf11.slice(0, 12), 12)+', miBindKey: '+dump(buf11.slice(12), 16);
+						if(blkid == 0x12) {
+							cnt_delkeys = 0;
+	 		 				mikeys.token = buf11.slice(0, 12);
+			 				mikeys.bindkey = buf11.slice(12);
+			 				CustomConfig();
+						} else if(blkid == 0x14) {
+							if(mikeys.token) mikeys.restore = true;
+						}
+						addLog(s);
+					} else if(cnt_buf11 == 20) {
+						let str = new TextDecoder("utf-8").decode(buf11.slice(1));
+						s += 'miDevId: "'+str+'" '+dump(buf11.slice(1), 19);
+						if(blkid == 0x11) {
+							cnt_delkeys = 0;
+							mikeys.id = buf11;
+						}
+						addLog(s);
+					} else if(cnt_buf11 == 8) {
+						// * public_mac: 		[0][1][2][3][4][5], const: [3]=38;[4]=C1;[5]=A4
+						// * random_static_mac: [0][1][2][6][7]C0
+						s += 'MAC: '+hex(buf11[5],2)+hex(buf11[4],2)+hex(buf11[3],2)+hex(buf11[2],2)+hex(buf11[1],2)+hex(buf11[0],2)+', RandMAC: '+'C0'+hex(buf11[7],2)+hex(buf11[6],2)+hex(buf11[2],2)+hex(buf11[1],2)+hex(buf11[0],2);
+						if(blkid == 0x10) {
+							cnt_delkeys = 0;
+							mikeys.mac = buf11;
+							addLog(s);
+						}
+					} else if(cnt_buf11 == 4) {
+						s += 'miCfg: '+dump(buf11, 4);
+						if(blkid == 0x13) {
+							cnt_delkeys = 0;
+							mikeys.cfg = buf11;
+							addLog(s);
+						}
+					} else
+	 					s += 'miKey: '+dump(buf11, cnt_buf11);
+					addClog(s);
+		 		}
+				cnt_buf11 = 0;
+			}
+		} else if(cnt_buf11 != 0) {
+			cnt_buf11 = 0;
+			addClog("Error read mi keys!");
+		} else {
+			if(blkid == 0x11) addAlog('No miDevId!');
+			else if(blkid == 0x12) addAlog('No miToken and miBindKey!');
+			else if(blkid == 0x13) addAlog('No miCFG!');
+			else if(blkid == 0x14) {addClog("End keys"); CustomConfig();}
+			else addClog("End keys");
+			cnt_buf11 = 0;
+		}
+	} else if(blkid == 0x18 && len >= 1) { // Get/set beacon bkey in EEP
+		if(len >= 16) {
+			mikeys.cbindkey = value.buffer.slice(1);
+			let s = bytesToHex(mikeys.cbindkey,16);
+			addAlog("Read bindkey: "+ s);
+			if($("cbind_key"))
+				$("cbind_key").value = s;
+		} else {
+			if(len == 1 && value.getUint8(1) == 0xff)
+				addAlog("No bindkey in EEP!");
+			else
+				addAlog("Error read bindkey from EEP!");
+			if($("cbind_key"))
+				$("cbind_key").value = '?';
+		}
+	} else if(blkid == 0x60 && len >= 6) {
+		let s = 'LCD data: '+bytesToHex(value.buffer.slice(1));
+		addClog(s);
+	} else if(blkid == 0x61 && len >= 1) {
+		let s = 'LCD flg: '+hex(value.getUint8(1), 2);
+		addClog(s);
+	} else if(blkid == 0x35) {
+		if(flg_memo_act) {
+			if(len >= 12) {
+				let cnt = value.getUint16(1, true);
+				let tc = value.getUint32(3, true);
+				let tm = value.getInt16(7, true) / 100.0;
+				let hm = value.getUint16(9, true) / 100.0;
+				let vb = value.getUint16(11, true);
+				let dt = new Date(tc*1000);
+				addAlog(((dt.toISOString().slice(0, -1)).replace('T',' ')).replace('.000','')+' # Vbat: '+vb+' mV , Temp: '+tm+'°C, Humi: '+hm+'%, Count: '+cnt);
+			} else if(len >= 2) {
+				let cnt = value.getUint16(1, true);
+				addAlog('Memo end: '+cnt);
+				flg_memo_act = false;
+			}
+		}
+	} else if(blkid == 0x23 && len >= 4) {
+		let time = value.getUint32(1,true);
+		addClog('Device Time: 0x' + hex(time,8));
+		let dt = new Date(time*1000);
+		addAlog('Device Date: '+(dt.toISOString().slice(0, -1)).replace('T',' '));
+	} else if(blkid == 0x24 && len >= 4) {
+		cfg.step_time = value.getUint32(1,true);
+		addAlog('Device StepTimeSec: ' + (cfg.step_time / 16.0).toFixed(3) + ' us');
+		if(cfg.ver >= 0x24 && $("cfg_time_delta")) {
+			$("cfg_time_delta").value = cfg.step_time - 16000000;
+		};
+	} else if(blkid == 0x20 && len >= 8) {
+		cmf.tmp_lo = value.getInt16(1, true); // temp lo
+		cmf.tmp_hi = value.getInt16(3, true); // temp hi
+		cmf.hm_lo = value.getUint16(5, true); // humi lo
+		cmf.hm_hi = value.getUint16(7, true); // humi lo
+		let s = 'Comfort Temp: '+(cmf.tmp_lo/100.0).toFixed(2)+'..'+(cmf.tmp_hi/100.0).toFixed(2)+'°C, Humi: '+(cmf.hm_lo/100.0).toFixed(2)+'..'+(cmf.hm_hi/100.0).toFixed(2)+'%';
+		addAlog(s); UpdCmf();
+	} else if(blkid == 0x01 && len >= 1) {
+		dnm.name = new TextDecoder("utf-8").decode(value.buffer.slice(1));
+		if($("dev_name"))
+			$("dev_name").value = dnm.name;
+		addAlog("DevName: ["+dnm.name+"]");
+	} else {
+		let s = 'Custom (0x1f1f) Notifications id: 0x'+hex(blkid,2)+' ['+bytesToHex(value.buffer.slice(1))+']';
+		addClog(s);
+	}
+}
+
+function customAction() {
+	gattServer.getPrimaryService('00001f10-0000-1000-8000-00805f9b34fb').then(service => {
+		addClog("Found custom Main service");
+		ServiceMain = service;
+		return ServiceMain.getCharacteristic('00001f1f-0000-1000-8000-00805f9b34fb');
+	}).then(characteristic => {
+		settingsCharacteristics = characteristic;
+		addClog("Found custom read-write characteristic");
+		if(devidEnabled) {
+            addClog("Start Notifications (0x1f1f)");
+			settingsCharacteristics.startNotifications().then(characteristic => {
+	            addClog("Add EventListener (0x1f1f)");
+				settingsCharacteristics.addEventListener('characteristicvaluechanged', event => CustomBlkParse(event.target.value));
+	            addClog("Read Characteristics (0x1f1f)");
+				settingsCharacteristics.readValue().then(value => {
+					$("ldfile").hidden = false;
+					addClog("Send cmd (3303): Query 3 measurements");
+					settingsCharacteristics.writeValue(new Uint8Array([0x33,0x03])).then(_ => {
+					  addClog('Send cmd ok');
+					})
+					.catch(error => addClog(error));
+				}).catch(error => { addClog(error);
+					addLog("Detected alternative Firmware? Use: https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html");
+					setStatus('Detected alternative Firmware? <a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html">TelinkOTA</a>');
+				 });
+	        }).catch(error => addClog(error));
+	    } else {
+			addLog("Detected alternative Firmware? Use: https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html");
+			setStatus('Detected alternative Firmware? <a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html">TelinkOTA</a>');
+	    }
+	}).catch(handleError);
+}
+
+function miAuthorization() {
+	gattServer.getPrimaryService(0xfe95)
+		.then(service => {
+			addClog("Found Main service");
+			enc_main = service;
+			return enc_main.getCharacteristic(0x0010);
+		}).then(characteristic => {
+			addClog("Found enc_10 char");
+			enc_10 = characteristic;
+			return enc_main.getCharacteristic(0x0019);
+		}).then(characteristic => {
+			addClog('Found enc_19 char');
+			enc_19 = characteristic;
+			miConnected = true;
+			return enc_10.startNotifications().then(() => {
+				enc_10.addEventListener('characteristicvaluechanged', event => {
+					var value = bytesToHex(event.target.value.buffer);
+					addClog("Enc_10: " + value);
+					if (value == "12000000") {
+						addLog("Activation Failed!");
+					} else if (value == "11000000") {
+						addLog("Activation successfull");
+						sendLogin();
+					}
+					if (value == "23000000") {
+						addLog("Login Failed!");
+					} else if (value == "21000000") {
+						is_logged_in = true;
+						addLog("Login successfull");
+						$("ldfile").hidden = false;
+						if(otafiles.loaded && otafiles.version) {
+							if(cfg.hver != null)
+								$("ldfrmw").innerHTML = ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>  <button type="button" onclick="BackToOriginal();">'+ otafiles.original[cfg.hver & 0x07] +'</button>';
+							$("log").innerHTML += '<a href="https://pvvx.github.io/ATC_MiThermometer/GraphOriginal.html">GraphOriginal</a><br>';
+						}
+					}
+				});
+			}).then(characteristic => {
+				return enc_19.startNotifications().then(() => {
+					enc_19.addEventListener('characteristicvaluechanged', event => {
+						var value = bytesToHex(event.target.value.buffer);
+						addClog("Enc_19: " + value);
+						if (mode_activation == 1) {
+							if (value == "000000000100") { // BLE_UUID_STDIO_SRV  00000100-0065-6c62-2e74-6f696d2e696d
+								is_activated = false;
+								mainCharSend("00000101", enc_19);  // BLE_UUID_STDIO_RX, 102 - BLE_UUID_STDIO_TX 
+							} else if (value == "000000000200") {
+								is_activated = true;
+								mainCharSend("00000101", enc_19);
+							} else if ((is_activated == true) && (state == 0) && value.substring(0, 4) == "0100") {
+								device_known_id = value.substring(4);
+							} else if ((is_activated == true) && (state == 0) && value.substring(0, 4) == "0200") {
+								device_known_id += value.substring(4);
+								device_new_id = device_known_id.substring(8);
+								$("known_id").value = hex2ascii(device_known_id.substring(10));
+								mainCharSend("00000100", enc_19).then(function(character) {
+									mainCharSend("15000000", enc_10).then(function(character) {
+										mainCharSend("000000030400", enc_19);
+										state = 1;
+									}).catch(function(err) {
+										updateFail(err);
+									});
+								}).catch(function(err) {
+									updateFail(err);
+								});
+							} else if (value == "010001000000") mainCharSend("00000100", enc_19).then(function(character) {
+								mainCharSend("15000000", enc_10).then(function(character) {
+									mainCharSend("000000030400", enc_19);
+									state = 1;
+								}).catch(function(err) {
+									updateFail(err);
+								});
+							}).catch(function(err) {
+								updateFail(err);
+							});
+
+							else if ((state == 1) && (value == "00000101")) {
+								state = 2;
+								mainCharSend("0100" + own_public_key.substring((36 * 0) + 2, (36 * 0) + 36 + 2), enc_19).then(function(character) {
+									mainCharSend("0200" + own_public_key.substring((36 * 1) + 2, (36 * 1) + 36 + 2), enc_19).then(function(character) {
+										mainCharSend("0300" + own_public_key.substring((36 * 2) + 2, (36 * 2) + 36 + 2), enc_19).then(function(character) {
+											mainCharSend("0400" + own_public_key.substring((36 * 3) + 2, (36 * 3) + 36 + 2), enc_19);
+										}).catch(function(err) {
+											updateFail(err);
+										});
+									}).catch(function(err) {
+										updateFail(err);
+									});
+								}).catch(function(err) {
+									updateFail(err);
+								});
+							} else if (value == "000000030400") mainCharSend("00000101", enc_19);
+
+							else if ((state == 2) && value.substring(0, 4) == "0100") {
+								device_public_key = "04" + value.substring(4);
+							} else if ((state == 2) && value.substring(0, 4) == "0200") {
+								device_public_key += value.substring(4);
+							} else if ((state == 2) && value.substring(0, 4) == "0300") {
+								device_public_key += value.substring(4);
+							} else if ((state == 2) && value.substring(0, 4) == "0400") {
+								device_public_key += value.substring(4);
+								mainCharSend("00000100", enc_19).then(function(character) {
+									makeSharedKey();
+								}).catch(function(err) {
+									updateFail(err);
+								});
+							} else if ((state == 2) && (value == "00000101")) {
+								state = 3;
+								mainCharSend("0100" + mi_write_did.substring(36 * 0, (36 * 0) + 36), enc_19).then(function(character) {
+									mainCharSend("0200" + mi_write_did.substring(36 * 1, (36 * 1) + 36), enc_19);
+								}).catch(function(err) {
+									updateFail(err);
+								});
+							} else if ((state == 3) && (value == "00000100")) {
+								state = 0;
+								mainCharSend("13000000", enc_10);
+							} else if (value == "000001050100") {
+								addLog("Received Timeout from device");
+							} else if (value == "12000000") {
+								addLog("Register Failed!");
+							} else if (value == "11000000") {
+								addLog("Register successfull");
+							}
+						} else { //Mode Login
+							if ((state == 0) && (value == "00000101")) {
+								state = 1;
+								mainCharSend("0100" + mi_random_key, enc_19);
+							} else if ((state == 1) && (value == "0000000d0100")) {
+								state = 2;
+								mainCharSend("00000101", enc_19);
+							} else if ((state == 2) && value.substring(0, 4) == "0100") {
+								state = 3;
+								mi_random_key_recv = value.substring(4);
+								do_login_generate();
+							} else if ((state == 3) && (value == "0000000c0200")) {
+								state = 4;
+								mainCharSend("00000101", enc_19);
+							} else if ((state == 4) && value.substring(0, 4) == "0100") {
+								state = 5;
+								mi_device_info_recv = value.substring(4);
+							} else if ((state == 5) && value.substring(0, 4) == "0200") {
+								state = 6;
+								mi_device_info_recv += value.substring(4);
+								if (expected_device_infos == mi_device_info_recv)
+									addLog("Received device infos are correct");
+								else
+									addLog("Received device infos are not correct");
+								mainCharSend("00000100", enc_19).then(function(character) {
+									mainCharSend("0000000a0200", enc_19);
+								})
+							} else if ((state == 6) && (value == "00000101")) {
+								state = 7;
+								mainCharSend("0100" + mi_device_info_send.substring(36 * 0, (36 * 0) + 36), enc_19).then(function(character) {
+									mainCharSend("0200" + mi_device_info_send.substring(36 * 1, (36 * 1) + 36), enc_19);
+								}).catch(function(err) {
+									updateFail(err);
+								});
+							}
+						}
+					});
+					addLog("Connected");
+					if(bluetoothDevice.name == 'LYWSD03MMC') cfg.hver = 0;
+					else if (bluetoothDevice.name == 'MHO-C401') cfg.hver = 1;
+					else if (bluetoothDevice.name == 'Qingping Temp & RH M') cfg.hver = 2;
+					else {
+						cfg.hver = null;
+						$("ldfile").hidden = false;
+					}
+					setStatus("Connected, you can now Do the Activation to either get the Token or flash a new Firmware");
+				});
+			});
+		}).catch(handleError);
+}
+
+function doConnect() {
+ if(bluetoothDevice != null) {	
+	bluetoothDevice.gatt.connect().then(server => {
+		addClog("Found GATT server");
+		gattServer = server;
+		return gattServer.getPrimaryService('00010203-0405-0607-0809-0a0b0c0d1912');
+	}).then(service => {
+		addClog("Found Telink OTA service");
+		Theservice = service;
+		return Theservice.getCharacteristic('00010203-0405-0607-0809-0a0b0c0d2b12');
+	}).then(characteristic => {
+		addClog("Found Telink OTA write characteristic");
+		writeCharacteristic = characteristic;
+		detectMi();
+	}).catch(handleError);
+ }	
+}
+
+function detectMi() {
+	gattServer.getPrimaryServices().then(services => {
+		//["00010203-0405-0607-0809-0a0b0c0d1912", "ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6", 0x180a, 0xfe95, 0x1f10, 0x181a]
+		miEnabled = false;
+		customEnabled = false;
+		devidEnabled = false;
+		for (var i = 0; i < services.length; i++) {
+			addClog("Services: " + services[i].uuid);
+			if (services[i].uuid == "ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6") miEnabled = true;
+			if (services[i].uuid == "00001f10-0000-1000-8000-00805f9b34fb") customEnabled = true;
+			if (services[i].uuid ==	"0000181a-0000-1000-8000-00805f9b34fb") devidEnabled = true;
+		}
+		if (miEnabled) {
+			addLog("Detected Mi Thermometer");
+			setStatus("Detected Mi Thermometer");
+			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
+			miAction();
+		} else if (customEnabled) {
+			addLog("Detected custom Firmware");
+			setStatus("Detected custom Firmware");
+			customAction();
+			$("custcfg").innerHTML = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
+		} else {
+			addLog("Detected Telink OTA service");
+			setStatus("Connected.")
+			miEnabled = true;
+			miAuthorization();  //	miConnected
+			$("ldfile").hidden = false;
+			$("custcfg").innerHTML = '<button type="button" onclick="sendRegister();">Do Activation</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br>';
+		}
+	}).catch(handleError);
+}
+
+function reConnect() {
+	if (bluetoothDevice != null) bluetoothDevice.gatt.disconnect();
+	resetVariables();
+	addLog("Reconnect");
+	connectTrys = 0;
+	doConnect();
+}
+
+function startDFU() {
+	addLog("Start DFU");
+	if ((miConnected==true) && (is_logged_in==false)){
+		addLog("Please do the Activation first");
+		return;
+	}
+	updateBegin();
+}
+
+function sendBLEdata(data) {
+	addLog(data);
+}
+
+function send10(data) {
+	mainCharSend(data, enc_10);
+}
+
+function send19(data) {
+	mainCharSend(data, enc_19);
+}
+
+function sendRegister() {
+	if (miConnected == false) {
+		addLog("Not connected");
+		return;
+	}
+	addLog("Activating now, please wait...");
+	state = 0;
+	mode_activation = 1;
+	doGenerate();
+	mainCharSend("a2000000", enc_10);
+}
+
+function sendLogin() {
+	mi_random_key = bytesToHex(window.crypto.getRandomValues(new Uint8Array(16)));
+	state = 0;
+	mode_activation = 0;
+	mainCharSend("24000000", enc_10).then(function(character) {
+		mainCharSend("0000000b0100", enc_19);
+	}).catch(function(err) {
+		updateFail(err);
+	});
+}
+
+function addLog(logTXT) {
+	var time = new Date().toLocaleTimeString();
+	var logString = time + ": " + logTXT;
+	$("log").innerHTML += logString + "<br>";
+}
+
+function addClog(logTXT) {
+	console.log(logTXT);
+}
+
+function addAlog(logTXT) {
+	console.log(logTXT);
+	addLog(logTXT);
+}
+
+function clearLog() {
+	$("log").innerHTML = "";
+}
+
+function setStatus(status) {
+	addClog("Status: " + status);
+	$("percent").innerHTML = "Status: " + status;
+}
+
+function updateFail(err) {
+	addLog("Update error: " + err);
+	setStatus("Update error: " + err);
+}
+
+function decimalToHex(d, padding) {
+	var hex = Number(d).toString(16);
+	while (hex.length < 4) {
+		hex = "0" + hex;
+	}
+	return hex;
+}
+
+function hexToBytes(hex) {
+	for (var bytes = [], c = 0; c < hex.length; c += 2)
+		bytes.push(parseInt(hex.substr(c, 2), 16));
+	return new Uint8Array(bytes);
+}
+
+function bytesToHex(data) {
+	return new Uint8Array(data).reduce(function(memo, i) {
+		return memo + ("0" + i.toString(16)).slice(-2);
+	}, "");
+}
+
+function makeRandomID(length) {
+	var result = '';
+	var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	var charactersLength = characters.length;
+	for (var i = 0; i < length; i++) {
+		result += characters.charAt(Math.floor(Math.random() * charactersLength));
+	}
+	return bytesToHex(new TextEncoder("utf-8").encode(result));
+}
+
+function crc16_modbus(buffer) {
+	var crc = 0xFFFF;
+	var odd;
+	for (var i = 0; i < buffer.length; i++) {
+		crc = crc ^ buffer[i];
+		for (var j = 0; j < 8; j++) {
+			odd = crc & 0x0001;
+			crc = crc >> 1;
+			if (odd) {
+				crc = crc ^ 0xA001;
+			}
+		}
+	}
+	return crc;
+};
+
+function hex2ascii(hexx) {
+	var hex = hexx.toString();
+	var str = '';
+	for (var i = 0;
+		(i < hex.length && hex.substr(i, 2) !== '00'); i += 2)
+		str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+	return str;
+}
+//-------------
+function getFirmwareArray(data, filename) {
+    //addAlog(filename);
+	firmwareArray = bytesToHex(data);
+	if(firmwareArray.substring(16,24)!="4b4e4c54"){
+		let s = "This file is no telink firmware .bin!"
+		alert(s);
+		addAlog(s);
+		blockCount = 0;
+		firmwareArray = "";
+		return;
+	}
+	addAlog("File size: " + firmwareArray.length / 2 + " bytes");
+	if (firmwareArray.length % 32 !== 0) { // pad last block to 16bytes
+		var padHex = "ffffffffffffffffffffffffffffffff";
+		firmwareArray += padHex.substr(0, 32 - firmwareArray.length % 32);
+	}
+	blockCount = firmwareArray.length / 32;
+	addAlog("Count: " + blockCount); 
+	fwname = filename;
+	let is = '<button type="button" onclick="startDFU();">Start Flashing</button> fw: \''+fwname+'\'';
+	$("ldfrmw").innerHTML = is;
+}
+
+function ajax_file(filename, fn) {
+	let xhr;  
+	if(window.XMLHttpRequest) xhr = new XMLHttpRequest();
+	else if(window.ActiveXObject) xhr = new ActiveXObject("Microsoft.XMLHTTP")
+	if (!xhr) { addClog(msg("Your browser does not support AJAX!")); fn(); return;};
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState == 4) {
+			if (xhr.status == 200) fn(xhr.response, filename);
+			else { addClog('XMLHttpRequest: response ' + xhr.status); fn();}
+			xhr.abort();
+			xhr = null;
+		}
+	};
+    xhr.ontimeout = function() { addClog('XMLHttpRequest: timeout'); fn();};
+	xhr.onerror = function () { addClog('XMLHttpRequest error!'); fn();};    
+	xhr.open('GET', rawurl+filename, true);
+	xhr.timeout = 10000;
+	xhr.responseType = "arraybuffer";
+   	xhr.send();
+}
+
+function getOtaJson(d, name) {
+	if (!d) {
+		addClog("No load index file!");
+	} else {
+		let str = '';
+		if (typeof d === 'string')
+			str = d;
+		else
+			str = new TextDecoder("utf-8").decode(d);
+		let x = JSON.parse(str);
+		if(x.version) {
+			otafiles = x;
+			otafiles.loaded = true;
+			addClog(otafiles);
+		}
+	}
+}
+
+function FirmwareUpgrade() {
+	if(cfg.hver != null) {
+		let fn = otafiles.custom[cfg.hver & 0x07];
+		addAlog("Load firmware file '"+fn+"'...");
+		ajax_file(fn, getFirmwareArray);
+	}
+}
+
+function BackToOriginal() {
+	if(cfg.hver != null) {
+		let fn = otafiles.original[cfg.hver & 0x07];
+		addAlog("Load firmware file '"+fn+"'...");
+		ajax_file(fn, getFirmwareArray);
+	}
+}
+
+window.onload = function() {
+	//TODO Test enable -web-platform-features
+	$("MAC").innerHTML= '#enable-experimental-web-platform-features may be needed to read MAC (copy link: <a href=chrome://flags/#enable-experimental-web-platform-features>Chrome<a>, <a href=opera://flags/#enable-experimental-web-platform-features>Opera<a>, <a href=edge://flags/#enable-experimental-web-platform-features>Edge<a>)<hr>';
+	addClog("Load index file 'firmware.json'...");
+	ajax_file('firmware.json', getOtaJson);
+	document.querySelector("#file").addEventListener("change", function() {
+		let reader = new FileReader();
+		reader.fname = "";
+		reader.onload = function() {getFirmwareArray(this.result, this.fname);};
+		if (this.files[0] != null) {
+			reader.fname = this.files[0].name;
+			reader.readAsArrayBuffer(this.files[0]);
+		} else	addLog("No file selected");	}, false);
+}
+
+function updateBegin() {
+	if (blockCount <= 0) {
+		addLog("No file selected aborting");
+		return;
+	}
+	if (miEnabled && writeCharacteristicSpeed != null) mainCharSend("1e0000", writeCharacteristicSpeed); // this makes the upload faster
+	setTimeout(function() {
+		otaCharSend("00ff").then(function(character) {
+			otaCharSend("01ff").then(function(character) {
+				setTimeout(function() {
+					startTime = new Date().getTime();
+					sendOTAblock(0);
+				}, 300);
+			}).catch(function(err) {
+				updateFail(err);
+			});
+		}).catch(function(err) {
+			updateFail(err);
+		});
+	}, 500);
+}
+
+function sendOTAblock(blockNr) {
+	if (blockNr >= blockCount) {
+		sendLastOTA();
+		return;
+	}
+	setStatus("Sending block nr: " + blockNr + " from " + blockCount + ", " + Math.floor(blockNr / (blockCount * 1.0) * 100) + "% done, time since start " + (new Date().getTime() - startTime) / 1000.0 + "s");
+	var blockNrString = getHexBLockCount(blockNr);
+	var blockString = blockNrString + firmwareArray.substring(blockNr * 32, blockNr * 32 + 32);
+	var blockCRC = getHexCRC(blockString);
+	otaCharSend(blockString + blockCRC).then(function(character) {
+		setTimeout(function() {
+			if ((blockNr + 1) % 8 == 0) {
+				writeCharacteristic.readValue().then(function(result) {
+					addClog('reading OTA');
+					sendOTAblock(blockNr + 1);
+				}).catch(function(err) {
+					updateFail(err);
+				});
+			} else {
+				sendOTAblock(blockNr + 1);
+			}
+		}, 0);
+	}).catch(function(err) {
+		updateFail(err);
+	});
+}
+
+function getHexBLockCount(count) {
+	var tempHEX = decimalToHex(count);
+	return tempHEX.substring(2, 4) + tempHEX.substring(0, 2);
+}
+
+function getHexCRC(data) {
+	var tempCRC = decimalToHex(crc16_modbus(hexToBytes(data)));
+	return tempCRC.substring(2, 4) + tempCRC.substring(0, 2);
+}
+
+function sendLastOTA() {
+	var data = "02ff" + getHexBLockCount(blockCount - 1) + getHexBLockCount(~(blockCount - 1) & 0xffff);
+	otaCharSend(data).then(function(character) {
+		addLog("Update done after " + (new Date().getTime() - startTime) / 1000 + " seconds");
+		setStatus("Update done after " + (new Date().getTime() - startTime) / 1000 + " seconds");
+	}).catch(function(err) {
+		updateFail(err);
+	});
+}
+
+var otaCharSend = function(data) {
+	return new Promise(function(resolve, reject) {
+		addClog("OTA: " + data);
+		writeCharacteristic.writeValue(hexToBytes(data)).then(function(character) {
+			resolve("ok");
+		}).catch(function(err) {
+			reject("some error while sending char data");
+		});
+	});
+}
+
+function sendCustomSetting(data){
+	if((hexToBytes(data))[0] == 0x35)
+		flg_memo_act = true;		
+	mainCharSend(data, settingsCharacteristics).then(function() {
+		addLog("Settings " + data + " was send successful");
+	}).catch(function(err) {
+		addLog("Error on sending setting " + data);
+	});
+}
+
+var mainCharSend = function(data, characteristic) {
+	return new Promise(function(resolve, reject) {
+		addClog("Send: " + data);
+		characteristic.writeValue(hexToBytes(data)).then(function(character) {
+			resolve("ok");
+		}).catch(function(err) {
+			reject("some error while sending char data");
+		});
+	});
+}
+
+function doGenerate() {
+	window.crypto.subtle.generateKey({
+			name: 'ECDH',
+			namedCurve: 'P-256'
+		}, false, ['deriveKey', 'deriveBits'])
+		.then(own_key => {
+			keypair = own_key
+			return window.crypto.subtle.exportKey('raw', own_key.publicKey);
+		})
+		.then(ownPublicKeyExported => {
+			own_public_key = bytesToHex(ownPublicKeyExported);
+		})
+		.catch(err => {
+			addLog(err);
+		});
+}
+
+function makeSharedKey() {
+	window.crypto.subtle.importKey('raw', hexToBytes(device_public_key), {
+			name: 'ECDH',
+			namedCurve: 'P-256'
+		}, true, [])
+		.then(device_key_imported => {
+			return window.crypto.subtle.deriveBits({
+				name: 'ECDH',
+				namedCurve: 'P-256',
+				public: device_key_imported
+			}, keypair.privateKey, 256)
+		})
+		.then(sharedSecret => {
+			shared_key = bytesToHex(sharedSecret);
+			deriveTheKey();
+		})
+		.catch(err => {
+			addLog(err)
+		})
+}
+
+function deriveTheKey() {
+	var derived_key = sjcl.codec.hex.fromBits(sjcl.misc.hkdf(sjcl.codec.hex.toBits(shared_key), 8 * 64, null, "mible-setup-info", sjcl.hash["sha256"]));
+	$("mi_token").value = derived_key.substring(0, 24);
+	$("mi_bind_key").value = derived_key.substring(24, 56);
+	var mi_bind_A = derived_key.substring(56, 88);
+	mi_write_did = sjcl.codec.hex.fromBits(sjcl.mode.ccm.encrypt(new sjcl.cipher.aes(sjcl.codec.hex.toBits(mi_bind_A)), sjcl.codec.hex.toBits(device_new_id), sjcl.codec.hex.toBits("101112131415161718191A1B"), sjcl.codec.hex.toBits("6465764944"), 32));
+	mainCharSend("000000000200", enc_19);
+}
+
+function do_login_generate() {
+	var salt = hexToBytes(mi_random_key + mi_random_key_recv);
+	var salt1 = hexToBytes(mi_random_key_recv + mi_random_key);
+	var derived_key = sjcl.codec.hex.fromBits(sjcl.misc.hkdf(sjcl.codec.hex.toBits($("mi_token").value), 8 * 64, sjcl.codec.hex.toBits(bytesToHex(salt)), "mible-login-info", sjcl.hash["sha256"]));
+	expected_device_infos = sjcl.codec.hex.fromBits(new sjcl.misc.hmac(sjcl.codec.hex.toBits(derived_key.substring(0, 32))).mac(sjcl.codec.hex.toBits(bytesToHex(salt1))));
+	mi_device_info_send = sjcl.codec.hex.fromBits(new sjcl.misc.hmac(sjcl.codec.hex.toBits(derived_key.substring(32, 64))).mac(sjcl.codec.hex.toBits(bytesToHex(salt))));
+	mainCharSend("00000100", enc_19);
+}
+
+const lcd_digcode = [0xf5,0x05,0xd3,0x97,0x27,0xb6,0xf6,0x15,0xf7,0xb7];
+function lcd_clock() {
+	let date = new Date();
+	let hours = date.getHours();
+	let minutes = date.getMinutes();
+	let lcdb = new Uint8Array(7);
+	lcdb[0] = 0x60;
+	lcdb[1] = lcd_digcode[parseInt(minutes % 10)];
+	lcdb[2] = lcd_digcode[parseInt(minutes / 10)];
+	lcdb[4] = lcd_digcode[parseInt(hours % 10)];
+	lcdb[5] = lcd_digcode[parseInt(hours / 10)];
+	addClog("Send cmd (60): Set LCD data");
+	settingsCharacteristics.writeValue(lcdb).then(_ => {addClog('Send data ok'); addLog("Send 'Send clock data on LCD' ok");});
+}
+function setDevTime() {
+	let time = Date.now()/1000;
+	time -= (new Date()).getTimezoneOffset() * 60;
+	blk = new Uint8Array(5);
+	blk[0] = 0x23;
+	blk[1] = time & 0xff;
+	blk[2] = (time >> 8) & 0xff;
+	blk[3] = (time >> 16) & 0xff;
+	blk[4] = (time >> 24) & 0xff;
+	addClog("Send cmd Set DevTime ("+dump(blk, blk.length)+")...");
+	settingsCharacteristics.writeValue(blk).then(_ => {
+		addAlog('Send new DevTime ok');
+	});
+}
+
+function lcd_restore() {
+	addClog("Send cmd (6100): Restore show LCD");
+	settingsCharacteristics.writeValue(new Uint8Array([0x61, 0])).then(_ => {addClog('Send data ok'); addLog("Send 'Repair LCD' ok");});
+}
+
+function sendPinCode() {
+	if(pincode.enable) {
+		let el = $("pincode");
+		let x = parseInt(el.value);
+		let s = ("0000000" + x.toString(10)).slice(-6);
+		if(el.value.length == 6 && x <= 999999 && x >= 0) {
+			el.value = s;
+			addLog("PinCode: '"+s+"'");
+			settingsCharacteristics.writeValue(new Uint8Array([0x70, x&0xff, (x>>8)&0xff, (x>>16)&0xff, (x>>24)&0xff])).then(_ => {addAlog('Send pincode ok');});
+		} else  {
+			el.value = s;
+			addLog("Must be 6 decimal digits! 000000..999999, 6 digits, if '000000' - PinCode Disable.")
+		}
+	}
+}
+function CleanDevName() {
+	addClog("Send cmd (0100) Clean DevName...");
+	settingsCharacteristics.writeValue(new Uint8Array([0x01, 0])).then(_ => {
+			addAlog('Send Clean DevName ok');
+	});
+}
+function sendDevName() {
+	if(dnm.enable) {
+		let el = $("dev_name").value;
+		if(el.length >= 1 && el.length <= 12) {
+			let encoder = new TextEncoder();
+			blk = new Uint8Array(el.length + 1);
+			blk.set(encoder.encode(el), 1);
+			blk[0] = 0x01;
+			addClog("Send cmd New DevName ("+dump(blk, blk.length)+")...");
+			settingsCharacteristics.writeValue(blk).then(_ => {
+				addAlog('Send New DevName ok');
+			});
+		}
+	}
+}
+function CleanMAC() {
+	addClog("Send cmd Clean MAC (1000)...");
+	settingsCharacteristics.writeValue(new Uint8Array([0x10, 0])).then(_ => {
+		addAlog('Send Clean MAC ok');
+	});
+}
+function sendMAC() {
+	if(mikeys.mac) {
+		let el = $("mi_mac").value;
+		let len = el.length;
+		addClog(len + ' ' + el);
+		if(len == 12 || len == 16) {
+			let mac = hexToBytes(el);
+			len = mac.length;
+			addClog(len + ' ' + el);
+			if(len == 6 || len == 8) {
+				let blk = new Uint8Array(len+2);
+				blk[0] = 0x10;
+				blk[1] = len;
+				blk[2] = mac[5];
+				blk[3] = mac[4];
+				blk[4] = mac[3];
+				blk[5] = mac[2];
+				blk[6] = mac[1];
+				blk[7] = mac[0];
+				if(len == 8) {
+					blk[8] = mac[7];
+					blk[9] = mac[6];
+				}
+				addClog(blk);
+				addClog("Send cmd New MAC ("+dump(blk, blk.length)+")...");
+				settingsCharacteristics.writeValue(blk).then(_ => {
+					addAlog("Send New MAC: "+dump(mac, 6)+" RAND:" +dump(mac.slice(6), 2)+" ok");
+				});
+			}
+		}
+		addLog("Must be 6 hex MAC digits [+ 2 hex RandMAC digits]!")
+		return;
+	}
+}
+
+function UpdExt() {
+	if(ext.enable && $("extbignumb").value) {
+		$("extbignumb").value = (ext.big_number / 10.0).toFixed(1);
+		if((cfg.hver & 0x07) == 2) { // CGG1
+			$("extsmalnumb").value = (ext.small_number / 10.0).toFixed(1);
+		} else {
+			$("extsmalnumb").value = ext.small_number.toFixed(0);
+		}
+		$("extvtimed").value = ext.vtime;
+		$("extsmiley").value = ext.flg & 7;
+		$("extpersent").checked = ((ext.flg & 8) !=0 ? 1 : 0);
+		$("extbattery").checked = ((ext.flg & 16) !=0 ? 1 : 0);
+		$("exttmpsmb").value = (ext.flg >> 5) & 7;
+	}
+}
+
+function sendExt() {
+	if(ext.enable) {
+		ext.big_number = Math.round(10.0 * parseFloat($("extbignumb").value));
+		if((cfg.hver & 0x07)  == 2) // CGG1
+			ext.small_number = Math.round(10.0 * parseFloat($("extsmalnumb").value));
+		else
+			ext.small_number = parseInt($("extsmalnumb").value);
+		ext.vtime = parseInt($("extvtimed").value);
+		if(ext.vtime < 1) ext.vtime = 60;
+		else if(ext.vtime > 65535) ext.vtime = 65535;
+		ext.cfg = (parseInt($("extsmiley").value) & 7) +
+		($("extpersent").checked ? 8 : 0) +
+		($("extbattery").checked ? 16 : 0) +
+		((parseInt($("exttmpsmb").value) & 7) << 5);
+		addClog("Send cmd (22 + ext data)...");
+		settingsCharacteristics.writeValue(new Uint8Array([0x22, ext.big_number&0xff, (ext.big_number>>8)&0xff,ext.small_number&0xff,(ext.small_number>>8)&0xff,ext.vtime&0xff,(ext.vtime>>8)&0xff,ext.cfg])).then(_ => {
+			addAlog('Send Ext data ok');
+		});
+	}
+}
+function UpdCmf() {
+	if(cmf.enable && $("cmf_tmp_lo").value) {
+		$("cmf_tmp_lo").value =  (cmf.tmp_lo/100.0).toFixed(2);
+		$("cmf_tmp_hi").value =  (cmf.tmp_hi/100.0).toFixed(2);
+		$("cmf_hm_lo").value =  (cmf.hm_lo/100.0).toFixed(2);
+		$("cmf_hm_hi").value =  (cmf.hm_hi/100.0).toFixed(2);
+	}
+}
+function SendCmf() {
+	if(cmf.enable) {
+		cmf.tmp_lo = Math.round(100.0 * parseFloat($("cmf_tmp_lo").value));
+		cmf.tmp_hi = Math.round(100.0 * parseFloat($("cmf_tmp_hi").value));
+		cmf.hm_lo = Math.round(100.0 * parseFloat($("cmf_hm_lo").value));
+		cmf.hm_hi = Math.round(100.0 * parseFloat($("cmf_hm_hi").value));
+		addClog("Send cmd (20 + cmf data)...");
+		settingsCharacteristics.writeValue(new Uint8Array([0x20, cmf.tmp_lo&0xff, (cmf.tmp_lo>>8)&0xff, cmf.tmp_hi&0xff, (cmf.tmp_hi>>8)&0xff, cmf.hm_lo&0xff, (cmf.hm_lo>>8)&0xff, cmf.hm_hi&0xff, (cmf.hm_hi>>8)&0xff])).then(_ => {
+			addAlog('Send Cmf data ok');
+		});
+	}
+}
+function UpdTrg() {
+	if(trg.enable && $("trg_tmp_hst").value) {
+		$("trg_tmp_thr").value =  trg.tmp_thr.toFixed(2);
+		$("trg_hm_thr").value =  trg.hm_thr.toFixed(2);
+		$("trg_tmp_hst").value =  trg.tmp_hst.toFixed(2);
+		$("trg_hm_hst").value =  trg.hm_hst.toFixed(2);
+	}
+}
+
+function generateMiBindKeyByPW()
+{
+	let pw=document.getElementById("device_PW").value;
+	let output_field = document.getElementById("mi_bind_key");
+	argon2.hash({pass: pw, salt: '4hzrcv507P5uQ7VmTy4wZY5KxAJNiFY9', mem: 25600, hashLen: 16, time: 10, parallelism: 1, type: argon2.ArgonType.Argon2id})
+	.then (hash => output_field.value = hash.hashHex.toUpperCase())
+	
+}
+
+function setNewTBKey() {
+	let bk = $("mi_bind_key").value;
+	if(bk.length == 32) {
+		let bkey = hexToBytes(bk);
+		if(bkey.length == 16) {
+			let tk = $("mi_token").value;
+			if(tk.length == 24) {
+				let token = hexToBytes(tk);
+				if(token.length == 12) {
+					let blk = new Uint8Array(29);
+					blk.set(token,1);
+					blk.set(bkey,13);
+					blk[0] = 0x12;
+					addClog(blk);
+					addClog("Send cmd MtuSizeExchange (7120)");
+					settingsCharacteristics.writeValue(new Uint8Array([0x71,0x20])).then(_ => {
+						addClog("Send cmd New bindkey ("+dump(blk, blk.length)+")...");
+						settingsCharacteristics.writeValue(blk).then(_ => {
+							addAlog("Send cmd New keys ok");
+					})});
+					return;
+				}
+			}
+			addLog("Mi Token must be 12 hex digits!")
+			return;
+		}
+	}
+	addLog("Bind Key must be 16 hex digits!")
+}
+function sendTrg() {
+	if(trg.enable) {
+		trg.tmp_thr = Math.round(100.0 * parseFloat($("trg_tmp_thr").value));
+		trg.hm_thr = Math.round(100.0 * parseFloat($("trg_hm_thr").value));
+		if(cfg.ver >= 0x26) {
+			trg.tmp_hst = Math.round(100.0 * parseFloat($("trg_tmp_hst").value));
+			trg.hm_hst = Math.round(100.0 * parseFloat($("trg_hm_hst").value));
+			addClog("Send cmd (44 + trg data)...");
+			settingsCharacteristics.writeValue(new Uint8Array([0x44, trg.tmp_thr&0xff, (trg.tmp_thr>>8)&0xff,trg.hm_thr&0xff,(trg.hm_thr>>8)&0xff,trg.tmp_hst&0xff,(trg.tmp_hst>>8)&0xff,trg.hm_hst&0xff,(trg.hm_hst>>8)&0xff])).then(_ => {
+				addAlog('Send Trg data ok');});
+		} else {
+			trg.tmp_hst = Math.round(10.0 * parseFloat($("trg_tmp_hst").value));
+			trg.hm_hst = Math.round(10.0 * parseFloat($("trg_hm_hst").value));
+			addClog("Send cmd (44 + trg data)...");
+			settingsCharacteristics.writeValue(new Uint8Array([0x44, trg.tmp_thr&0xff, (trg.tmp_thr>>8)&0xff,trg.hm_thr&0xff,(trg.hm_thr>>8)&0xff,trg.tmp_hst&0xff,trg.hm_hst&0xff])).then(_ => {
+				addAlog('Send Trg data ok');});
+		}
+	}
+}
+function sendDeltaTime() {
+	let dtim = parseInt($("cfg_time_delta").value);
+	if(dtim > -32768 && dtim < 32768) {
+		addClog("Send cmd set delta (24 + delta: '+dtim+' )...");
+		settingsCharacteristics.writeValue(new Uint8Array([0x24, dtim&0xff, (dtim>>8)&0xff])).then(_ => {
+			addAlog('Send delta time ok');
+		});
+	} else {
+		addAlog("Delta time -32767 to 32767!");
+	}
+}
+function sendGetMemo(cnt) {
+	let count = cnt & 0x7fff;
+	let start = 0;
+	if(count > 19632) count = 19632;
+	if(start < 0) start = 0;
+	else if(start >= count) start = count - 1;
+	blk = new Uint8Array([0x35, count&0xff, (count>>8)&0xff,start&0xff,(start>>8)&0xff]);
+	addClog("Send cmd GetMemo: ("+dump(blk, blk.length)+")...");
+	settingsCharacteristics.writeValue(blk).then(_ => {
+		flg_memo_act = true;
+		addAlog('Send cmd GetMemo ok');
+	});
+}
+function getBKey() {
+		settingsCharacteristics.writeValue(new Uint8Array([0x18])).then(_ => {
+			addAlog('Get binkey from EEP...');
+		});
+}
+function setBKey() {
+	let bk = $("cbind_key").value;
+	if(bk.length == 32) {
+		let bkey = hexToBytes(bk);
+		if(bkey.length == 16) {
+			let blk = new Uint8Array(17);
+			blk.set(bkey,1);
+			blk[0] = 0x18;
+			addClog("Send bindkey to EEP...");
+			settingsCharacteristics.writeValue(blk).then(_ => {
+				addAlog("Send new bindkey: " + bytesToHex(blk.slice(1)));
+			});
+			return;
+		}
+	}
+	addLog("BindKey must be 16 hex digits!")
+}
+function CustomConfig() {
+  let is = '';
+  if(otafiles.loaded && fwname == '') {
+	if(otafiles.version)
+		is += ' <button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>';
+	if(otafiles.original.length > (cfg.hver & 0x07))
+		is += ' <button type="button" onclick="BackToOriginal();">'+ otafiles.original[cfg.hver & 0x07] +'</button> ';
+	$("ldfrmw").innerHTML = is;
+  }
+  if(cfg.ver >= 0x10) {
+	is = 'Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button>';
+	if((cfg.hver & 0x07)  == 0)
+		is += ' Test: [ <button type="button" onclick="lcd_clock();">Show clock on LCD</button> <button type="button" onclick="lcd_restore();">Repair LCD</button> ]';
+	is += '<br><br><input size="6" title="Big number: -99.5..1999.5" id="extbignumb" maxlength="5" value="123.4">';
+	is += ' <select id="exttmpsmb"><option value="0">&nbsp;&nbsp;</option><option value="1">°Г</option><option value="2">&nbsp;-</option><option value="3">°F</option><option value="4">&nbsp;_</option><option value="5">°C</option><option value="6" selected>&nbsp;=</option><option value="7">°E</option></select>';
+	if((cfg.hver & 0x07)  == 2) {
+		is += ' <select id="extsmiley"><option value="0" selected>&nbsp;&nbsp;&nbsp;</option><option value="5">&nbsp;---&nbsp;</option></select>';
+		is += '	<input size="5" title="Small number: -99.5..999.5" id="extsmalnumb" maxlength="5" value="56.7">';
+	}else{
+		is += ' <select id="extsmiley"><option value="0">&nbsp;&nbsp;&nbsp;</option><option value="1">&nbsp;^_^&nbsp;</option><option value="2">&nbsp;-&and;-&nbsp;</option><option value="3">&nbsp;&Delta;&#9651;&Delta;&nbsp;</option><option value="4">(&nbsp;&nbsp;&nbsp;)</option><option value="5">(^_^)</option><option value="6">(-&and;-)</option><option value="7" selected>(&Delta;&#9651;&Delta;)</option></select>';
+		is += '	<input size="5" title="Small number: -9..99" id="extsmalnumb" maxlength="2" value="99">';
+	}
+	is += '&nbsp;%<input type="checkbox" id="extpersent">';
+	is += '	<input size="5" title="Validity time = Show time in sec: 1..65535" id="extvtimed" maxlength="5" value="600">';
+	is += '&nbsp;Battery:<input type="checkbox" id="extbattery">';
+	is += '	<button type="button" onclick="sendCustomSetting(&quot;22&quot;);">Get OldData</button>';
+	is += '	<button type="button" id="extsend" onclick="sendExt();">Show</button>';
+	ext.enable = true;
+	is += '<br><br>Temperature: <select id="cfg_flg_cf"><option value="0">°C</option><option value="1">°F</option></select><br><br>';
+	if((cfg.hver & 0x07)  == 2)
+		is += 'Line: <select id="cfg_smiley"><option value="0" selected>&nbsp;&nbsp;&nbsp;</option><option value="5">&nbsp;---&nbsp;</option></select>';
+	else
+		is += 'Smiley: <select id="cfg_smiley"><option value="0">&nbsp;&nbsp;&nbsp;</option><option value="1">&nbsp;^_^&nbsp;</option><option value="2">&nbsp;-&and;-&nbsp;</option><option value="3">&nbsp;&Delta;&#9651;&Delta;&nbsp;</option><option value="4">(&nbsp;&nbsp;&nbsp;)</option><option value="5">(^_^)</option><option value="6">(-&and;-)</option><option value="7">(&Delta;&#9651;&Delta;)</option></select>';
+
+	is += ', Comfort: <input type="checkbox" id="cfg_flg_comfort">';
+	is += ', Show batt: <input type="checkbox" id="cfg_flg_show_batt">';
+	if(cfg.ver >= 0x18 && (cfg.hver & 0x10) != 0)
+		is += ', Clock: <input type="checkbox" id="cfg_flg_blinking"> <button type="button" onclick="setDevTime();">Set Time</button> <button type="button" onclick="sendCustomSetting(&quot;23&quot;);">Get Time</button>';
+	else
+		is += ', Blinking: <input type="checkbox" id="cfg_flg_blinking">';
+	is += '<br><br>Sensor in "LowPower mode": <input title="Sensor measurements in Low Power mode" type="checkbox" id="cfg_flg_lp_meas">';
+	is += ', Tx measures: <input title="When connected, start transferring measurements" type="checkbox" id="cfg_flg_tx_meas">';
+	is += ' <button type="button" title="Start transferring measurements. Only in the current connection." onclick="sendCustomSetting(&quot;33ff&quot;);">Start Tx Measure</button>';
+	is += ' <button type="button" title="Stop transferring measurements. Only in the current connection." onclick="sendCustomSetting(&quot;3300&quot;);">Stop Tx Measure</button><br><br>';
+	is += 'Temperature offset: <input size="5" title="-12.7..12.7°, default 0" id="cfg_tmp_off" maxlength="5" value="0"> °';
+	is += ', Humidity offset: <input size="5" title="-12.7..12.7%, default 0" id="cfg_hm_off" maxlength="5" value="0"> %<br><br>';
+	is += 'Advertising type: <select id="cfg_flg_adv_type"><option value="0">Atc1441</option><option value="1">Custom</option><option value="2">Mi</option><option value="3" selected>All</option></select>';
+	if(cfg.ver >= 0x30)
+		is += ', AdFlags: <input title="Toggle support for third-party software" type="checkbox" id="adv_flags">';
+	if(cfg.ver >= 0x22)
+		is += ', Encrypted beacon: <input title="Bindkey encrypted beacon" type="checkbox" id="mi_beacon">';
+	is += '<br><br>Advertising interval: <input size="5" title="62.5 ms .. 10 000 ms, step: 62.5 ms, default 2500 ms" id="cfg_adv_int" maxlength="6" value="40"> ms, step: 62.5 ms<br><br>';
+	is += 'Measure interval: <input size="5" title="1..25 (62.5 ms .. 250 sec), default 4 (10 sec)" id="cfg_meas_int" maxlength="2" value="4"> x(Advertising interval)<br><br>';
+	is += 'Connect latency: <input size="5" title="0..4000 ms, default 2500 ms" id="cfg_con_lat" maxlength="4" value="2500"> ms, step 20 ms<br><br>';
+	is += 'RF TX Power: <select id="cfg_rf_tx"><option value="191" selected>VANT+3.01 dbm</option><option value="189">VANT+2.81 dbm</option><option value="187">VANT+2.61 dbm</option><option value="185">VANT+2.39 dbm</option><option value="182">VANT+1.99 dbm</option><option value="180">VANT+1.73 dbm</option><option value="178">VANT+1.45 dbm</option><option value="176">VANT+1.17 dbm</option><option value="174">VANT+0.90 dbm</option><option value="172">VANT+0.58 dbm</option><option value="169">VANT+0.04 dbm</option><option value="168">VANT-0.14 dbm</option><option value="164">VANT-0.97 dbm</option><option value="162">VANT-1.42 dbm</option><option value="160">VANT-1.89 dbm</option><option value="158">VANT-2.48 dbm</option><option value="156">VANT-3.03 dbm</option><option value="154">VANT-3.61 dbm</option><option value="152">VANT-4.26 dbm</option><option value="150">VANT-5.03 dbm</option><option value="148">VANT-5.81 dbm</option><option value="146">VANT-6.67 dbm</option><option value="144">VANT-7.65 dbm</option><option value="142">VANT-8.65 dbm</option><option value="140">VANT-9.89 dbm</option><option value="138">VANT-11.4 dbm</option><option value="136">VANT-13.29 dbm</option><option value="134">VANT-15.88 dbm</option><option value="132">VANT-19.27 dbm</option><option value="130">VANT-25.18 dbm</option></select><br><br>';
+	is += 'Minimum LCD refresh rate: <input size="5" title="0.5..12.75 sec, step: 0.05 s, default 2.45 s" id="cfg_lcd_tint" maxlength="6" value="2.45"> s, step: 0.05 s<br><br>';
+	if(cfg.ver == 0x19) {
+		is += 'Recording measurements to flash memory <input type="checkbox" id="cfg_flg2_memo" title="Recording measurements to flash memory (cyclic buffer for 19632 measurements)">';
+		is += ' <button type="button" onclick="sendGetMemo(50);">Get the last 50 records</button> <a href="GraphMemo.html">GraphMemo.html</a><br><br>';
+	}
+	if(cfg.ver >= 0x20) {
+		is += 'Recording averaging measurements to flash memory <input size="5" title="0..255, =0 - off, default 60. Set time/date!" id="cfg_av_meas_mem" maxlength="3" value="60"> x(measure interval)<br>';
+		if(cfg.ver >= 0x23) 
+			is += '<button type="button" onclick="sendCustomSetting(&quot;361234&quot;);">!Delete all records!</button> '
+		is += '<a href="GraphMemo.html">GraphMemo.html</a> <button type="button" onclick="setDevTime();">Set Time</button> <button type="button" onclick="sendGetMemo(50);">Get the last 50 records</button><br><br>';
+	}
+	is += '<button type="button" onclick="SendCustomConfig()">Send Config</button>';
+	is += ' <button type="button" onclick="sendCustomSetting(&quot;56&quot;);">Set default</button>';
+	is += ' <button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>';
+	if(cfg.ver >= 0x24) {
+		is += '<hr><button type="button" title="Get time clock delta" onclick="sendCustomSetting(&quot;24&quot;);">Get delta time</button>';
+		is += ' Adjust time clock delta: <input size="5" title="-32767..32767, in 1/16 us for 1 sec, default 0" id="cfg_time_delta" maxlength="6" value="0">';
+		is += ' <button type="button" onclick="sendDeltaTime();">Set delta time</button><br>';
+	}
+	if(cfg.ver >= 0x11) {
+		is += '<hr><input size="6" maxlength="6" type="text" title="000000..999999, 6 decimal digits, 000000 - PinCode Disable. Warning: If the PinCode is forgotten - only a hardware flasher!" id="pincode" value="000000"> <button title="Warning: If the PinCode is forgotten - only a hardware flasher!" type="button" onclick="sendPinCode();">!Set PinCode!</button><br>';
+		pincode.enable = true;
+		if(cfg.ver >= 0x14) {
+			is += '<br><button type="button" onclick="sendCustomSetting(&quot;01&quot;);">Get device Name</button> <input size="10" maxlength="10" type="text" title="Device Name: 1..10 chars" id="dev_name" value=""> <button type="button" title="Set New Name" onclick="sendDevName();">Set New Name</button> <button title="Clean Name: ATC_xxxx" type="button" onclick="CleanDevName();">Set default Name</button><br>';
+			dnm.enable = true;
+		}
+	}
+	is += '<hr>Management GPIO_TRG (mark "reset"):<br>';
+	if(cfg.ver >= 0x26) {
+		is += 'Temperature hysteresis: <input size="8" title="Step 0.01°, default -0.55°, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="trg_tmp_hst" maxlength="7" value="-0.55"> °';
+		is += ', Humidity hysteresis: <input size="8" title="Step 0.01%, default 0, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="trg_hm_hst" maxlength="7" value="0.0"> %<br>';
+	} else {
+		is += 'Temperature hysteresis: <input size="8" title="-12.7..12.7°, default -0.1, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="trg_tmp_hst" maxlength="5" value="-0.1"> °';
+		is += ', Humidity hysteresis: <input size="8" title="-12.7..12.7%, default 0, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="trg_hm_hst" maxlength="5" value="0.0"> %<br>';
+	}
+	is += 'Temperature threshold: <input size="8" title="-40.00..80.00°C, default 21.00°C" id="trg_tmp_thr" maxlength="6" value="21.00"> °';
+	is += ', Humidity threshold: <input size="8" title="0..99.00%, default 50.00%" id="trg_hm_thr" maxlength="6" value="50.00"> %<br>';
+	is += ' <button type="button" title="Get/read current setings" onclick="sendCustomSetting(&quot;44&quot;);">Get TRG</button>';
+	is += ' <button type="button" title="Set/save current setings" onclick="sendTrg();">Set TRG</button>';
+	is += ' <button type="button" title="GPIO_PA5 PullUp 10 kOm. Work only TRG off!" onclick="sendCustomSetting(&quot;4501&quot;);">Set pin to "1"</button>';
+	is += ' <button type="button" title="GPIO_PA5 PullDown 100 kOm. Work only TRG off!" onclick="sendCustomSetting(&quot;4500&quot;);">Set pin to "0"</button><br><hr>';
+	if(cfg.ver >= 0x13) {
+		is += '<button type="button" title="Get current comfort parameters. The parameters are processed if the configuration is set to &quot;Comfort: On&quot;." onclick="sendCustomSetting(&quot;20&quot;);">Get current comfort parameters</button><br>';
+		is += 'Temperature Lo:<input size="8" title="-40.00..125.00°C, default 21.00°C" id="cmf_tmp_lo" maxlength="6" value="21.00">, ';
+		is += 'Hi: <input size="8" title="-40.00..125.00°C, default 26.00°C" id="cmf_tmp_hi" maxlength="6" value="26.00"> °C<br>';
+		is += 'Humidity Lo:<input size="8" title="0.0..99.99%, default 30.00" id="cmf_hm_lo" maxlength="5" value="30.00">, ';
+		is += 'Hi:<input size="8" title="0.0..99.99%, default 60.00%" id="cmf_hm_hi" maxlength="5" value="60.00"> %<br>';
+		is += '<button type="button" title="Set comfort parameters" onclick="SendCmf();">Set comfort parameters</button><br><hr>';
+		cmf.enable = true;
+	}
+	trg.enable = true;
+	is += '<button type="button" onclick="sendCustomSetting(&quot;15&quot;);">Show all mi keys</button><br>';
+	if(mikeys.mac) {
+		is +='Device MAC [+ 2 Rand]:<br><input size="40" maxlength="16" type="text" id="mi_mac" title="Must be 6 hex MAC digits [+ 2 hex RandMAC digits]!" value="'+hex(mikeys.mac[5],2)+hex(mikeys.mac[4],2)+hex(mikeys.mac[3],2)+hex(mikeys.mac[2],2)+hex(mikeys.mac[1],2)+hex(mikeys.mac[0],2)+hex(mikeys.mac[7],2)+hex(mikeys.mac[6],2)+'">';
+		// ', C0'+hex(mikeys.mac[7],2)+hex(mikeys.mac[6],2)+hex(mikeys.mac[2],2)+hex(mikeys.mac[1],2)+hex(mikeys.mac[0],2)'
+		if(cfg.ver >= 0x14)
+			is +=' <button type="button" title="Set Custom MAC. Warning: If the pin code is set, restart all Soft & Hard for the next connection!" onclick="sendMAC();">!Set MAC!</button> <button type="button" title="Clean MAC - Set Standart Random MAC: A4C138******. Warning: If the pin code is set, restart all Soft & Hard for the next connection!" onclick="CleanMAC();">!Clean MAC!</button>';
+		is +='<br>';
+	}
+	if(mikeys.id) {
+		let str = new TextDecoder("utf-8").decode(mikeys.id.slice(1));
+		is +='Device known id:<br><input size="40" maxlength="19" type="text" id="known_id" value="'+str+'"><br>';
+	}
+	if(mikeys.bindkey && mikeys.token) {
+		is +='Mi Token:<br><input size="40" maxlength="24" type="text" id="mi_token" value="'+dump(mikeys.token,12)+'"><br>';
+		is +='Mi Bind Key:<br><input size="40" maxlength="32" type="text" id="mi_bind_key" value="'+dump(mikeys.bindkey,16)+'">';
+		is +=' <button type="button" title="Set new Mi Token and Bind keys" onclick="setNewTBKey();">Set new Token & Bind keys</button><br>';
+		is +='Generate Mi Bind Key by password (you have to click "Set new Token & Bind Keys" to send it do device):<br><input size="40" maxlength="32" type="text" id="device_PW"" value="">' ;
+		is +=' <button type="button" title="Generate Mi bind key by Password" onclick="generateMiBindKeyByPW();">Generate Mi bind key by Password</button><br>';
+		if(cfg.ver >= 0x21)
+			is +=' <button type="button" title="Erase all MiKeys" onclick="sendCustomSetting(&quot;17&quot;);">!Erase all Mi Keys!</button>';
+		if(mikeys.restore) {
+			is += '<br><button type="button" onclick="sendCustomSetting(&quot;16&quot;);">Swap previous token + bindkey</button>';
+		}
+		is += '<br>';
+	}
+	if(cfg.ver >= 0x28) {
+		is +='EEP BindKey:<br><input size="40" maxlength="32" title="Bind Key must be 16 hex digits" type="text" id="cbind_key" value="?">';
+		is +=' <button type="button" title="Get EEP BindKey" onclick="getBKey();">Get EEP BindKey</button>';
+		is +=' <button type="button" title="Set new EEP BindKey" onclick="setBKey();">Set EEP BindKey</button><br>';
+	}
+	$("custcfg").innerHTML = is;
+	$("cfg_flg_adv_type").value = cfg.flg&3;
+	$("cfg_flg_comfort").checked = (cfg.flg&4) != 0;
+	$("cfg_flg_blinking").checked = (cfg.flg&8) != 0;
+	$("cfg_flg_cf").value = ((cfg.flg&16) != 0 ? 1 : 0);
+	$("cfg_flg_show_batt").checked = (cfg.flg&32) != 0;
+	$("cfg_flg_tx_meas").checked = (cfg.flg&64) != 0;
+	$("cfg_flg_lp_meas").checked = (cfg.flg&128) != 0;
+	$("cfg_smiley").value = cfg.flg2&7;
+	if(cfg.ver == 0x19)
+		$("cfg_flg2_memo").checked = (cfg.flg2&8) != 0;
+	if(cfg.ver >= 0x22)
+		$("mi_beacon").checked = (cfg.flg2&0x08) != 0;
+	if(cfg.ver >= 0x30)
+		$("adv_flags").checked = (cfg.flg2&0x10) != 0;
+	if(cfg.ver >= 0x20)
+		$("cfg_av_meas_mem").value = String(cfg.av_meas_mem);
+	$("cfg_tmp_off").value = String((cfg.temp_offset / 10.0).toFixed(1));
+	$("cfg_hm_off").value = String((cfg.humi_offset / 10.0).toFixed(1));
+	$("cfg_adv_int").value = String((cfg.advertising_interval * 62.5).toFixed(1));
+	$("cfg_meas_int").value = String(cfg.measure_interval);
+	$("cfg_rf_tx").value = String(cfg.rf_tx_power);
+	$("cfg_con_lat").value = String((cfg.connect_latency + 1) * 20);
+	$("cfg_lcd_tint").value = String((cfg.lcd_tint * 0.05).toFixed(2));
+	cfg.enable = true;
+  } else
+	$("custcfg").innerHTML = '<br><br>Unsupported device software version! Custom ATC version >= 1.0!<br><br>';
+}
+function hex(number, len) {
+	var str = (number.toString(16)).toUpperCase();
+	while (str.length < len) str = '0' + str;
+	return str;
+}
+function SendCustomConfig() {
+	cfg.flg = ($("cfg_flg_adv_type").value & 3)+
+	(($("cfg_flg_comfort").checked) ? 4 : 0) +
+	(($("cfg_flg_blinking").checked) ? 8 : 0) +
+	(($("cfg_flg_cf").value != 0) ? 16 : 0) +
+	(($("cfg_flg_show_batt").checked) ? 32 : 0) +
+	(($("cfg_flg_tx_meas").checked) ? 64 : 0) +
+	(($("cfg_flg_lp_meas").checked) ? 128 : 0);
+	cfg.flg2 = (parseInt($("cfg_smiley").value) & 7);
+	if(cfg.ver == 0x19)
+		cfg.flg2 += (($("cfg_flg2_memo").checked) ? 8 : 0);
+	if(cfg.ver >= 0x22)
+		cfg.flg2 += (($("mi_beacon").checked) ? 0x08 : 0);
+	if(cfg.ver >= 0x30)
+		cfg.flg2 += (($("adv_flags").checked) ? 0x10 : 0);
+	if(cfg.ver >= 0x20)
+		cfg.av_meas_mem = parseInt($("cfg_av_meas_mem").value);
+	cfg.temp_offset = Math.round(10.0 * parseFloat($("cfg_tmp_off").value));
+	if(cfg.temp_offset < -127) cfg.temp_offset = -127;
+	else if(cfg.temp_offset > 127) cfg.temp_offset = 127;
+	cfg.humi_offset = Math.round(10.0 * parseFloat($("cfg_hm_off").value));
+	if(cfg.humi_offset < -127) cfg.humi_offset = -127;
+	else if(cfg.humi_offset > 127) cfg.humi_offset = 127;
+	cfg.advertising_interval = Math.round(parseFloat($("cfg_adv_int").value) / 62.5)
+	if(cfg.advertising_interval < 1) cfg.advertising_interval = 1;
+	else if(cfg.advertising_interval > 160) cfg.advertising_interval = 160;
+	cfg.measure_interval = parseInt($("cfg_meas_int").value);
+	if(cfg.measure_interval < 1) cfg.measure_interval = 1;
+	else if(cfg.measure_interval > 25) cfg.measure_interval = 25;
+	cfg.rf_tx_power = parseInt($("cfg_rf_tx").value);
+	if(cfg.rf_tx_power < 130) cfg.rf_tx_power = 130;
+	else if(cfg.rf_tx_power > 191) cfg.rf_tx_power = 191;
+	cfg.connect_latency = Math.round((parseFloat($("cfg_con_lat").value) / 20.0) - 1);
+	if(cfg.connect_latency < 0) cfg.connect_latency = 0;
+	else if(cfg.connect_latency > 200) cfg.connect_latency = 200;
+	cfg.lcd_tint = Math.round(parseFloat($("cfg_lcd_tint").value) / 0.05);
+	if(cfg.lcd_tint < 10) cfg.lcd_tint = 10;
+	else if(cfg.lcd_tint > 255) cfg.lcd_tint = 255;
+	if(cfg.ver < 0x20) {
+		let s = 'New custom config: ['+cfg.flg+', '+cfg.flg2+', '+cfg.temp_offset+', '+cfg.humi_offset+', '+cfg.advertising_interval+', '+cfg.measure_interval+', '+cfg.rf_tx_power+', '+cfg.connect_latency+', '+cfg.lcd_tint+']';
+		addAlog(s);
+		sendCustomSetting('55'+hex(cfg.flg,2)+hex(cfg.flg2,2)+hex(cfg.temp_offset&0xff,2)+hex(cfg.humi_offset&0xff,2)+hex(cfg.advertising_interval,2)+hex(cfg.measure_interval,2)+hex(cfg.rf_tx_power,2)+hex(cfg.connect_latency,2)+hex(cfg.lcd_tint,2));
+	} else {
+		let s = 'New custom config: ['+cfg.flg+', '+cfg.flg2+', '+cfg.temp_offset+', '+cfg.humi_offset+', '+cfg.advertising_interval+', '+cfg.measure_interval+', '+cfg.rf_tx_power+', '+cfg.connect_latency+', '+cfg.lcd_tint+', '+cfg.hver+', '+cfg.av_meas_mem+']';
+		addAlog(s);
+		sendCustomSetting('55'+hex(cfg.flg,2)+hex(cfg.flg2,2)+hex(cfg.temp_offset&0xff,2)+hex(cfg.humi_offset&0xff,2)+hex(cfg.advertising_interval,2)+hex(cfg.measure_interval,2)+hex(cfg.rf_tx_power,2)+hex(cfg.connect_latency,2)+hex(cfg.lcd_tint,2)+hex(cfg.hver,2)+hex(cfg.av_meas_mem,2));
+	}
+	$("custcfg").innerHTML = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send settings to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
+}
+
+</script>
+<big><big>Telink Flasher for Mi Thermostat</big></big> <a href="https://github.com/atc1441/ATC_MiThermometer">©</a> <a href="https://github.com/pvvx/ATC_MiThermometer">&#9432;</a><br>
+<!-- Copyright: Aaron Christophel / Atc1441  <a href="https://atcnetz.de">https://ATCnetz.de</a><br> -->
+  <button type="button" onclick="connect();">Connect</button> Get Advertising MAC:<input type="checkbox" title="Web Experimental Features!" id="advmac">
+  <button type="button" onclick="reConnect();">Reconnect</button><br>
+  <label for="hideUnknown">Hide unknown</label>
+  <input type="checkbox" id="hideUnknown" checked><br>
+  <label for="namePrefix">BLE device name prefix filter(s)</label>
+  <input type="text" id="namePrefix" value="" placeholder="LYWSD03,ATC"><br>
+  <div id="ldfile" hidden="true">Select Firmware: <input type="file" accept=".bin" id="file"/></div>
+  <div id="ldfrmw"></div>
+ <div id="percent">Status: waiting for you to connect a device</div><hr>
+ <div id="tempHumiData">Temp/Humi: waiting for data after connecting</div><hr>
+ <div id="MAC"></div>
+  <div id="custcfg"></div><hr>
+  <button type="button" onclick="clearLog();">Clear Log</button>
+ <div id="log"></div>
+</body></html>
