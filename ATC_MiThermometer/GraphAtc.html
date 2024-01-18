@@ -299,9 +299,9 @@ function download(data, filename, type) {
 $("butSave").onclick =  function() {
     download(convertArrayOfObjectsToCSV({data: datau}), 'data.csv', 'text/csv;charset=utf-8');
 }
-if(window.innerHeight > 320) $('div_v').style.height = (window.innerHeight-80) + 'px';
+if(window.innerHeight > 400) $('div_v').style.height = (window.innerHeight-220) + 'px';
 window.onresize = function(){
-	if(window.innerHeight > 320) $('div_v').style.height = (window.innerHeight-80) + 'px';
+	if(window.innerHeight > 400) $('div_v').style.height = (window.innerHeight-220) + 'px';
 //	$('div_v').style.width = (window.innerWidth-50) + 'px';
 }
 var pack_samples = 8;

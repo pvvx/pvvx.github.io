@@ -299,9 +299,9 @@ function download(data, filename, type) {
 $("butSave").onclick =  function() {
     download(convertArrayOfObjectsToCSV({data: datau}), 'data.csv', 'text/csv;charset=utf-8');
 }
-if(window.innerHeight > 320) $('div_v').style.height = (window.innerHeight-80) + 'px';
+if(window.innerHeight > 400) $('div_v').style.height = (window.innerHeight-220) + 'px';
 window.onresize = function(){
-	if(window.innerHeight > 320) $('div_v').style.height = (window.innerHeight-80) + 'px';
+	if(window.innerHeight > 400) $('div_v').style.height = (window.innerHeight-220) + 'px';
 //	$('div_v').style.width = (window.innerWidth-50) + 'px';
 }
 var pack_samples = 8;
@@ -329,6 +329,7 @@ function ResponsePkt(head, value) {
 // Кэш объекта выбранного устройства
 let deviceCache = null;
 // Кэш объекта характеристики
+var primservice;
 var characteristicTemp = null;
 var characteristicHumi = null;
 // Запустить выбор Bluetooth устройства и подключиться к выбранному
@@ -378,40 +379,39 @@ function connectDeviceAndCacheCharacteristic(device) {
   return device.gatt.connect().
 	then(server => {
 		log('GATT server connected, getting service...');
-		return server.getPrimaryService(0x181A);
-	}).
-	then(service => {
-		log('Service found, getting Humidity characteristic...');
-		service.getCharacteristic(0x2A6F).
-		  then(characteristic => {
-			log('Characteristic Humi found');
-			characteristicHumi = characteristic;
-			return characteristicHumi.startNotifications().
-			then(() => {
-				characteristicHumi.addEventListener('characteristicvaluechanged', event => {
-					var value = event.target.value;
-					humi = value.getInt16(0, true) / 100.0;
-					log('Humi: '+humi+ '%');
-					ShowGrf();
-				});
-	  	  	});
-  		});
-		log('Getting Temp characteristic...');
-		return service.getCharacteristic(0x2A6E);
-	}).
-	then(characteristic => {
-		log('Characteristic Temp found');
-		characteristicTemp = characteristic;
 		devcnn = 1;
 		ShowConnect();
-		return characteristicTemp.startNotifications().
-		then(() => {
-			characteristicTemp.addEventListener('characteristicvaluechanged', event => {
-				var value = event.target.value;
-				temp = value.getInt16(0, true) / 100.0;
-				log('Temp: '+temp+ '°C');
-			});
-	  	});
+		return server.getPrimaryService(0x181A);
+	}).then(service => {
+		primservice = service;
+		log('Service found, getting Humidity characteristic...');
+		return primservice.getCharacteristic(0x2A6F);
+	}).then(characteristic => {
+		log('Characteristic Humi found');
+		characteristicHumi = characteristic;
+		return characteristicHumi.addEventListener('characteristicvaluechanged', event => {
+			var value = event.target.value;
+			humi = value.getInt16(0, true) / 100.0;
+			log('Humi: '+humi+ '%');})
+	}).then(_ => {
+		return characteristicHumi.readValue();
+	}).then(_ => {
+		return characteristicHumi.startNotifications();
+	}).then(_ => {
+		log('Getting Temp characteristic...');
+		return primservice.getCharacteristic(0x2A6E);
+	}).then(characteristic => {
+		log('Characteristic Temp found');
+		characteristicTemp = characteristic;
+		characteristicTemp.addEventListener('characteristicvaluechanged', event => {
+			var value = event.target.value;
+			temp = value.getInt16(0, true) / 100.0;
+			log('Temp: '+temp+ '°C');
+			ShowGrf();});
+	}).then(_ => {
+		return characteristicTemp.readValue();
+	}).then(_ => {
+		return characteristicTemp.startNotifications();
 	});
 }
 // Отключиться от подключенного устройства
