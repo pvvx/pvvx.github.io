@@ -52,6 +52,8 @@ Web files for projects:
 
 [BTH01](https://pvvx.github.io/BTH01)
 
+[DS01 zbeacon](https://pvvx.github.io/DS01_zbeacon)
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
