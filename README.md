@@ -44,7 +44,9 @@ Web files for projects:
 
 [TS0202_TZ3000](https://pvvx.github.io/TS0202_TZ3000)
 
-[TS0601_TZE200](https://pvvx.github.io/TS0601_TZE200)
+[TS0601_TZE200 ZTH01](https://pvvx.github.io/TS0601_TZE200_zth01)
+
+[TS0601_TZE200 ZTH02](https://pvvx.github.io/TS0601_TZE200_zth02)
 
 [TS0601_TZE204](https://pvvx.github.io/TS0601_TZE204)
 
