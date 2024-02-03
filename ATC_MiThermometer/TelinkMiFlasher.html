@@ -2115,7 +2115,7 @@ function sendCustomSetting(data){
 	if((hexToBytes(data))[0] == 0x35)
 		flg_memo_act = true;
 	mainCharSend(data, settingsCharacteristics).then(function() {
-		addLog("Settings " + data + " was send successful");
+		addLog("Settings " + data + " was sent successfully");
 	}).catch(function(err) {
 		addLog("Error on sending setting " + data);
 	});
