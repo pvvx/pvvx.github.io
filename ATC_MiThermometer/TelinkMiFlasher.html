@@ -126,8 +126,8 @@ function onDisconnected() {
 
 function connect() {
 	var deviceOptions = {
-		optionalServices: ['00001f10-0000-1000-8000-00805f9b34fb','00010203-0405-0607-0809-0a0b0c0d1912', 'ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6', '22210000-554a-4546-5542-46534450464d', 0x180a, 0x181c, 0x181e, 0xfe95, 0x1f10, 0x1f11, 0x181a, 0xfff9, 0xfdcd, 0xffe0],
-		services: [0x180a, 0x181c, 0x181e, 0xfe95, 0x1f10, 0x1f11, 0x181a, 0xfff9, 0xfdcd, 0xffe0],
+		optionalServices: ['00001f10-0000-1000-8000-00805f9b34fb','00010203-0405-0607-0809-0a0b0c0d1912', 'ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6', '22210000-554a-4546-5542-46534450464d', 0x180a, 0x181c, 0x181e, 0xfe95, 0x1f10, 0x1f11, 0x181a, 0xfff9, 0xfdcd, 0xffe0, 0xfcd2],
+		services: [0x180a, 0x181c, 0x181e, 0xfe95, 0x1f10, 0x1f11, 0x181a, 0xfff9, 0xfcd2, 0xfdcd, 0xffe0],
 		acceptAllDevices: true };
 	const namePrefix = $('namePrefix').value;
 	if (namePrefix) {
@@ -1611,6 +1611,7 @@ function doConnect() {
 		devTest = false;
 		devInfEnabled = false;
 		EnabledQinping = false;
+		phy62x2bthome = false;
 		for (var i = 0; i < services.length; i++) {
 			addClog("Services: " + services[i].uuid);
 			if (services[i].uuid == "00010203-0405-0607-0809-0a0b0c0d1912") otaEnabled = true;
@@ -1619,12 +1620,16 @@ function doConnect() {
 			else if (services[i].uuid == "ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6") miEnabled = true;
 			else if (services[i].uuid == "0000181a-0000-1000-8000-00805f9b34fb") devIdEnabled = true;
 			else if (services[i].uuid == "0000ffe0-0000-1000-8000-00805f9b34fb") devTest = true;
+			else if (services[i].uuid == "0000fcd2-0000-1000-8000-00805f9b34fb") phy62x2bthome = true;
 			else if (services[i].uuid == "0000180a-0000-1000-8000-00805f9b34fb") devInfEnabled = true; // Device Information Service
 		}
 		if(otaEnabled)
 			return gattServer.getPrimaryService('00010203-0405-0607-0809-0a0b0c0d1912');
 		else {
 			addAlog("Not found Telink OTA service!");
+			if(phy62x2bthome) {
+				addAlog('<a href="https://pvvx.github.io/THB2/web/PHY62x2BTHome.html" target="_blank">PHY62x2BTHome</a>');
+			}
 		}
 		connectTrys = 1000;
 		return resolve(null);
