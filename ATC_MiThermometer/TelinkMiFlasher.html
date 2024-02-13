@@ -1284,8 +1284,8 @@ function menuUpgrade() {
 					if(fn != "" && fn != "?" && fn != "/")
 						is +=' <button type="button" id="btorupg" onclick="BackToOriginal();">' + fn +'</button><br>';
 				}
-				//if(hwver_id == 0 || hwver_id == 3 || hwver_id == 4 || hwver_id == 5 || hwver_id ==10)
-				//	is +=' <button type="button" id="btzdevbis" onclick="FirmwareZdevbis();">Zigbee devbis Firmware: 1.1.0.0</button><br>';
+				if(hwver_id == 0 || hwver_id == 3 || hwver_id == 4 || hwver_id == 5 || hwver_id ==10)
+					is +=' <button type="button" id="btzdevbis" onclick="FirmwareZdevbis();">Zigbee devbis Firmware: 1.1.0.0</button><br>';
 			}
 		}
 	}
@@ -1987,7 +1987,7 @@ function getOtaJson(d, name) {
 function FirmwareZdevbis() {
 		if(!confirm("Attention: Zigbee firmware converts the thermometer to the Zigbee protocol! All data for MiHome and measurement memory will be erased! The devbis version consumes twice as much as ZigbeeTlc!"))
 		   return;
-		let fn = "https://github.com/devbis/z03mmc/releases/download/1.1.0/1141-0203-11003001-z03mmc.zigbee";
+		let fn = "https://raw.githubusercontent.com/pvvx/ZigbeeTLc/master/bin/devbis/db15-0203-11003001-z03mmc.zigbee";
 		addAlog("Load firmware file '"+fn+"'...");
 		ajax_file(fn, getFirmwareArray, "");
 }
