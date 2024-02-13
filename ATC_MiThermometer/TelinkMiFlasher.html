@@ -776,6 +776,7 @@ function CustomBlkParse(value) {
 			if((cfg.lcd_tint & 0x80) != 0) bigOtaEnabled = true;
 			if(cfg.ext_hw_id == 1) s +='TS0201';
 			else if(cfg.ext_hw_id == 2) s +='TNKS1';
+			else if(cfg.ext_hw_id == 6) s +='TH03Z';
 			else s += 'Unknown or DIY';
 		}
 		else s += 'Unknown or DIY';
@@ -786,6 +787,10 @@ function CustomBlkParse(value) {
 		if(hwver_id != 15 && cfg.ver > 0x33) {
 			if((cfg.hver & 0x80) == 0) s += ', Sensor: SHT4x';
 			else s += ', Sensor: SHTC3 (SHTV3)';
+		} else {
+			if(cfg.ext_hw_id == 1) s +=', Sensor: CHT8305';
+			else if(cfg.ext_hw_id == 2) s +=', Sensor: AHT25';
+			else if(cfg.ext_hw_id == 6) s +=', Sensor: GXHT30';
 		}
 		addAlog(s);
 		addAlog('Custom config HEX string: 55' + bytesToHex(value.buffer.slice(2)));
