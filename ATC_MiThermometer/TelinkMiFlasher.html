@@ -1101,8 +1101,8 @@ function decimalToHex00(d) {
     return hex;
 }
 function mapper_toggle() {
-  var mapper_content_div = document.getElementById("mapper_content");
-  var mapper_button = document.getElementById("mapper_toggle_button");
+  var mapper_content_div = $("mapper_content");
+  var mapper_button = $("mapper_toggle_button");
   if (mapper_content_div.style.display === "none") {
     mapper_content_div.style.display = "block";
 	mapper_button.innerText  = "Hide LCD Segment Mapper";
@@ -1119,59 +1119,59 @@ function mapper_send() {
 	var byte4 = 0;
 	var byte5 = 0;
 		
-	if(document.getElementById("check00").checked)byte0 += 1;
-	if(document.getElementById("check01").checked)byte0 += 2;
-	if(document.getElementById("check02").checked)byte0 += 4;
-	if(document.getElementById("check03").checked)byte0 += 8;
-	if(document.getElementById("check04").checked)byte0 += 16;
-	if(document.getElementById("check05").checked)byte0 += 32;
-	if(document.getElementById("check06").checked)byte0 += 64;
-	if(document.getElementById("check07").checked)byte0 += 128;
+	if($("check00").checked)byte0 += 1;
+	if($("check01").checked)byte0 += 2;
+	if($("check02").checked)byte0 += 4;
+	if($("check03").checked)byte0 += 8;
+	if($("check04").checked)byte0 += 16;
+	if($("check05").checked)byte0 += 32;
+	if($("check06").checked)byte0 += 64;
+	if($("check07").checked)byte0 += 128;
 		
-	if(document.getElementById("check10").checked)byte1 += 1;
-	if(document.getElementById("check11").checked)byte1 += 2;
-	if(document.getElementById("check12").checked)byte1 += 4;
-	if(document.getElementById("check13").checked)byte1 += 8;
-	if(document.getElementById("check14").checked)byte1 += 16;
-	if(document.getElementById("check15").checked)byte1 += 32;
-	if(document.getElementById("check16").checked)byte1 += 64;
-	if(document.getElementById("check17").checked)byte1 += 128;
+	if($("check10").checked)byte1 += 1;
+	if($("check11").checked)byte1 += 2;
+	if($("check12").checked)byte1 += 4;
+	if($("check13").checked)byte1 += 8;
+	if($("check14").checked)byte1 += 16;
+	if($("check15").checked)byte1 += 32;
+	if($("check16").checked)byte1 += 64;
+	if($("check17").checked)byte1 += 128;
 		
-	if(document.getElementById("check20").checked)byte2 += 1;
-	if(document.getElementById("check21").checked)byte2 += 2;
-	if(document.getElementById("check22").checked)byte2 += 4;
-	if(document.getElementById("check23").checked)byte2 += 8;
-	if(document.getElementById("check24").checked)byte2 += 16;
-	if(document.getElementById("check25").checked)byte2 += 32;
-	if(document.getElementById("check26").checked)byte2 += 64;
-	if(document.getElementById("check27").checked)byte2 += 128;
+	if($("check20").checked)byte2 += 1;
+	if($("check21").checked)byte2 += 2;
+	if($("check22").checked)byte2 += 4;
+	if($("check23").checked)byte2 += 8;
+	if($("check24").checked)byte2 += 16;
+	if($("check25").checked)byte2 += 32;
+	if($("check26").checked)byte2 += 64;
+	if($("check27").checked)byte2 += 128;
 		
-	if(document.getElementById("check30").checked)byte3 += 1;
-	if(document.getElementById("check31").checked)byte3 += 2;
-	if(document.getElementById("check32").checked)byte3 += 4;
-	if(document.getElementById("check33").checked)byte3 += 8;
-	if(document.getElementById("check34").checked)byte3 += 16;
-	if(document.getElementById("check35").checked)byte3 += 32;
-	if(document.getElementById("check36").checked)byte3 += 64;
-	if(document.getElementById("check37").checked)byte3 += 128;
+	if($("check30").checked)byte3 += 1;
+	if($("check31").checked)byte3 += 2;
+	if($("check32").checked)byte3 += 4;
+	if($("check33").checked)byte3 += 8;
+	if($("check34").checked)byte3 += 16;
+	if($("check35").checked)byte3 += 32;
+	if($("check36").checked)byte3 += 64;
+	if($("check37").checked)byte3 += 128;
 		
-	if(document.getElementById("check40").checked)byte4 += 1;
-	if(document.getElementById("check41").checked)byte4 += 2;
-	if(document.getElementById("check42").checked)byte4 += 4;
-	if(document.getElementById("check43").checked)byte4 += 8;
-	if(document.getElementById("check44").checked)byte4 += 16;
-	if(document.getElementById("check45").checked)byte4 += 32;
-	if(document.getElementById("check46").checked)byte4 += 64;
-	if(document.getElementById("check47").checked)byte4 += 128;
+	if($("check40").checked)byte4 += 1;
+	if($("check41").checked)byte4 += 2;
+	if($("check42").checked)byte4 += 4;
+	if($("check43").checked)byte4 += 8;
+	if($("check44").checked)byte4 += 16;
+	if($("check45").checked)byte4 += 32;
+	if($("check46").checked)byte4 += 64;
+	if($("check47").checked)byte4 += 128;
 		
-	if(document.getElementById("check50").checked)byte5 += 1;
-	if(document.getElementById("check51").checked)byte5 += 2;
-	if(document.getElementById("check52").checked)byte5 += 4;
-	if(document.getElementById("check53").checked)byte5 += 8;
-	if(document.getElementById("check54").checked)byte5 += 16;
-	if(document.getElementById("check55").checked)byte5 += 32;
-	if(document.getElementById("check56").checked)byte5 += 64;
-	if(document.getElementById("check57").checked)byte5 += 128;
+	if($("check50").checked)byte5 += 1;
+	if($("check51").checked)byte5 += 2;
+	if($("check52").checked)byte5 += 4;
+	if($("check53").checked)byte5 += 8;
+	if($("check54").checked)byte5 += 16;
+	if($("check55").checked)byte5 += 32;
+	if($("check56").checked)byte5 += 64;
+	if($("check57").checked)byte5 += 128;
 	
 	var segment_bytes_to_send = "dd" + decimalToHex00(byte0)+ decimalToHex00(byte1)+ decimalToHex00(byte2)+ decimalToHex00(byte3)+ decimalToHex00(byte4)+ decimalToHex00(byte5);
 	addLog("Sending Segment bytes: " + segment_bytes_to_send);
@@ -1284,6 +1284,8 @@ function menuUpgrade() {
 					if(fn != "" && fn != "?" && fn != "/")
 						is +=' <button type="button" id="btorupg" onclick="BackToOriginal();">' + fn +'</button><br>';
 				}
+				//if(hwver_id == 0 || hwver_id == 3 || hwver_id == 4 || hwver_id == 5 || hwver_id ==10)
+				//	is +=' <button type="button" id="btzdevbis" onclick="FirmwareZdevbis();">Zigbee devbis Firmware: 1.1.0.0</button><br>';
 			}
 		}
 	}
@@ -1868,9 +1870,9 @@ function testOTAFirmware(data) {
 		+ " Release: " + ((fzigbeeota.fwversion >> 4)&0x0f) + "." + (fzigbeeota.fwversion&0x0f));
 		if(!bigOtaEnabled) {
 			if(fzigbeeota.image_type == 0x0203)
-				return "The current firmware version does not support EXT OTA for image type `"+hex(fzigbeeota.image_type, 4)+"`. Update the new custom  version (4.6 or higher)!";
+				return "The current firmware version does not support EXT OTA for image type `"+hex(fzigbeeota.image_type, 4)+"`. Update the new custom BLE version (4.6 or higher)!";
 			if(fsize > fwmaxsize)
-				return "The current firmware version does not support EXT OTA. Update the new custom version (4.6 or higher)!";
+				return "The current firmware version does not support EXT OTA. Update the new custom BLE version (4.6 or higher)!";
 		}
 		data = data.slice(0x3e);
 	 	head = new DataView(data, 0, 0x20);
@@ -1980,6 +1982,14 @@ function getOtaJson(d, name) {
 			}
 		}
 	}
+}
+
+function FirmwareZdevbis() {
+		if(!confirm("Attention: Zigbee firmware converts the thermometer to the Zigbee protocol! All data for MiHome and measurement memory will be erased! The devbis version consumes twice as much as ZigbeeTlc!"))
+		   return;
+		let fn = "https://github.com/devbis/z03mmc/releases/download/1.1.0/1141-0203-11003001-z03mmc.zigbee";
+		addAlog("Load firmware file '"+fn+"'...");
+		ajax_file(fn, getFirmwareArray, "");
 }
 
 function FirmwareZigbee() {
@@ -2767,14 +2777,14 @@ function CustomConfig() {
 		$("cfg_adv_crypto").checked = (cfg.flg2&0x08) != 0;
 	if(cfg.ver >= 0x20) {
 		$("cfg_av_meas_mem").value = String(cfg.av_meas_mem);
-		$("cfg_av_meas_mem").onchange = function() {InfoIntervals();}
+		$("cfg_av_meas_mem").onchange = function() {InfoIntervals();};
 	}
 	$("cfg_tmp_off").value = String((cfg.temp_offset / 10.0).toFixed(1));
 	$("cfg_hm_off").value = String((cfg.humi_offset / 10.0).toFixed(1));
 	$("cfg_adv_int").value = String((cfg.advertising_interval * 62.5).toFixed(1));
-	$("cfg_adv_int").onchange = function() {InfoIntervals();}
+	$("cfg_adv_int").onchange = function() {InfoIntervals();};
 	$("cfg_meas_int").value = String(cfg.measure_interval);
-	$("cfg_meas_int").onchange = function() {InfoIntervals();}
+	$("cfg_meas_int").onchange = function() {InfoIntervals();};
 	$("cfg_rf_tx").value = String(cfg.rf_tx_power);
 	$("cfg_con_lat").value = String((cfg.connect_latency + 1) * 20);
   } else {
@@ -2804,13 +2814,13 @@ function CustomConfig() {
 	$("cfg_flg_tx_meas").checked = (cfg.flg&64) != 0;
 	$("cfg_adv_crypto").checked = (cfg.flg2&0x08) != 0;
 	$("cfg_av_meas_mem").value = String(cfg.av_meas_mem);
-	$("cfg_av_meas_mem").onchange = function() {InfoIntervals();}
+	$("cfg_av_meas_mem").onchange = function() {InfoIntervals();};
 	$("cfg_tmp_off").value = String((cfg.temp_offset / 10.0).toFixed(1));
 	$("cfg_hm_off").value = String((cfg.humi_offset / 10.0).toFixed(1));
 	$("cfg_adv_int").value = String((cfg.advertising_interval * 62.5).toFixed(1));
-	$("cfg_adv_int").onchange = function() {InfoIntervals();}
+	$("cfg_adv_int").onchange = function() {InfoIntervals();};
 	$("cfg_meas_int").value = String(cfg.measure_interval);
-	$("cfg_meas_int").onchange = function() {InfoIntervals();}
+	$("cfg_meas_int").onchange = function() {InfoIntervals();};
 	$("cfg_rf_tx").value = String(cfg.rf_tx_power);
 	$("cfg_con_lat").value = String((cfg.connect_latency + 1) * 20);
   }
