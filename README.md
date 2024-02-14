@@ -32,8 +32,6 @@ Web files for projects:
 
 [CGDK2-2](https://pvvx.github.io/CGDK2/CGDK2-2)
 
-[TH-05](https://pvvx.github.io/TH-05)
-
 [CX0726B](https://pvvx.github.io/CX0726B)
 
 [iSearching](https://pvvx.github.io/iSearching)
@@ -55,6 +53,10 @@ Web files for projects:
 [THB2](https://pvvx.github.io/THB2)
 
 [THB1](https://pvvx.github.io/THB1)
+
+[TH-05](https://pvvx.github.io/TH-05)
+
+[TH05F](https://pvvx.github.io/TH05F)
 
 [BTH01](https://pvvx.github.io/BTH01)
 
