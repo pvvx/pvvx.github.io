@@ -54,6 +54,8 @@ Web files for projects:
 
 [THB2](https://pvvx.github.io/THB2)
 
+[THB1](https://pvvx.github.io/THB1)
+
 [BTH01](https://pvvx.github.io/BTH01)
 
 [DS01 zbeacon](https://pvvx.github.io/DS01_zbeacon)
