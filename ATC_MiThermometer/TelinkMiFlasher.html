@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v7.4</title>
+<title>Telink Flasher v7.5</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -637,7 +637,7 @@ function CGPR1_Action() {
 function CGDK2_Action() {
 	cus017Chr = null;
 	addLog("Detected Qingping CGDK2 device");
-	//if(devinfo.frstr && devinfo.frstr.substr(0,5) == "2.2.3") addAlog("Warning! The device with this Firmware Revision is not supported!");	
+	//if(devinfo.frstr && devinfo.frstr.substr(0,5) == "2.2.3") addAlog("Warning! The device with this Firmware Revision is not supported!");
 	$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value="">';
 	gattServer.getPrimaryService("22210000-554a-4546-5542-46534450464d")
 		.then(service => {
@@ -771,26 +771,27 @@ function CustomBlkParse(value) {
 		else if(hwver_id == 8) s +='MHO-C401N';
 		else if(hwver_id == 9) { s +='MJWSD05MMC'; bigOtaEnabled = true; }
 		else if(hwver_id == 11) { s +='MHO-C122'; bigOtaEnabled = true; }
-		else if((hwver_id == 15)&&(len >= 11))  { 
+		else if((hwver_id == 15)&&(len >= 11))  {
 			cfg.ext_hw_id = cfg.lcd_tint & 0x7f;
+			hwver_id = 16 + cfg.ext_hw_id;
 			if((cfg.lcd_tint & 0x80) != 0) bigOtaEnabled = true;
-			if(cfg.ext_hw_id == 1) s +='TS0201';
-			else if(cfg.ext_hw_id == 2) s +='TNKS1';
-			else if(cfg.ext_hw_id == 6) s +='TH03Z';
-			else s += 'Unknown or DIY';
+			if(hwver_id == 16) s +='TS0201';
+			else if(hwver_id == 18) s +='TNKS1';
+			else if(hwver_id == 22) s +='TH03Z';
+			else s += 'Unknown or DIY ('+hwver_id+')';
 		}
-		else s += 'Unknown or DIY';
+		else s += 'Unknown or DIY ('+hwver_id+')';
 		if(cfg.ver > 0x45 && hwver_id <= 15) bigOtaEnabled = true;
 		if(devinfo.hrstr) s += ' ' + devinfo.hrstr;
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
 		setStatus(s);
-		if(hwver_id != 15 && cfg.ver > 0x33) {
+		if(hwver_id < 15 && cfg.ver > 0x33) {
 			if((cfg.hver & 0x80) == 0) s += ', Sensor: SHT4x';
 			else s += ', Sensor: SHTC3 (SHTV3)';
 		} else {
-			if(cfg.ext_hw_id == 1) s +=', Sensor: CHT8305';
-			else if(cfg.ext_hw_id == 2) s +=', Sensor: AHT25';
-			else if(cfg.ext_hw_id == 6) s +=', Sensor: GXHT30';
+			if(hwver_id == 17) s +=', Sensor: CHT8305';
+			else if(hwver_id == 18) s +=', Sensor: AHT25';
+			else if(hwver_id == 22) s +=', Sensor: GXHT30';
 		}
 		addAlog(s);
 		addAlog('Custom config HEX string: 55' + bytesToHex(value.buffer.slice(2)));
@@ -1123,7 +1124,7 @@ function mapper_send() {
 	var byte3 = 0;
 	var byte4 = 0;
 	var byte5 = 0;
-		
+
 	if($("check00").checked)byte0 += 1;
 	if($("check01").checked)byte0 += 2;
 	if($("check02").checked)byte0 += 4;
@@ -1132,7 +1133,7 @@ function mapper_send() {
 	if($("check05").checked)byte0 += 32;
 	if($("check06").checked)byte0 += 64;
 	if($("check07").checked)byte0 += 128;
-		
+
 	if($("check10").checked)byte1 += 1;
 	if($("check11").checked)byte1 += 2;
 	if($("check12").checked)byte1 += 4;
@@ -1141,7 +1142,7 @@ function mapper_send() {
 	if($("check15").checked)byte1 += 32;
 	if($("check16").checked)byte1 += 64;
 	if($("check17").checked)byte1 += 128;
-		
+
 	if($("check20").checked)byte2 += 1;
 	if($("check21").checked)byte2 += 2;
 	if($("check22").checked)byte2 += 4;
@@ -1150,7 +1151,7 @@ function mapper_send() {
 	if($("check25").checked)byte2 += 32;
 	if($("check26").checked)byte2 += 64;
 	if($("check27").checked)byte2 += 128;
-		
+
 	if($("check30").checked)byte3 += 1;
 	if($("check31").checked)byte3 += 2;
 	if($("check32").checked)byte3 += 4;
@@ -1159,7 +1160,7 @@ function mapper_send() {
 	if($("check35").checked)byte3 += 32;
 	if($("check36").checked)byte3 += 64;
 	if($("check37").checked)byte3 += 128;
-		
+
 	if($("check40").checked)byte4 += 1;
 	if($("check41").checked)byte4 += 2;
 	if($("check42").checked)byte4 += 4;
@@ -1168,7 +1169,7 @@ function mapper_send() {
 	if($("check45").checked)byte4 += 32;
 	if($("check46").checked)byte4 += 64;
 	if($("check47").checked)byte4 += 128;
-		
+
 	if($("check50").checked)byte5 += 1;
 	if($("check51").checked)byte5 += 2;
 	if($("check52").checked)byte5 += 4;
@@ -1177,7 +1178,7 @@ function mapper_send() {
 	if($("check55").checked)byte5 += 32;
 	if($("check56").checked)byte5 += 64;
 	if($("check57").checked)byte5 += 128;
-	
+
 	var segment_bytes_to_send = "dd" + decimalToHex00(byte0)+ decimalToHex00(byte1)+ decimalToHex00(byte2)+ decimalToHex00(byte3)+ decimalToHex00(byte4)+ decimalToHex00(byte5);
 	addLog("Sending Segment bytes: " + segment_bytes_to_send);
 	sendCustomSetting(segment_bytes_to_send);
@@ -1240,58 +1241,56 @@ function menuUpgrade() {
 	$("ldfile").hidden = false;
 	if(hwver_id != null) {
 		if(otafiles.loaded && otafiles.version) {
-			if(hwver_id < 15) {
-				if(otafiles.custom != null) {
-					let fn = otafiles.custom[hwver_id];
-					if(fn.slice(0,6) == "https:") {
-						try {
+			if(otafiles.custom != null) {
+				let fn = otafiles.custom[hwver_id];
+				if(fn != null && fn != "" && fn != "?" && fn != "/") {
+					try {
+						if(fn.slice(0,6) == "https:")
 							fn = (new URL(fn)).pathname.split("/").pop();
-						} catch (error) {
-							console.log(error); 
-						}					
+					} catch (error) {
+						console.log(error);
 					}
-					if(fn != "" && fn != "?" && fn != "/")
-						is += '<button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+'</button>';
+					is += '<button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+' ' + fn + '</button>';
 				}
-				if(otafiles.betafw && otafiles.betaver != null) {
-					let fn = otafiles.betafw[hwver_id];
-					if(fn.slice(0,6) == "https:") {
-						try {
-							fn = (new URL(fn)).pathname.split("/").pop();
-						} catch (error) {
-							console.log(error); 
-						}					
-					}
-					if(fn != "" && fn != "?" && fn != "/")
-						is += ' <button type="button" id="btfrmupg" onclick="BetaFirmwareUpgrade();">Beta Firmware ver '+(otafiles.betaver>>4)+'.'+(otafiles.betaver&0x0f)+'</button><br>';
-				}
-				if(otafiles.zbjson != null && otazfiles.loaded) {
-					let fn = otazfiles.bin[hwver_id];
-					if(fn.slice(0,6) == "https:") {
-						try {
-							fn = (new URL(fn)).pathname.split("/").pop();
-						} catch (error) {
-							console.log(error); 
-						}					
-					}
-					if(fn != "" && fn != "?" && fn != "/")
-						is +=' <button type="button" id="btzrupg" onclick="FirmwareZigbee();">Zigbee Firmware: ' + fn +'</button><br>';
-				}
-				if(otafiles.original != null) {
-					let fn = otafiles.original[hwver_id];
-					if(fn.slice(0,6) == "https:") {
-						try {
-							fn = (new URL(fn)).pathname.split("/").pop();
-						} catch (error) {
-							console.log(error); 
-						}					
-					}
-					if(fn != "" && fn != "?" && fn != "/")
-						is +=' <button type="button" id="btorupg" onclick="BackToOriginal();">' + fn +'</button><br>';
-				}
-				if(hwver_id == 0 || hwver_id == 3 || hwver_id == 4 || hwver_id == 5 || hwver_id ==10)
-					is +=' <button type="button" id="btzdevbis" onclick="FirmwareZdevbis();">Zigbee devbis Firmware: 1.1.0.0</button><br>';
 			}
+			if(otafiles.betafw && otafiles.betaver != null) {
+				let fn = otafiles.betafw[hwver_id];
+				if(fn != null && fn != "" && fn != "?" && fn != "/") {
+					try {
+						if(fn.slice(0,6) == "https:")
+							fn = (new URL(fn)).pathname.split("/").pop();
+					} catch (error) {
+						console.log(error);
+					}
+					is += ' <button type="button" id="btfrmupg" onclick="BetaFirmwareUpgrade();">Beta Firmware ver '+(otafiles.betaver>>4)+'.'+(otafiles.betaver&0x0f)+' ' + fn + '</button><br>';
+				}
+			}
+			if(otafiles.zbjson != null && otazfiles.loaded) {
+				let fn = otazfiles.bin[hwver_id];
+				if(fn != null && fn != "" && fn != "?" && fn != "/") {
+					try {
+						if(fn.slice(0,6) == "https:")
+							fn = (new URL(fn)).pathname.split("/").pop();
+					} catch (error) {
+						console.log(error);
+					}
+					is +=' <button type="button" id="btzrupg" onclick="FirmwareZigbee();">Zigbee Firmware: ' + fn +'</button><br>';
+				}
+			}
+			if(otafiles.original != null) {
+				let fn = otafiles.original[hwver_id];
+				if(fn != null && fn != "" && fn != "?" && fn != "/") {
+					try {
+						if(fn.slice(0,6) == "https:")
+							fn = (new URL(fn)).pathname.split("/").pop();
+					} catch (error) {
+						console.log(error);
+					}
+					is +=' <button type="button" id="btorupg" onclick="BackToOriginal();">' + fn +'</button><br>';
+				}
+			}
+			if(hwver_id == 0 || hwver_id == 3 || hwver_id == 4 || hwver_id == 5 || hwver_id ==10)
+				is +=' <button type="button" id="btzdevbis" onclick="FirmwareZdevbis();">Zigbee devbis Firmware: 1.1.0.0</button><br>';
 		}
 	}
 	if(fwname != "" && firmwareArray != "") {
@@ -1697,7 +1696,7 @@ function doConnect() {
 			$("ldfile").hidden = false;
 			$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>	 <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
 		}}).catch(handleError);
-	}).catch(error => {addClog(error);}); 
+	}).catch(error => {addClog(error);});
  }
 }
 
@@ -1869,7 +1868,7 @@ function testOTAFirmware(data) {
 		fzigbeeota.used = true;
 		fsize = fzigbeeota.size;
 		addAlog("Zigbee OTA Info: ManCode: "+hex(fzigbeeota.man_code, 4)+ ", ImageType: " + hex(fzigbeeota.image_type,4) + ", FwVer: " + hex(fzigbeeota.fwversion, 8));
-		addAlog("APP Release: " + ((fzigbeeota.fwversion >> 28)&0x0f) + "." + ((fzigbeeota.fwversion >> 24)&0x0f) 
+		addAlog("APP Release: " + ((fzigbeeota.fwversion >> 28)&0x0f) + "." + ((fzigbeeota.fwversion >> 24)&0x0f)
 		+ " Build: " + ((fzigbeeota.fwversion >> 20)&0x0f) + "." + ((fzigbeeota.fwversion >> 16)&0x0f)
 		+ ", Stack Version: " + ((fzigbeeota.fwversion >> 12)&0x0f) + "." + ((fzigbeeota.fwversion >> 8)&0x0f)
 		+ " Release: " + ((fzigbeeota.fwversion >> 4)&0x0f) + "." + (fzigbeeota.fwversion&0x0f));
@@ -1915,7 +1914,7 @@ function getFirmwareArray(data, filename) {
 		alert(s);
 		return;
 	}
-	if(fzigbeeota.used) 
+	if(fzigbeeota.used)
 		firmwareArray = bytesToHex(data.slice(0x3E, fzigbeeota.size+0x3E));
 	else
 		firmwareArray = bytesToHex(data);
@@ -2607,7 +2606,7 @@ function CustomConfig() {
   } else {
 	is += '<br><hr><br><b>Configuration:</b>&nbsp;<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br><br>';
 	is += 'Tx measures: <input title="When connected, start transferring measurements" type="checkbox" id="cfg_flg_tx_meas">';
-  }	
+  }
 	is += ' <button type="button" title="Start transferring measurements. Only in the current connection." onclick="sendCustomSetting(&quot;33ff&quot;);">Start Tx Measure</button>';
 	is += ' <button type="button" title="Stop transferring measurements. Only in the current connection." onclick="sendCustomSetting(&quot;3300&quot;);">Stop Tx Measure</button><br><br>';
 	is += 'Temperature offset: <input size="5" title="-12.7..12.7°, default 0" id="cfg_tmp_off" maxlength="5" value="0"> °';
@@ -2887,7 +2886,7 @@ function SendCustomConfig() {
  } else {
 		cfg.flg = (cfg.flg & 0xbc) + ($("cfg_flg_adv_type").value & 3)+
 		(($("cfg_flg_tx_meas").checked) ? 64 : 0);
-		cfg.flg2 = cfg.flg2 & 0x87; 
+		cfg.flg2 = cfg.flg2 & 0x87;
 		cfg.flg2 += (($("cfg_adv_crypto").checked) ? 0x08 : 0);
 		cfg.flg2 += (($("adv_flags").checked )? 0x10 : 0);
 		cfg.flg2 += (($("bt5_flags").checked) ? 0x20 : 0);
