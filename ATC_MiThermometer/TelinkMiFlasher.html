@@ -2013,15 +2013,20 @@ function FirmwareUpgrade() {
 	if(hwver_id != null) {
 		let fn = otafiles.custom[hwver_id];
 		addAlog("Load firmware file '"+fn+"'...");
-		ajax_file(fn, getFirmwareArray);
+		if(fn.slice(0,6) == "https:")
+			ajax_file(fn, getFirmwareArray, "");
+		else
+			ajax_file(fn, getFirmwareArray);
 	}
 }
 function BetaFirmwareUpgrade() {
 	if(hwver_id != null) {
 		let fn = otafiles.betafw[hwver_id];
 		addAlog("Load firmware file '"+fn+"'...");
-		ajax_file
-		(fn, getFirmwareArray);
+		if(fn.slice(0,6) == "https:")
+			ajax_file(fn, getFirmwareArray, "");
+		else
+			ajax_file(fn, getFirmwareArray);
 	}
 }
 function BackToOriginal() {
