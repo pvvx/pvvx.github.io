@@ -904,8 +904,7 @@ function CustomBlkParse(value) {
 							cnt_delkeys = 0;
 							mikeys.mac = buf11;
 							addLog(s);
-							if(hwver_id <= 15)
-								$("mi_mac").value = m + hex(buf11[7],2)+hex(buf11[6],2);
+							$("mi_mac").value = m + hex(buf11[7],2)+hex(buf11[6],2);
 						}
 					} else if(cnt_buf11 == 4) {
 						s += 'miCfg: '+dump(buf11, 4);
