@@ -1250,7 +1250,8 @@ function menuUpgrade() {
 					} catch (error) {
 						console.log(error);
 					}
-					is += '<button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware ver '+(otafiles.version>>4)+'.'+(otafiles.version&0x0f)+' ' + fn + '</button>';
+					fn = fn.substring(fn.lastIndexOf('/')+1);
+					is += '<button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware: ' + fn + '</button>';
 				}
 			}
 			if(otafiles.betafw && otafiles.betaver != null) {
@@ -1262,7 +1263,8 @@ function menuUpgrade() {
 					} catch (error) {
 						console.log(error);
 					}
-					is += ' <button type="button" id="btfrmupg" onclick="BetaFirmwareUpgrade();">Beta Firmware ver '+(otafiles.betaver>>4)+'.'+(otafiles.betaver&0x0f)+' ' + fn + '</button><br>';
+					fn = fn.substring(fn.lastIndexOf('/')+1);
+					is += ' <button type="button" id="btfrmupg" onclick="BetaFirmwareUpgrade();">Beta Firmware: ' + fn + '</button><br>';
 				}
 			}
 			if(otafiles.zbjson != null && otazfiles.loaded) {
@@ -1274,6 +1276,7 @@ function menuUpgrade() {
 					} catch (error) {
 						console.log(error);
 					}
+					fn = fn.substring(fn.lastIndexOf('/')+1);
 					is +=' <button type="button" id="btzrupg" onclick="FirmwareZigbee();">Zigbee Firmware: ' + fn +'</button><br>';
 				}
 			}
@@ -1286,6 +1289,7 @@ function menuUpgrade() {
 					} catch (error) {
 						console.log(error);
 					}
+					fn = fn.substring(fn.lastIndexOf('/')+1);
 					is +=' <button type="button" id="btorupg" onclick="BackToOriginal();">' + fn +'</button><br>';
 				}
 			}
