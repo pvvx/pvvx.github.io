@@ -2324,7 +2324,7 @@ function CleanDevName() {
 function sendDevName() {
 	if(dnm.enable) {
 		let el = $("dev_name").value;
-		if(el.length >= 1 && el.length <= 12) {
+		if(el.length >= 1 && el.length <= 18) {
 			let encoder = new TextEncoder();
 			blk = new Uint8Array(el.length + 1);
 			blk.set(encoder.encode(el), 1);
@@ -2791,7 +2791,7 @@ function CustomConfig() {
 		is += '<input size="6" maxlength="6" type="text" title="000000..999999, 6 decimal digits, 000000 - PinCode Disable. Warning: If the PinCode is forgotten - only a hardware flasher!" id="pincode" value="000000"> <button title="Warning: If the PinCode is forgotten - only a hardware flasher!" type="button" onclick="sendPinCode();">!Set PinCode!</button><br>';
 		pincode.enable = true;
 		if(cfg.ver >= 0x14) {
-			is += '<br><button type="button" onclick="sendCustomSetting(&quot;01&quot;);">Get device Name</button> <input size="10" maxlength="10" type="text" title="Device Name: 1..10 chars" id="dev_name" value=""> <button type="button" title="Set New Name" onclick="sendDevName();">Set New Name</button> <button title="Clean Name: ATC_xxxx" type="button" onclick="CleanDevName();">Set default Name</button><br>';
+			is += '<br><button type="button" onclick="sendCustomSetting(&quot;01&quot;);">Get device Name</button> <input size="10" maxlength="18" type="text" title="Device Name: 1..18 chars" id="dev_name" value=""> <button type="button" title="Set New Name" onclick="sendDevName();">Set New Name</button> <button title="Clean Name: ATC_xxxx" type="button" onclick="CleanDevName();">Set default Name</button><br>';
 			dnm.enable = true;
 		}
 	}
