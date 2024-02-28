@@ -134,12 +134,12 @@ function connect() {
 		deviceOptions.acceptAllDevices = false;
 		deviceOptions.filters = namePrefix.split(",")
 			.map((x) => ({ namePrefix: x }));
-	} else {
+	}/* else {
 		deviceOptions.acceptAllDevices = false;
 		deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz_#@!*0123456789';,.<>{}[]"
 			.split("")
 			.map((x) => ({ namePrefix: x }));
-	}
+	} */
 	addClog(deviceOptions)
 	if (bluetoothDevice != null) bluetoothDevice.gatt.disconnect();
 	resetVariables();
