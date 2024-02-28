@@ -551,10 +551,11 @@ function connect() {
 			.map((x) => ({ namePrefix: x }));
 	} else {
 		deviceOptions.acceptAllDevices = false;
-		deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz_#@!*0123456789';,.<>{}[]"
+		deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz_#@!*0123456789';,.<>{}[]абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
 			.split("")
 			.map((x) => ({ namePrefix: x }));
 	}
+	console.log(deviceOptions);
 	if (bluetoothDevice != null) bluetoothDevice.gatt.disconnect();
 	chartData.length = 0;
 	resetVariables();
@@ -1802,10 +1803,15 @@ function setDevName(flg) {
 		if(flg) {
 			let eltxt = $("inpDevName").value;
 			let len = eltxt.length;
-			if(len > 1 && len < 20) {
+			if(len > 0 && len < 20) {
+				let nm = new Uint8Array((new TextEncoder()).encode(eltxt));
+				len = nm.length;
+				if(len > 0 && len < 20) {
+					addLog("Имя устройства должно быть от 1 до 19 символов, включая кодирование UTF-8!");
+				}
 				let blk = new Uint8Array(1 + len);
 				blk[0] = 0x01;
-				blk.set((new TextEncoder()).encode(eltxt), 1);
+				blk.set(nm, 1);
 				console.log(blk);
 				cmdCharacteristic.writeValue(blk).catch(error => { console.log(error); addLog("setDevName() error!"); });
 			} else
