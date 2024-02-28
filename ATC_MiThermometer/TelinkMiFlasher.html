@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v7.5</title>
+<title>Telink Flasher v7.6</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -21,6 +21,7 @@ var firmwareArray = "",
 	blockCount = 0;
 var flg_memo_act = false;
 var devinfo = { hrstr: null, srstr: null, frstr: null };
+var devSens = {};
 var fwname = '';
 //Connection values
 var state = 0,
@@ -747,8 +748,13 @@ function CustomBlkParse(value) {
 		cfg.ver = value.getUint8(1);
 		cfg.flg = value.getUint8(2);
 		cfg.flg2 = value.getUint8(3);
-		cfg.temp_offset = value.getInt8(4);
-		cfg.humi_offset = value.getInt8(5);
+		if(cfg.ver < 0x47) {
+			cfg.temp_offset = value.getInt8(4);
+			cfg.humi_offset = value.getInt8(5);
+		/* } else {
+			cfg.temp_offset = 0;
+			cfg.humi_offset = 0; */
+		}
 		cfg.advertising_interval = value.getUint8(6);
 		cfg.measure_interval = value.getUint8(7);
 		cfg.rf_tx_power = value.getUint8(8);
@@ -828,6 +834,35 @@ function CustomBlkParse(value) {
 		ext.flg = value.getUint8(7);
 		s = 'ExtShow: big_number: '+ext.big_number+', small_number: '+ext.small_number+', ext.vtime: '+ext.vtime+' s, flg: '+hex(ext.flg,2);
 		addAlog(s); UpdExt();
+	} else if((blkid == 0x25 || blkid == 0x26) && (len > 16)) {
+	// CMD_ID_CFS Get/Set sensor config
+	    devSens.temp_k = value.getUint32(1, true);
+	    devSens.humi_k = value.getUint32(5, true);
+	    devSens.temp_z = value.getInt16(9, true);
+	    devSens.humi_z = value.getInt16(11, true);
+
+		$('inpTempK').value  = (devSens.temp_k/100.0).toFixed(2);
+		$('inpHumK').value = (devSens.humi_k/100.0).toFixed(2);
+		$('inpTempZ').value = (devSens.temp_z/100.0).toFixed(2);
+		$('inpHumZ').value  = (devSens.humi_z/100.0).toFixed(2);
+
+		devSens.id = value.getUint32(13, false);
+		devSens.i2c_addr = value.getUint8(17);
+		s = "<b>Sensor Settings:</b> (";
+		if(devSens.i2c_addr == 0xE0)
+			s += "SHTv3";
+		else if(devSens.i2c_addr == 0x88 || devSens.i2c_addr == 0x8A)
+			s += "SHT4x";
+		else
+			s += "???";
+		$('lblSensor').innerHTML = s + ", I2C address: 0x"+hex(devSens.i2c_addr,2) + ", ID: " + hex(devSens.id, 8) + ")";
+		addAlog("Sensor id: "+hex(devSens.id, 8)
+		   + ", I2C address: 0x" + hex(devSens.i2c_addr,2)
+		   + ", Kt: " + devSens.temp_k
+		   + ", Kh: " + devSens.humi_k
+		   + ", Zt: " + devSens.temp_z
+		   + ", Zh: " + devSens.humi_z);
+
 	} else if(blkid == 0x44 && len >= 7) {
 		trg.tmp_thr = value.getInt16(1, true) / 100.0; // temp threshold
 		trg.hm_thr = value.getInt16(3, true) / 100.0; // humi threshold
@@ -2518,6 +2553,35 @@ function sendGetMemo(cnt) {
 		addAlog('Send cmd GetMemo ok');
 	});
 }
+function setSensCfg() {
+	if(settingsCharacteristics != null) {
+		devSens.temp_k = Math.round(100.0 * parseFloat($('inpTempK').value));
+		devSens.humi_k = Math.round(100.0 * parseFloat($('inpHumK').value)); 
+		devSens.temp_z = Math.round(100.0 * parseFloat($('inpTempZ').value));
+		devSens.humi_z = Math.round(100.0 * parseFloat($('inpHumZ').value));
+
+		blk = new Uint8Array([0x25, 
+		    devSens.temp_k & 0xff, (devSens.temp_k >> 8) & 0xff, (devSens.temp_k >> 16) & 0xff, (devSens.temp_k >> 24) & 0xff,
+		    devSens.humi_k & 0xff, (devSens.humi_k >> 8) & 0xff, (devSens.humi_k >> 16) & 0xff, (devSens.humi_k >> 24) & 0xff,
+	    	devSens.temp_z & 0xff, (devSens.temp_z >> 8) & 0xff,
+		    devSens.humi_z & 0xff, (devSens.humi_z >> 8) & 0xff
+		    ]);
+		settingsCharacteristics.writeValue(new Uint8Array(blk)).then(_ => {	addAlog("Send Sensor Settings: "+dump(blk, blk.length)+" - ok")})
+		.catch(error => { addAlog("Send Sensor Settings Error: " + error); });
+	}
+}
+function getSensCfg() {
+	if(settingsCharacteristics != null) {
+		addAlog("Get Sensor Settings...");
+		settingsCharacteristics.writeValue(new Uint8Array([0x25])).catch(error => { addAlog("Get Sensor Settings Error: " + error); });
+	}
+}
+function resetSensCfg() {
+	if(settingsCharacteristics != null) {
+		addAlog("Restore Sensor Default Settings...");
+		settingsCharacteristics.writeValue(new Uint8Array([0x26])).catch(error => { addAlog("Restore Sensor Default Settings Error: " + error); });
+	}
+}
 function getBKey() {
 		settingsCharacteristics.writeValue(new Uint8Array([0x18])).then(_ => {
 			addAlog('Get binkey from EEP...');
@@ -2618,8 +2682,10 @@ function CustomConfig() {
   }
 	is += ' <button type="button" title="Start transferring measurements. Only in the current connection." onclick="sendCustomSetting(&quot;33ff&quot;);">Start Tx Measure</button>';
 	is += ' <button type="button" title="Stop transferring measurements. Only in the current connection." onclick="sendCustomSetting(&quot;3300&quot;);">Stop Tx Measure</button><br><br>';
-	is += 'Temperature offset: <input size="5" title="-12.7..12.7°, default 0" id="cfg_tmp_off" maxlength="5" value="0"> °';
-	is += ', Humidity offset: <input size="5" title="-12.7..12.7%, default 0" id="cfg_hm_off" maxlength="5" value="0"> %<br><br>';
+	if(cfg.ver < 0x47) {
+		is += 'Temperature offset: <input size="5" title="-12.7..12.7°, default 0" id="cfg_tmp_off" maxlength="5" value="0"> °';
+		is += ', Humidity offset: <input size="5" title="-12.7..12.7%, default 0" id="cfg_hm_off" maxlength="5" value="0"> %<br><br>';
+	}
 	if(cfg.ver >= 0x36) {
 		if(cfg.ver >= 0x42)
 			is += 'BT5+ PHY: <input title="Support BT5.0+ PHY (LE 2M/1M/500K/125K, CSA2)" type="checkbox" id="bt5_flags">, LE Long Range (only for BT5.0+ adapters!): <input title="Enable Extended Advertising Long Range (Coded PHY S8)" type="checkbox" id="longrange_flags"><br><br>';
@@ -2673,6 +2739,8 @@ function CustomConfig() {
 	}
 	is += '<button type="button" onclick="SendCustomConfig()">Send Config</button>';
 	is += ' <button type="button" onclick="sendCustomSetting(&quot;56&quot;);">Set default</button><br>';
+	if(cfg.ver >= 0x47)
+		is += '<hr><label id="lblSensor"><b>Sensor Settings:</b></label><br>Temperature Slope factor: <input size="8" type="text" id="inpTempK" maxlength="8" title="Tk: Slope factor (linear function) for temperature calculation (T=RegT*Tk/65536+Tz)"> , Zero offset: <input size="8" type="text" id="inpTempZ" maxlength="8" title="Tz: Zero offset with correction value for temperature calculation (T=RegT*Tk/65536+Tz)"><br>Humidity Slope factor: <input size="8" type="text" id="inpHumK" maxlength="8" title="Hk: Slope factor (linear function) for humidity calculation (H=RegH*Hk/65536+Hz)"> , Zero offset: <input size="8" type="text" id="inpHumZ" maxlength="8" title="Hz: Zero offset with correction value for humidity calculation (H=RegH*Hk/65536+Hz)"><br><button type="button"id="btnGetSens" onclick="getSensCfg()">Get Sensor Settings</button> <button type="button"id="btnSetSens" onclick="setSensCfg()">Send Sensor Settings</button> <button type="button"id="btnRstSens" onclick="resetSensCfg()" title="Restore default sensor settings">Set Default</button><br>';
 	if(cfg.ver >= 0x24 && hwver_id != 9) {
 		is += '<hr><button type="button" title="Get time clock delta" onclick="sendCustomSetting(&quot;24&quot;);">Get delta time</button>';
 		is += ' Adjust time clock delta: <input size="5" title="-32767..32767, in 1/16 us for 1 sec, default 0" id="cfg_time_step" maxlength="6" value="0">';
@@ -2792,8 +2860,10 @@ function CustomConfig() {
 		$("cfg_av_meas_mem").value = String(cfg.av_meas_mem);
 		$("cfg_av_meas_mem").onchange = function() {InfoIntervals();};
 	}
-	$("cfg_tmp_off").value = String((cfg.temp_offset / 10.0).toFixed(1));
-	$("cfg_hm_off").value = String((cfg.humi_offset / 10.0).toFixed(1));
+	if(cfg.ver < 0x47) {
+		$("cfg_tmp_off").value = String((cfg.temp_offset / 10.0).toFixed(1));
+		$("cfg_hm_off").value = String((cfg.humi_offset / 10.0).toFixed(1));
+	}
 	$("cfg_adv_int").value = String((cfg.advertising_interval * 62.5).toFixed(1));
 	$("cfg_adv_int").onchange = function() {InfoIntervals();};
 	$("cfg_meas_int").value = String(cfg.measure_interval);
@@ -2828,8 +2898,10 @@ function CustomConfig() {
 	$("cfg_adv_crypto").checked = (cfg.flg2&0x08) != 0;
 	$("cfg_av_meas_mem").value = String(cfg.av_meas_mem);
 	$("cfg_av_meas_mem").onchange = function() {InfoIntervals();};
-	$("cfg_tmp_off").value = String((cfg.temp_offset / 10.0).toFixed(1));
-	$("cfg_hm_off").value = String((cfg.humi_offset / 10.0).toFixed(1));
+	if(cfg.ver < 0x47) {
+		$("cfg_tmp_off").value = String((cfg.temp_offset / 10.0).toFixed(1));
+		$("cfg_hm_off").value = String((cfg.humi_offset / 10.0).toFixed(1));
+	}
 	$("cfg_adv_int").value = String((cfg.advertising_interval * 62.5).toFixed(1));
 	$("cfg_adv_int").onchange = function() {InfoIntervals();};
 	$("cfg_meas_int").value = String(cfg.measure_interval);
@@ -2902,12 +2974,14 @@ function SendCustomConfig() {
 		cfg.flg2 += (($("longrange_flags").checked) ? 0x40 : 0);
  }
 	if(cfg.ver >= 0x20)	cfg.av_meas_mem = parseInt($("cfg_av_meas_mem").value);
-	cfg.temp_offset = Math.round(10.0 * parseFloat($("cfg_tmp_off").value));
-	if(cfg.temp_offset < -127) cfg.temp_offset = -127;
-	else if(cfg.temp_offset > 127) cfg.temp_offset = 127;
-	cfg.humi_offset = Math.round(10.0 * parseFloat($("cfg_hm_off").value));
-	if(cfg.humi_offset < -127) cfg.humi_offset = -127;
-	else if(cfg.humi_offset > 127) cfg.humi_offset = 127;
+	if(cfg.ver < 0x47) {
+		cfg.temp_offset = Math.round(10.0 * parseFloat($("cfg_tmp_off").value));
+		if(cfg.temp_offset < -127) cfg.temp_offset = -127;
+		else if(cfg.temp_offset > 127) cfg.temp_offset = 127;
+		cfg.humi_offset = Math.round(10.0 * parseFloat($("cfg_hm_off").value));
+		if(cfg.humi_offset < -127) cfg.humi_offset = -127;
+		else if(cfg.humi_offset > 127) cfg.humi_offset = 127;
+	}
 	cfg.advertising_interval = Math.round(parseFloat($("cfg_adv_int").value) / 62.5)
 	if(cfg.advertising_interval < 1) cfg.advertising_interval = 1;
 	else if(cfg.advertising_interval > 160) cfg.advertising_interval = 160;
