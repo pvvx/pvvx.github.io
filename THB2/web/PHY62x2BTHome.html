@@ -549,11 +549,6 @@ function connect() {
 		deviceOptions.acceptAllDevices = false;
 		deviceOptions.filters = namePrefix.split(",")
 			.map((x) => ({ namePrefix: x }));
-	} else {
-		deviceOptions.acceptAllDevices = false;
-		deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz_#@!*0123456789';,.<>{}[]абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
-			.split("")
-			.map((x) => ({ namePrefix: x }));
 	}
 	console.log(deviceOptions);
 	if (bluetoothDevice != null) bluetoothDevice.gatt.disconnect();
