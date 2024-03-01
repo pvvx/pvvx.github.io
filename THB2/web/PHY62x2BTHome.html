@@ -1620,7 +1620,7 @@ function getDevName() {
 
 function chkDevCfg() {
 		if(devCfg.flg == null) return;
-		devCfg.flg &= 0xffffffe0;
+		devCfg.flg &= 0xffffffc0;
 	    devCfg.flg |= ($('chkCfgNotify').checked) ? 1 : 0;
 	    devCfg.flg |= ($('chkCfgClock').checked) ? 2 : 0;
 	    devCfg.flg |= ($('chkCfgSmiley').checked) ? 4 : 0;

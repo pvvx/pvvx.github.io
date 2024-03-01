@@ -2818,9 +2818,9 @@ function CustomConfig() {
 		is += '<br>';
 	}
 	if(cfg.ver >= 0x28) {
-		is +='EEP BindKey:<br><input size="40" maxlength="32" title="Bind Key must be 16 hex digits" type="text" id="cbind_key" value="?">';
-		is +=' <button type="button" title="Get EEP BindKey" onclick="getBKey();">Get EEP BindKey</button>';
-		is +=' <button type="button" title="Set new EEP BindKey" onclick="setBKey();">Set EEP BindKey</button><br>';
+		is +='BindKey:<br><input size="40" maxlength="32" title="Bind Key must be 16 hex digits" type="text" id="cbind_key" value="?">';
+		is +=' <button type="button" title="Get BindKey" onclick="getBKey();">Get BindKey</button>';
+		is +=' <button type="button" title="Set new BindKey" onclick="setBKey();">Set BindKey</button><br>';
 	}
 	$("custcfg").innerHTML = is;
 	if(cfg.ver >= 0x43)
