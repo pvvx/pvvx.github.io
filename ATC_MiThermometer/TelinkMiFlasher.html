@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v7.6</title>
+<title>Telink Flasher v7.7</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -2880,6 +2880,8 @@ function CustomConfig() {
 	is +=' Adjust time clock delta: <input size="5" title="-32767..32767, in 1/16 us for 1 sec, default 0" id="cfg_time_step" maxlength="6" value="0">';
 	is +=' <button type="button" onclick="sendDeltaTime();">Set delta time</button>';
 	is +=' <button type="button" title="The minimum period for calculation is 3 hours!" onclick="calkDeltaTime();">Calk delta time</button><br>';
+	if(cfg.ver >= 0x47)
+		is += '<hr><label id="lblSensor"><b>Sensor Settings:</b></label><br>Temperature Slope factor: <input size="8" type="text" id="inpTempK" maxlength="8" title="Tk: Slope factor (linear function) for temperature calculation (T=RegT*Tk/65536+Tz)"> , Zero offset: <input size="8" type="text" id="inpTempZ" maxlength="8" title="Tz: Zero offset with correction value for temperature calculation (T=RegT*Tk/65536+Tz)"><br>Humidity Slope factor: <input size="8" type="text" id="inpHumK" maxlength="8" title="Hk: Slope factor (linear function) for humidity calculation (H=RegH*Hk/65536+Hz)"> , Zero offset: <input size="8" type="text" id="inpHumZ" maxlength="8" title="Hz: Zero offset with correction value for humidity calculation (H=RegH*Hk/65536+Hz)"><br><button type="button"id="btnGetSens" onclick="getSensCfg()">Get Sensor Settings</button> <button type="button"id="btnSetSens" onclick="setSensCfg()">Send Sensor Settings</button> <button type="button"id="btnRstSens" onclick="resetSensCfg()" title="Restore default sensor settings">Set Default</button><br>';
 	is +='<hr><b>Keys and Codes:</b><br><br>EEP BindKey:<br><input size="40" maxlength="32" title="Bind Key must be 16 hex digits" type="text" id="cbind_key" value="?">';
 	is +=' <button type="button" title="Get EEP BindKey" onclick="getBKey();">Get EEP BindKey</button>';
 	is +=' <button type="button" title="Set new EEP BindKey" onclick="setBKey();">Set EEP BindKey</button><br>';
