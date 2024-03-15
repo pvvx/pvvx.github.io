@@ -50,9 +50,11 @@ Web files for projects:
 
 [TS0601_TZE204](https://pvvx.github.io/TS0601_TZE204)
 
-[THB2](https://pvvx.github.io/THB2)
-
 [THB1](https://pvvx.github.io/THB1)
+
+[THB3](https://pvvx.github.io/THB3)
+
+[THB2](https://pvvx.github.io/THB2)
 
 [TH05 v1.4](https://pvvx.github.io/TH-05)
 
