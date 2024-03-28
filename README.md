@@ -66,6 +66,8 @@ Web files for projects:
 
 [DS01 zbeacon](https://pvvx.github.io/DS01_zbeacon)
 
+[RSH-GW018_DM](https://pvvx.github.io/RSH-GW018_DM) Tuya Smart Gateway WiFi-BLE-Zigbee
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)

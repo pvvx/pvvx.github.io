@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+  <head><meta charset="utf-8">
+  <title>Tuya Smart Gateway WiFi, BLE, Zigbee</title>
+  <style>
+	body {text-align: center;}
+	table {margin: 0 auto; width: 10vh;}
+    table, th, td {border-collapse: collapse;}
+    h3{color: green;}
+    </style>
+  </head>
+  <body>
+	<div style="height: auto; width: auto; text-align: center;">
+	<h2>Tuya Smart Gateway WiFi-BLE-Zigbee, Model: RSH-GW018 DM</h2><hr>
+	Tuya Modules: 
+	<a href="https://developer.tuya.com/en/docs/iot/wbrg1-module-datasheet?id=Ka015vo8tfztz">WBRG1</a>, 
+	<a href="https://developer.tuya.com/en/docs/iot/zs3l?id=K97r37j19f496">ZS3L</a><br> 
+	Full Flash: <a href="bin/wbrg1.zip">WBRG1</a>, <a href="bin/zs3l.zip">ZS3L</a><br>
+	<img src="img/RSH-GW018_DM_pcb1.gif" style="max-width:20%;">
+	<img src="img/RSH-GW018_DM_pcb2.gif" style="max-width:20%;"><br>
+	P1:
+ 	<table align="center" border="1">
+	<tr><td>1</td><td>GND</td></tr>
+	<tr><td>2</td><td>LogTX</td></tr>
+	<tr><td>3</td><td>LogRX</td></tr>
+	<tr><td>4</td><td>EN</td></tr>
+ 	</table>
+	<div align="center">
+ 	Для запуска в режим программирования:<br>
+	1) EN/RST на GND<br>
+	2) PA7 LogTX через 1k на GND<br>
+	3) Отпустить EN/RST<br>
+	4) Отпустить PA7 LogTX<br>
+	Использовать wbrg1.zip:wbrg1\rtltool.py<br>
+ 	<div><br>
+	P2:
+ 	<table align="center" border="1">
+	<tr><td>1</td><td>Vcc</td></tr>
+	<tr><td>2</td><td>GND</td></tr>
+	<tr><td>3</td><td>RX1</td></tr>
+	<tr><td>4</td><td>TX1</td></tr>
+ 	</table><br>
+	P3:
+ 	<table align="center" border="1">
+	<tr><td>1</td><td>GND</td></tr>
+	<tr><td>2</td><td>RST2</td></tr>
+	<tr><td>3</td><td>SWCLK</td></tr>
+	<tr><td>4</td><td>SWDIO</td></tr>
+	<tr><td>4</td><td>RST</td></tr>
+	<tr><td>4</td><td>TXD</td></tr>
+	<tr><td>4</td><td>RXD</td></tr>
+ 	</table>
+ 	Jlink: SWCLK, SWDIO, RST
+	<hr>
+	</div>
+  </body>
+</html>

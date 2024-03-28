@@ -678,7 +678,7 @@ function showConfig() {
 function parseBlkCustom(value) {
 	let len = value.byteLength;
 	if(len == 0) return;
-	console.log('blk: ' + dump8(value, len));
+	//console.log('blk: ' + dump8(value, len));
 	let blkId = value.getUint8(0);
 	if((blkId == 0x00) && (len > 3)) {	// CMD_ID_DEVID Get dev id, version, services
 		devSrv.board = value.getUint8(1);
