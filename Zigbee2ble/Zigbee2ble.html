@@ -9,7 +9,7 @@
 const PServ = '00010203-0405-0607-0809-0a0b0c0d1912';
 const PChar = '00010203-0405-0607-0809-0a0b0c0d2b12';
 
-const hcitimeot = 15000;
+const hcitimeot = 8000;
 const hciretry = 3;
 
 var gw = {};
@@ -207,9 +207,9 @@ function arraysIsEqual(a, b) {
     return true;
 }
 
-async function WriteAttr(ntwAddr, profileID, direction, clusterID, attr, data) {
+async function WriteAttr(ntwAddr, profileID, direction, clusterID, attr, data, dstEp=1, srcEp=1) {
 	let dir = 0;
-	let head = new Uint8Array([2,(ntwAddr>>8)&0xff,ntwAddr&0xff,1,1,(profileID>>8)&0xff,profileID&0xff,dir,(clusterID>>8)&0xff,clusterID&0xff,
+	let head = new Uint8Array([2,(ntwAddr>>8)&0xff,ntwAddr&0xff,srcEp,dstEp,(profileID>>8)&0xff,profileID&0xff,dir,(clusterID>>8)&0xff,clusterID&0xff,
 	1, // number of attribute records in the list
 	(attr>>8)&0xff, attr&0xff]);
 	let blk = new Uint8Array(head.byteLength + data.byteLength);
@@ -217,9 +217,9 @@ async function WriteAttr(ntwAddr, profileID, direction, clusterID, attr, data) {
 	blk.set(data,head.byteLength);
 	await hci_write(0x0101, blk, 0x8101);
 }
-async function SetReportConfig(ntwAddr, profileID, direction, clusterID, attr, data) {
+async function SetReportConfig(ntwAddr, profileID, direction, clusterID, attr, data, dstEp=1, srcEp=1) {
 	let dir = 0;
-	let head = new Uint8Array([2,(ntwAddr>>8)&0xff,ntwAddr&0xff,1,1,
+	let head = new Uint8Array([2,(ntwAddr>>8)&0xff,ntwAddr&0xff,srcEp,dstEp,
 	(profileID>>8)&0xff,profileID&0xff,
 	dir,
 	(clusterID>>8)&0xff,clusterID&0xff,
@@ -231,16 +231,16 @@ async function SetReportConfig(ntwAddr, profileID, direction, clusterID, attr, d
 	await hci_write(0x0102, blk, 0x8102);
 }
 
-async function GetReportConfig(ntwAddr, profileID, direction, clusterID, attr) {
+async function GetReportConfig(ntwAddr, profileID, direction, clusterID, attr, dstEp=1, srcEp=1) {
 	let dir = 0;
-	await hci_write(0x0103, new Uint8Array([2,(ntwAddr>>8)&0xff,ntwAddr&0xff,1,1,(profileID>>8)&0xff,profileID&0xff,dir,(clusterID>>8)&0xff,clusterID&0xff,1,direction,(attr>>8)&0xff, attr&0xff]), 0x8103);
+	await hci_write(0x0103, new Uint8Array([2,(ntwAddr>>8)&0xff,ntwAddr&0xff,srcEp,dstEp,(profileID>>8)&0xff,profileID&0xff,dir,(clusterID>>8)&0xff,clusterID&0xff,1,direction,(attr>>8)&0xff, attr&0xff]), 0x8103);
 }
-async function AttrRead(ntwAddr, profileID, direction, clusterID, attr) {
+async function AttrRead(ntwAddr, profileID, direction, clusterID, attr, dstEp = 1, srcEp = 1) {
 	let dir = 0;
-	await hci_write(0x0100, new Uint8Array([2,(ntwAddr>>8)&0xff,ntwAddr&0xff,1,1,(profileID>>8)&0xff,profileID&0xff,dir,(clusterID>>8)&0xff,clusterID&0xff,1,(attr>>8)&0xff, attr&0xff]), 0x8100);
+	await hci_write(0x0100, new Uint8Array([2,(ntwAddr>>8)&0xff,ntwAddr&0xff,srcEp,dstEp,(profileID>>8)&0xff,profileID&0xff,dir,(clusterID>>8)&0xff,clusterID&0xff,1,(attr>>8)&0xff, attr&0xff]), 0x8100);
 }
-async function GetNodeName(ntwAddr) {
-	await hci_write(0x0100, new Uint8Array([2,(ntwAddr>>8)&0xff,ntwAddr&0xff,1,1,1,4,0,0,0,2,0,4,0,5]), 0x8100);
+async function GetNodeName(ntwAddr, srcEp = 1, dstEp = 1) {
+	await hci_write(0x0100, new Uint8Array([2,(ntwAddr>>8)&0xff,ntwAddr&0xff,srcEp,dstEp,1,4,0,0,0,2,0,4,0,5]), 0x8100);
 }
 async function getMGMTBinding(ntwAddr){
 	await hci_write(0x0031, new Uint8Array([(ntwAddr>>8),ntwAddr&0xff, 0]), 0x8031);
@@ -308,7 +308,7 @@ function updateJoinedNodeTab() {
 }
 
 
-async function bind_req(clusterId, ieeeAddr, un) {
+async function bind_req(clusterId, ieeeAddr, srcEp, dstEp, un ) {
 // 00 20 a4 c1 38 50 8c ca 07 24 01 04 02 03 a4 c1 38 71 37 69 34 2f 01
 	if (un == 0) 
 		log("@ <b>Bind Cluster</b> "+hex(clusterId,4)+" Dev addr: "+ dump8(ieeeAddr,8));
@@ -319,12 +319,12 @@ async function bind_req(clusterId, ieeeAddr, un) {
 		cmd = 0x0021;
 	let blk = new Uint8Array(21);
 	blk.set(new Uint8Array(ieeeAddr.buffer), 0);
-	blk[8] = 1; // srcEp
+	blk[8] = srcEp; // srcEp
 	blk[9] = (clusterId>>8)&0xff;; 
 	blk[10] = clusterId&0xff;
 	blk[11] = 3; // addr type
 	blk.set(new Uint8Array(gw.ieeeAddr.buffer), 12);
-	blk[20] = 1; // dstEp
+	blk[20] = dstEp; // dstEp
 	return hci_write(cmd, blk, 0x8020);
 }
 
@@ -717,9 +717,16 @@ async function cfghandleChanged(event) {
 		let clusterId = value.getUint16(7, false);
 		let numAttr = value.getUint8(9); // number of attributes
 		let s = " srcAddr: "+hex(srcAddr,4)+", srcEp: "+srcEp+", dstEp: "+dstEp+", seqNum: "+seqNum+", clusterId: "+hex(clusterId,4)+", numAttr: "+ numAttr;
+		if(numAttr == 0) {
+	 		$("resp").innerHTML += "numAttr: 0, Data: None<br>";
+			log(s);
+			return;
+	 	}
 		if(blkid != 0x8104) {
 			$("txtntwAddr").value = hex(srcAddr,4);
 			$("txtCluster").value = hex(clusterId,4);
+			$("txtsrcEp").value = srcEp;
+			$("txtdstEp").value = dstEp;
 		}
 		if(blkid == 0x8100) {
 			log( "<b> Read Attr:</b>"+s);
@@ -727,12 +734,18 @@ async function cfghandleChanged(event) {
 		 		let dList = new DataView(value.buffer.slice(10));
 		 		len -= 8;
 		 		$("resp").innerHTML = "";
-		 		while(dList.byteLength >= 4 && numAttr > 0) {
+		 		while(dList.byteLength >= 3 && numAttr > 0) {
 			 		let attrID = dList.getUint16(0, false);
-					$("txtAttr").value = hex(attrID,4);
 			 		let status = dList.getUint8(2);
+					let s = " * attrID: "+hex(attrID,4)+", status: "+zcl_status(status);
+			 		if(status != 0 && dList.byteLength < 4) {
+				 		$("resp").innerHTML = s + "<br>";
+				 		log(s);
+			 			break;
+			 		}
+					$("txtAttr").value = hex(attrID,4);
 			 		let dataType = dList.getUint8(3);
-					let s = " * attrID: "+hex(attrID,4)+", status: "+zcl_status(status)+", dataType: "+zcl_data_type(dataType);
+					s += ", dataType: "+zcl_data_type(dataType);
 					let el = dList.getUint8(4)
 					let	len = zcl_getAttrSize(dataType, el);
 			 		let n = nodes.addrList.findIndex((element, index) => element.nwkAddr == srcAddr);
@@ -745,15 +758,15 @@ async function cfghandleChanged(event) {
 							console.log("id: "+hex(srcAddr,4)+ " addrList["+n+"] add name: " + str);
 							updateJoinedNodeTab();
 							if(join_nodes_on) {
-								if(str == "LYWSD03MMC" || str == "TS0201" || str == "TS0601") {
+								if(str == "LYWSD03MMC" || str == "TS0201" || str == "TS0601" || str == "TB03F-bz") {
 									nodes.addrList[n].bing = 1;
-									bind_req(0x402, nodes.addrList[n].ieeeAddr, 0);
+									bind_req(0x402, nodes.addrList[n].ieeeAddr, 1, 1, 0);
 								} else if(str == "TS011F") {
 									// 010002376A01010104000b04030508050b0505 RMSCurrent, ActivePower, RMSVoltage
 									await hci_write(0x0100, new Uint8Array([2, (nodes.addrList[n].nwkAddr>>8)&0xff, nodes.addrList[n].nwkAddr&0xff,1,1,1,4,0,0x0b,4,3,5,8,5,0x0b,5,5]), 0x8100);
 								} else if(str == "TS0202") {
 									nodes.addrList[n].bing = 1000;
-									bind_req(0x500, nodes.addrList[n].ieeeAddr, 0);
+									bind_req(0x500, nodes.addrList[n].ieeeAddr, 1, 1, 0);
 								}
 							}
 				 		} else if(n >= 0 && clusterId == 0 && attrID == 0x0004) {
@@ -990,6 +1003,9 @@ async function cfghandleChanged(event) {
 		if(status != 0) {
 			hci_timeout();
 		}
+		//$("txtsrcEp").value = srcEp;
+		//$("txtdstEp").value = dstEp;
+
 /*
 		if(clusterId == 0x500) {
 		 	let n = nodes.addrList.findIndex((element, index) => element.name == "TS011F");
@@ -1013,17 +1029,17 @@ async function cfghandleChanged(event) {
 		 		if(n >= 0) {
 		 			if(nodes.addrList[n].bing == 1) {
 			 			nodes.addrList[n].bing = 2;
-						bind_req(0x0405, nodes.addrList[n].ieeeAddr, 0);
+						bind_req(0x0405, nodes.addrList[n].ieeeAddr,1,1, 0);
 					} else if(nodes.addrList[n].bing == 2) {
 			 			nodes.addrList[n].bing = 3;
-						bind_req(0x0001, nodes.addrList[n].ieeeAddr, 0);
+						bind_req(0x0001, nodes.addrList[n].ieeeAddr,1,1, 0);
 					} else if(nodes.addrList[n].bing == 3) {
 			 			nodes.addrList[n].bing = 100;
 			 			log("@ <b>Get the binding table information of the target device...</b>")
 						await hci_write(0x0031, new Uint8Array([(srcAddr>>8),srcAddr&0xff,0]), 0x8031);
 					} else if(nodes.addrList[n].bing == 1000) {
 			 			nodes.addrList[n].bing = 3;
-						bind_req(0x0001, nodes.addrList[n].ieeeAddr, 0);
+						bind_req(0x0001, nodes.addrList[n].ieeeAddr,1,1, 0);
 					}
 				}
  			}
@@ -1245,9 +1261,11 @@ function butGetReportConfig() {
 		} else {
 			ntwAddr = parseInt($('txtntwAddr').value, 16);
 		}
+		let srcEp = parseInt($('txtsrcEp').value, 10);
+		let dstEp = parseInt($('txtdstEp').value, 10);
 		let clusterID = parseInt($('txtCluster').value, 16);
 		let Attr = parseInt($('txtAttr').value, 16);
-		GetReportConfig(ntwAddr, 0x104, 0, clusterID, Attr);
+		GetReportConfig(ntwAddr, 0x104, 0, clusterID, Attr, srcEp, dstEp);
 	}
 }
 
@@ -1292,6 +1310,8 @@ function butSetReportConfig() {
 		let clusterID = parseInt($('txtCluster').value, 16);
 		let Attr = parseInt($('txtAttr').value, 16);
 		let datalen = zcl_getDataTypeLen(td);
+		let srcEp = parseInt($('txtsrcEp').value, 10);
+		let dstEp = parseInt($('txtdstEp').value, 10);
 		let data;
 		if(datalen == 1)
 		 	data = new Uint8Array([td, (tmin>>8)&0xff, tmin&0xff,(tmax>>8)&0xff, tmax&0xff, value&0xff]);
@@ -1299,7 +1319,7 @@ function butSetReportConfig() {
 		 	data = new Uint8Array([td, (tmin>>8)&0xff, tmin&0xff,(tmax>>8)&0xff, tmax&0xff, (value>>8)&0xff, value&0xff]);
 		else
 		 	data = new Uint8Array([td, (tmin>>8)&0xff, tmin&0xff,(tmax>>8)&0xff, tmax&0xff, (value>>24)&0xff, (value>>16)&0xff, (value>>8)&0xff, value&0xff]);
-		SetReportConfig(ntwAddr, 0x104, 0, clusterID, Attr, data);
+		SetReportConfig(ntwAddr, 0x104, 0, clusterID, Attr, data, srcEp, dstEp);
 	}
 }
 function butAttrRead() {
@@ -1311,9 +1331,11 @@ function butAttrRead() {
 		} else {
 			ntwAddr = parseInt($('txtntwAddr').value, 16);
 		}
+		let srcEp = parseInt($('txtsrcEp').value, 10);
+		let dstEp = parseInt($('txtdstEp').value, 10);
 		let clusterID = parseInt($('txtCluster').value, 16);
 		let Attr = parseInt($('txtAttr').value, 16);
-		AttrRead(ntwAddr, 0x104, 0, clusterID, Attr);
+		AttrRead(ntwAddr, 0x104, 0, clusterID, Attr, srcEp, dstEp);
    	}
 }
 
@@ -1327,11 +1349,13 @@ function butBindCluster() {
 			ntwAddr = parseInt($('txtntwAddr').value, 16);
 		}
 		let clusterID = parseInt($('txtCluster').value, 16);
+		let srcEp = parseInt($('txtsrcEp').value, 10);
+		let dstEp = parseInt($('txtdstEp').value, 10);
 
  		let n = nodes.addrList.findIndex((element, index) => element.nwkAddr == ntwAddr);
  		if(n >= 0) {
  			nodes.addrList[n].bing = 200;
-			bind_req(clusterID, nodes.addrList[n].ieeeAddr, 0);
+			bind_req(clusterID, nodes.addrList[n].ieeeAddr, srcEp, dstEp, 0);
 		}
    	}
 }
@@ -1345,11 +1369,14 @@ function butUnBindCluster() {
 			ntwAddr = parseInt($('txtntwAddr').value, 16);
 		}
 		let clusterID = parseInt($('txtCluster').value, 16);
+		let srcEp = parseInt($('txtsrcEp').value, 10);
+		let dstEp = parseInt($('txtdstEp').value, 10);
 
  		let n = nodes.addrList.findIndex((element, index) => element.nwkAddr == ntwAddr);
  		if(n >= 0) {
  			nodes.addrList[n].bing = 200;
 			bind_req(clusterID, nodes.addrList[n].ieeeAddr, 0);
+			bind_req(clusterID, nodes.addrList[n].ieeeAddr, srcEp, dstEp, 0);
 		}
    	}
 }
@@ -1409,6 +1436,9 @@ function StartFunctions() {
 	</table><br>
 	ntwAddr <input size="20" type="text" id="txtntwAddr" value="?">
 	ClusterID <input size="20" type="text" id="txtCluster" value="0405">
+	srcEp <input size="20" type="text" id="txtsrcEp" value="1">
+	dstEp <input size="20" type="text" id="txtdstEp" value="1">
+	<br><br>
 	Attr <input size="20" type="text" id="txtAttr" value="0000">
 	<button type="button" onclick="butGetReportConfig()">GetReportConfig</button>
 
