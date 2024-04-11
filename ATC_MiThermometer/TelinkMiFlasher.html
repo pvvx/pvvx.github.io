@@ -781,7 +781,7 @@ function CustomBlkParse(value) {
 			cfg.ext_hw_id = cfg.lcd_tint & 0x7f;
 			hwver_id = 16 + cfg.ext_hw_id;
 			if((cfg.lcd_tint & 0x80) != 0) bigOtaEnabled = true;
-			if(hwver_id == 16) s +='TS0201';
+			if(hwver_id == 16 || hwver_id == 17) s +='TS0201'; // TS0201 = 17
 			else if(hwver_id == 18) s +='TNKS1';
 			else if(hwver_id == 22) s +='TH03Z';
 			else s += 'Unknown or DIY ('+hwver_id+')';

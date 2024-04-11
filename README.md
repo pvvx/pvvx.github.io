@@ -56,6 +56,8 @@ Web files for projects:
 
 [THB2](https://pvvx.github.io/THB2)
 
+[TH03Z](https://pvvx.github.io/TH03Z)
+
 [TH05 v1.4](https://pvvx.github.io/TH-05)
 
 [TH05 v1.3](https://pvvx.github.io/TH05-v1.3)
