@@ -781,7 +781,7 @@ function CustomBlkParse(value) {
 			cfg.ext_hw_id = cfg.lcd_tint & 0x7f;
 			hwver_id = 16 + cfg.ext_hw_id;
 			if((cfg.lcd_tint & 0x80) != 0) bigOtaEnabled = true;
-			if(hwver_id == 16 || hwver_id == 17) s +='TS0201'; // TS0201 = 17
+			if(hwver_id == 17) s +='TS0201';
 			else if(hwver_id == 18) s +='TNKS1';
 			else if(hwver_id == 22) s +='TH03Z';
 			else s += 'Unknown or DIY ('+hwver_id+')';
@@ -1541,10 +1541,10 @@ function miAuthorization() {
 						else if(shwsr == 'B1.6') cfg.hver = 3;
 						else if(shwsr == 'B1.9') cfg.hver = 4;
 						else if(shwsr == 'B1.7' || shwsr == 'B2.0') cfg.hver = 5;
-						else if(shwsr == 'B1.8') cfg.hver = 0; // ??
+						//else if(shwsr == 'B1.8') cfg.hver = 0; // ??
 						else {
-							cfg.hver = null;
-							$("ldfile").hidden = false;
+							cfg.hver = 0;
+							// $("ldfile").hidden = false;
 						}
 					} else if (bluetoothDevice.name.substr(0,8) == 'MHO-C401') {
 						let swnum = parseInt(devinfo.srstr.substr(0,4));
