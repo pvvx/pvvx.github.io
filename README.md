@@ -2,73 +2,73 @@ Web files for projects:
 
 ![foto](https://raw.githubusercontent.com/pvvx/pvvx.github.io/master/SensorsTH.jpg)
 
-[ATC_MiThermometer (Xiaomi LYWSD03MMC)](https://pvvx.github.io/ATC_MiThermometer)
+[ATC_MiThermometer (Xiaomi LYWSD03MMC)](https://pvvx.github.io/ATC_MiThermometer) - BLE Xiaomi Thermo-Hygrometer
 
-[MHO-C122](https://pvvx.github.io/MHO_C122)
+[MHO-C122](https://pvvx.github.io/MHO_C122) - E-ink Bluetooth Mini Thermo-Hygrometer
 
-[MHO-C401](https://pvvx.github.io/MHO_C401)
+[MHO-C401](https://pvvx.github.io/MHO_C401) - E-ink BLE Xiaomi Thermo-Hygrometer
 
-[MHO-C401 (2022.11)](https://pvvx.github.io/MHO_C401N) 
+[MHO-C401 (2022.11)](https://pvvx.github.io/MHO_C401N) - E-ink BLE Xiaomi Thermo-Hygrometer
 
-[CGG1-M (2020,2021)](https://pvvx.github.io/CGG1)
+[CGG1-M (2020,2021)](https://pvvx.github.io/CGG1) - E-ink BLE Qingping Temp & RH Monitor
 
 ---
 
-[CGG1-M (2022)](https://pvvx.github.io/CGG1_2022)
+[CGG1-M (2022)](https://pvvx.github.io/CGG1_2022) - E-ink BLE Qingping Temp & RH Monitor
 
-[CGG1-old (2018)](https://pvvx.github.io/CGG1_old)
+[CGG1-old (2018)](https://pvvx.github.io/CGG1_old) - E-ink BLE Qingping Temp & RH Monitor
 
-[LYWSD02](https://pvvx.github.io/LYWSD02)
+[LYWSD02](https://pvvx.github.io/LYWSD02) - E-ink Xiaomi Temp & RH + Clock
 
-[CGPR1 Qingping Motion & Light](https://pvvx.github.io/CGPR1)
+[CGPR1 Qingping Motion & Light](https://pvvx.github.io/CGPR1) - BLE Xiaomi
 
-[XMWSDJ04MMC](https://pvvx.github.io/XMWSDJ04MMC)
+[XMWSDJ04MMC](https://pvvx.github.io/XMWSDJ04MMC) - E-ink BLE Xiaomi Temp & RH
 
-[MJWSD05MMC](https://pvvx.github.io/MJWSD05MMC)
+[MJWSD05MMC](https://pvvx.github.io/MJWSD05MMC) - BLE Xiaomi Temp & RH + Clock
 
-[SJWS01LM](https://pvvx.github.io/SJWS01LM)
+[SJWS01LM](https://pvvx.github.io/SJWS01LM) - BLE Mijia Mi Flood Detector
 
-[CGDK2](https://pvvx.github.io/CGDK2)
+[CGDK2](https://pvvx.github.io/CGDK2) - BLE Qingping Temp & RH Monitor Lite
 
-[CGDK2-2](https://pvvx.github.io/CGDK2/CGDK2-2)
+[CGDK2-2](https://pvvx.github.io/CGDK2/CGDK2-2) - Not BLE!, "Qingping Temp & RH Monitor Lite E"
 
-[CX0726B](https://pvvx.github.io/CX0726B)
+[CX0726B](https://pvvx.github.io/CX0726B) - BLE Thermo-Hygrometer Beijing OnMicro Electronics LT_96F2
 
-[iSearching](https://pvvx.github.io/iSearching)
+[iSearching](https://pvvx.github.io/iSearching) - BLE
 
-[TS0001_TZ3000](https://pvvx.github.io/TS0001_TZ3000)
+[TS0001_TZ3000](https://pvvx.github.io/TS0001_TZ3000) - Tuya ZigBee "DIY Smart Switch"
 
-[TS0201_TZ3000](https://pvvx.github.io/TS0201_TZ3000)
+[DS01 zbeacon](https://pvvx.github.io/DS01_zbeacon) TS0003 _TZ3000_gohcgzj7 - Tuya ZigBee Door Window Sensor
 
-[TS0202_TZ3000](https://pvvx.github.io/TS0202_TZ3000)
+[TS0201_TZ3000](https://pvvx.github.io/TS0201_TZ3000) - Tuya ZigBee Thermo-Hygrometer
 
-[TS0207_TZ3000](https://pvvx.github.io/TS0207_TZ3000)
+[TS0202_TZ3000](https://pvvx.github.io/TS0202_TZ3000) - Tuya ZigBee ZP01 IR-Motion sensor
 
-[TS0601_TZE200 ZTH01](https://pvvx.github.io/TS0601_TZE200_zth01)
+[TS0207_TZ3000](https://pvvx.github.io/TS0207_TZ3000) - Tuya ZigBee "Wireless Water Detector"
 
-[TS0601_TZE200 ZTH02](https://pvvx.github.io/TS0601_TZE200_zth02)
+[TS0601_TZE200 ZTH01](https://pvvx.github.io/TS0601_TZE200_zth01) - Tuya ZigBee ZTH01 Thermo-Hygrometer 
 
-[TS0601_TZE204](https://pvvx.github.io/TS0601_TZE204)
+[TS0601_TZE200 ZTH02](https://pvvx.github.io/TS0601_TZE200_zth02) - Tuya ZigBee ZTH02 Thermo-Hygrometer 
 
-[THB1](https://pvvx.github.io/THB1)
+[TS0601_TZE204](https://pvvx.github.io/TS0601_TZE204) - Tuya ZigBee ZTH05 Thermo-Hygrometer
 
-[THB3](https://pvvx.github.io/THB3)
+[THB1](https://pvvx.github.io/THB1) - Tuya BLE Temperature & Humidity Sensor 
 
-[THB2](https://pvvx.github.io/THB2)
+[THB3](https://pvvx.github.io/THB3) - Tuya BLE Temperature & Humidity Sensor 
 
-[TH03Z](https://pvvx.github.io/TH03Z)
+[THB2](https://pvvx.github.io/THB2) - Tuya BLE Temperature & Humidity Sensor
 
-[TH05 v1.4](https://pvvx.github.io/TH-05)
+[TH03Z](https://pvvx.github.io/TH03Z) - Tuya BLE Temperature & Humidity Sensor
 
-[TH05 v1.3](https://pvvx.github.io/TH05-v1.3)
+[TH05 v1.4](https://pvvx.github.io/TH-05) - Tuya BLE Temperature & Humidity Sensor
 
-[TH05F](https://pvvx.github.io/TH05F)
+[TH05 v1.3](https://pvvx.github.io/TH05-v1.3) - Tuya BLE Temperature & Humidity Sensor
 
-[BTH01](https://pvvx.github.io/BTH01)
+[TH05F](https://pvvx.github.io/TH05F) - Tuya BLE Temperature & Humidity Sensor
 
-[DS01 zbeacon](https://pvvx.github.io/DS01_zbeacon)
+[BTH01](https://pvvx.github.io/BTH01) - Tuya BLE Temperature & Humidity Sensor
 
-[RSH-GW018_DM](https://pvvx.github.io/RSH-GW018_DM) Tuya Smart Gateway WiFi-BLE-Zigbee
+[RSH-GW018_DM](https://pvvx.github.io/RSH-GW018_DM) - Tuya Smart Gateway WiFi-BLE-Zigbee
 
 ---
 
