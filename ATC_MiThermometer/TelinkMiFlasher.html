@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v7.8</title>
+<title>Telink Flasher v7.9</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -784,6 +784,8 @@ function CustomBlkParse(value) {
 			if(hwver_id == 17) s +='TS0201';
 			else if(hwver_id == 18) s +='TNKS1';
 			else if(hwver_id == 22) s +='TH03Z';
+			else if(hwver_id == 27) s +='ZTH01';
+			else if(hwver_id == 28) s +='ZTH02';
 			else s += 'Unknown or DIY ('+hwver_id+')';
 		}
 		else s += 'Unknown or DIY ('+hwver_id+')';
@@ -798,6 +800,8 @@ function CustomBlkParse(value) {
 			if(hwver_id == 17) s +=', Sensor: CHT8305';
 			else if(hwver_id == 18) s +=', Sensor: AHT25';
 			else if(hwver_id == 22) s +=', Sensor: GXHT30';
+			else if(hwver_id == 27) s +=', Sensor: AHT30';
+			else if(hwver_id == 28) s +=', Sensor: AHT20';
 		}
 		addAlog(s);
 		addAlog('Custom config HEX string: 55' + bytesToHex(value.buffer.slice(2)));
@@ -849,7 +853,13 @@ function CustomBlkParse(value) {
 		devSens.id = value.getUint32(13, false);
 		devSens.i2c_addr = value.getUint8(17);
 		s = "<b>Sensor Settings:</b> (";
-		if(devSens.i2c_addr == 0xE0)
+		if((devSens.id & 0xFFFF) == 0x2000)
+			s += "AHT20/30";
+		else if((devSens.id & 0xFFFF) == 0x3000)
+			s += "SHT30";
+		else if(devSens.id == 0x83055959)
+			s += "CHT8305";
+		else if(devSens.i2c_addr == 0xE0)
 			s += "SHTv3";
 		else if(devSens.i2c_addr == 0x88 || devSens.i2c_addr == 0x8A)
 			s += "SHT4x";
