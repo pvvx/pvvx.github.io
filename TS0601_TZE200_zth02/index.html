@@ -2,15 +2,30 @@
 <html>
   <head><meta charset="utf-8">
   <title>TS0601 (_TZE200_9yapgbuv)</title>
+  <style>
+	body {text-align: center;}
+	table {margin: 0 auto; width: 10vh;}
+    table, th, td {border-collapse: collapse;}
+    </style>
   </head>
   <body>
 	<div style="height: auto; width: auto; text-align: center;">
 	<h2>TS0601 (_TZE200_9yapgbuv): Tuya ZigBee ZTH02</h2><hr>
 	<img src="img/zth02.jpg" style="max-width:40%;">
 	<br><hr>
-	<a href="https://developer.tuya.com/en/docs/iot/ztu-module-datasheet?id=Ka45nl4ywgabp">Module ZTU</a>, Sensor: AHT20, Chip SO-16 - ?<br>
+	<a href="https://developer.tuya.com/en/docs/iot/ztu-module-datasheet?id=Ka45nl4ywgabp">Module ZTU</a>, Sensor: AHT20, Chip (Tuya MCU) SO-16 - ?<br>
 	<img src="img/zth02_pcb1.jpg" style="max-width:100%;">
 	<img src="img/zth02_pcb2.jpg" style="max-width:100%;"><br><br>
+	<hr>
+	<h3>Removing a useless chip (Tuya MCU)</h3>
+	Custom firmware <a href="https://github.com/pvvx/BLE_THSensor">BLE</a>, <a href="https://github.com/pvvx/ZigbeeTLc">Zigbee</a><br><br>
+ 	<table align="center" border="1">
+	<tr><td>GPIO_PB4</td><td>KEY</td></tr>
+	<tr><td>GPIO_PB5</td><td>LED</td></tr>
+	<tr><td>GPIO_PC2</td><td>SDA</td></tr>
+	<tr><td>GPIO_PC3</td><td>SCL</td></tr>
+ 	</table><br>
+	<img src="img/zth02_diy.png" style="max-width:100%;"><br><br>
 	<hr>
 	</div>
   </body>
