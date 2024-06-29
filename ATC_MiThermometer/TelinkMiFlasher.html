@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v7.9</title>
+<title>Telink Flasher v8.0</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -529,6 +529,15 @@ function catchAdvertisement(device) {
 		}
 	} else if(key == '0000181e-0000-1000-8000-00805f9b34fb') {	// BTHome
 		s += " BTHomeV1, Data encrypted";
+	} else if(key == '0000fcd2-0000-1000-8000-00805f9b34fb') {	// BTHome v2
+		if(b.byteLength > 1) {
+			let ver = b.getUint8(8);
+			if(ver & 0xe0 == 0x40) {
+				s += " BTHomeV2";
+				if(ver & 1 != 0)
+					s += ", Data encrypted";
+			}
+		}
 	}
 	addAlog(s);
 	abortController.abort();
@@ -751,9 +760,6 @@ function CustomBlkParse(value) {
 		if(cfg.ver < 0x47) {
 			cfg.temp_offset = value.getInt8(4);
 			cfg.humi_offset = value.getInt8(5);
-		/* } else {
-			cfg.temp_offset = 0;
-			cfg.humi_offset = 0; */
 		}
 		cfg.advertising_interval = value.getUint8(6);
 		cfg.measure_interval = value.getUint8(7);
@@ -767,8 +773,11 @@ function CustomBlkParse(value) {
 			if(cfg.ver < 0x36) cfg.hver &= 0x87;
 		} else if(cfg.hver == null) cfg.hver = 0x80;
 		if(len >= 12) cfg.av_meas_mem = value.getUint8(12); else cfg.av_meas_mem = 0;
-		hwver_id = cfg.hver & 0x0F;
 		let s = 'Hardware Version: ';
+		if(cfg.ver < 0x48)
+			hwver_id = cfg.hver & 0x0F;
+		else
+			hwver_id = cfg.hver;
 		if((hwver_id == 0)||(hwver_id == 3)||(hwver_id == 4)||(hwver_id == 5)||(hwver_id == 10)) s +='LYWSD03MMC';
 		else if(hwver_id == 1) s +='MHO-C401';
 		else if(hwver_id == 2) s +='CGG1';
@@ -777,10 +786,14 @@ function CustomBlkParse(value) {
 		else if(hwver_id == 8) s +='MHO-C401N';
 		else if(hwver_id == 9) { s +='MJWSD05MMC'; bigOtaEnabled = true; }
 		else if(hwver_id == 11) { s +='MHO-C122'; bigOtaEnabled = true; }
-		else if((hwver_id == 15)&&(len >= 11))  {
-			cfg.ext_hw_id = cfg.lcd_tint & 0x7f;
-			hwver_id = 16 + cfg.ext_hw_id;
-			if((cfg.lcd_tint & 0x80) != 0) bigOtaEnabled = true;
+		else {
+			if(cfg.ver < 0x48) {
+				if((hwver_id == 15)&&(len >= 11))  {
+					cfg.ext_hw_id = cfg.lcd_tint & 0x7f;
+					hwver_id = 16 + cfg.ext_hw_id;
+					if((cfg.lcd_tint & 0x80) != 0) bigOtaEnabled = true;
+				}
+			}
 			if(hwver_id == 17) s +='TS0201';
 			else if(hwver_id == 18) s +='TNKS1';
 			else if(hwver_id == 22) s +='TH03Z';
@@ -788,7 +801,6 @@ function CustomBlkParse(value) {
 			else if(hwver_id == 28) s +='ZTH02';
 			else s += 'Unknown or DIY ('+hwver_id+')';
 		}
-		else s += 'Unknown or DIY ('+hwver_id+')';
 		if(cfg.ver > 0x45 && hwver_id <= 15) bigOtaEnabled = true;
 		if(devinfo.hrstr) s += ' ' + devinfo.hrstr;
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
@@ -819,11 +831,13 @@ function CustomBlkParse(value) {
 			if(len > 12)
 				rds_count = value.getUint32(10, true);
 		}
+		let sw = 'Open';
+		if((flg & 1) == 0) sw = 'Close';
 		let s = '';
 		if(cfg.ver >= 0x37)
-			s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', Reed switch counter: '+ rds_count+', flg: 0x'+hex(flg,2)+':r'+(flg&1)+'/t'+((flg>>1)&1);
+			s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', Reed switch counter: '+ rds_count+', Switch ' + sw +', TRG Out "' + ((flg & 2) >> 1) + '", flg: 0x'+hex(flg,2);
 		else
-			s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', flg: 0x'+hex(flg,2)+':r'+(flg&1)+'/t'+((flg>>1)&1);
+			s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', Switch ' + sw +', TRG Out "' + ((flg & 2) >> 1) + '", flg: 0x'+hex(flg,2);
 		$("tempHumiData").innerHTML = s;
 		addClog(s);
 	} else if(blkid == 0x22 && len >= 7) {
@@ -850,23 +864,40 @@ function CustomBlkParse(value) {
 		$('inpTempZ').value = (devSens.temp_z/100.0).toFixed(2);
 		$('inpHumZ').value  = (devSens.humi_z/100.0).toFixed(2);
 
-		devSens.id = value.getUint32(13, false);
 		devSens.i2c_addr = value.getUint8(17);
-		s = "<b>Sensor Settings:</b> (";
-		if((devSens.id & 0xFFFF) == 0x2000)
-			s += "AHT20/30";
-		else if((devSens.id & 0xFFFF) == 0x3000)
-			s += "SHT30";
-		else if(devSens.id == 0x83055959)
-			s += "CHT8305";
-		else if(devSens.i2c_addr == 0xE0)
-			s += "SHTv3";
-		else if(devSens.i2c_addr == 0x88 || devSens.i2c_addr == 0x8A)
-			s += "SHT4x";
-		else
-			s += "???";
-		$('lblSensor').innerHTML = s + ", I2C address: 0x"+hex(devSens.i2c_addr,2) + ", ID: " + hex(devSens.id, 8) + ")";
-		addAlog("Sensor id: "+hex(devSens.id, 8)
+		let st = "Unknown";
+		if(len > 17) { // ver 4.9
+			devSens.id = value.getUint32(13, true);
+				let sentype = value.getUint8(18);
+				if(sentype == 1)
+					st = "SHTV3(C3)";
+				else if(sentype == 2)
+					st = "SHT4x";
+				else if(sentype == 3)
+					st = "SHT30";
+				else if(sentype == 4)
+					st = "CHT8305";
+				else if(sentype == 5)
+					st = "ANT20/30";
+				else if(sentype == 6)
+					st = "CHT8215";
+				else if(sentype == 0)
+				    st = "None"
+		} else {
+			devSens.id = value.getUint32(13, false);
+			if((devSens.id & 0xFFFF) == 0x2000)
+				st = "AHT20/30";
+			else if((devSens.id & 0xFFFF) == 0x3000)
+				st = "SHT30";
+			else if(devSens.id == 0x83055959)
+				st = "CHT8305";
+			else if(devSens.i2c_addr == 0xE0)
+				st = "SHTv3";
+			else if(devSens.i2c_addr == 0x88 || devSens.i2c_addr == 0x8A)
+				st = "SHT4x";
+		}
+		$('lblSensor').innerHTML = "<b>Sensor Settings:</b> (" + st + ", I2C address: 0x"+hex(devSens.i2c_addr,2) + ", ID: " + hex(devSens.id, 8) + ")";
+		addAlog("Sensor "+st+" id: "+hex(devSens.id, 8)
 		   + ", I2C address: 0x" + hex(devSens.i2c_addr,2)
 		   + ", Kt: " + devSens.temp_k
 		   + ", Kh: " + devSens.humi_k
@@ -1132,11 +1163,18 @@ function CustomBlkParse(value) {
 			if(wr != 0)
 				s += ', write '+wr+' bytes';
 			if(len > 2)
-				s += ', read: '+bytesToHex(value.buffer.slice(3));
+				s += ', read '+ (len-3) +' bytes: '+bytesToHex(value.buffer.slice(3));
 		}
 		addAlog(s);
 	} else if(blkid == 0x05 && len > 3) {
 		addAlog('Sensor ID: ' + hex(value.getUint32(1,true),8));
+	} else if(blkid == 0x45) {
+		let flg = value.getUint8(1);
+		let sw = 'Close';
+		if((flg & 1) == 0) sw = 'Open';
+		let s = 'Switch ' + sw +', TRG Out "' + ((flg & 2) >> 1) + '", flg: 0x'+hex(flg,2);
+		$("tempHumiData").innerHTML = s;
+		addClog(s);
 	} else {
 		let s = 'Custom (0x1f1f) Notifications id: 0x'+hex(blkid,2)+' ['+bytesToHex(value.buffer.slice(1))+']';
 		addClog(s);
@@ -1656,8 +1694,7 @@ function doConnect() {
 	bluetoothDevice.gatt.connect().then(server => {
 		addClog("Found GATT server");
 		gattServer = server;
-		return gattServer.getPrimaryServices();
-	}).then(services => {
+		return gattServer.getPrimaryServices().then(services => {
 		miEnabled = false;
 		otaEnabled = false;
 		customEnabled = false;
@@ -1695,7 +1732,7 @@ function doConnect() {
 		addClog("Found Telink OTA write characteristic");
 		writeCharacteristic = characteristic;
 
-	getDevVersion(devInfEnabled).then(_ => {
+	    getDevVersion(devInfEnabled).then(_ => {
 		if (devinfo.hrstr) addLog('Hardware Revision String: ' + devinfo.hrstr);
 		if (devinfo.srstr) addLog('Software Revision String: ' + devinfo.srstr);
 		if (devinfo.frstr) addLog('Firmware Revision String: ' + devinfo.frstr);
@@ -1744,7 +1781,8 @@ function doConnect() {
 			$("ldfile").hidden = false;
 			$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="skipActivation();">Skip Activation</button>	 <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
 		}}).catch(handleError);
-	}).catch(error => {addClog(error);});
+	}).catch(error => {addLog(error); });
+	}).catch(handleError);
  }
 }
 
@@ -2688,6 +2726,7 @@ function CustomConfig() {
 	is += ', Tx measures: <input title="When connected, start transferring measurements" type="checkbox" id="cfg_flg_tx_meas">';
   } else {
 	is += '<br><hr><br><b>Configuration:</b>&nbsp;<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br><br>';
+	//is += 'Sensor in "LowPower mode": <input title="Sensor measurements in Low Power mode" type="checkbox" id="cfg_flg_lp_meas">';
 	is += 'Tx measures: <input title="When connected, start transferring measurements" type="checkbox" id="cfg_flg_tx_meas">';
   }
 	is += ' <button type="button" title="Start transferring measurements. Only in the current connection." onclick="sendCustomSetting(&quot;33ff&quot;);">Start Tx Measure</button>';
@@ -2724,7 +2763,12 @@ function CustomConfig() {
 	else
 		is += 'Connect latency: <input size="5" title="0..4000 ms, default 2500 ms" id="cfg_con_lat" maxlength="4" value="2500"> ms, step 20 ms<br><br>';
   } else {
-	is += 'Advertising type: <select id="cfg_flg_adv_type"><option value="0">BTHome v2</option><option value="1"  selected>PVVX (Custom)</option><option value="2">MIJIA (MiHome)</option><option value="3">BTHome v1</option></select>';
+	if(cfg.ver < 0x48) {
+	  	is += 'Advertising type: <select id="cfg_flg_adv_type"><option value="0">BTHome v2</option><option value="1"  selected>PVVX (Custom)</option><option value="2">MIJIA (MiHome)</option><option value="3">BTHome v1</option></select>';
+	} else {
+		is += 'Sensor in "LowPower mode": <input title="Sensor measurements in Low Power mode" type="checkbox" id="cfg_flg_lp_meas"><br><br>';
+		is += 'Advertising type: <select id="cfg_flg_adv_type"><option value="0">ATC1441</option><option value="1">PVVX (Custom)</option><option value="2">MIJIA (MiHome)</option><option value="3" selected>BTHome v2</option></select>';
+	}
 	is += ', AdFlags: <input title="Toggle support for third-party software" type="checkbox" id="adv_flags">';
 	is += ', Encrypted beacon: <input title="Bindkey encrypted beacon" type="checkbox" id="cfg_adv_crypto">';
 	is += '<br><br>Advertising interval: <input size="5" title="62.5 ms .. 10 000 ms, step: 62.5 ms, default 2500 ms" id="cfg_adv_int" maxlength="6" value="40"> ms, step: 62.5 ms<br><br>';
@@ -2892,6 +2936,23 @@ function CustomConfig() {
 	is +=' <button type="button" title="The minimum period for calculation is 3 hours!" onclick="calkDeltaTime();">Calk delta time</button><br>';
 	if(cfg.ver >= 0x47)
 		is += '<hr><label id="lblSensor"><b>Sensor Settings:</b></label><br>Temperature Slope factor: <input size="8" type="text" id="inpTempK" maxlength="8" title="Tk: Slope factor (linear function) for temperature calculation (T=RegT*Tk/65536+Tz)"> , Zero offset: <input size="8" type="text" id="inpTempZ" maxlength="8" title="Tz: Zero offset with correction value for temperature calculation (T=RegT*Tk/65536+Tz)"><br>Humidity Slope factor: <input size="8" type="text" id="inpHumK" maxlength="8" title="Hk: Slope factor (linear function) for humidity calculation (H=RegH*Hk/65536+Hz)"> , Zero offset: <input size="8" type="text" id="inpHumZ" maxlength="8" title="Hz: Zero offset with correction value for humidity calculation (H=RegH*Hk/65536+Hz)"><br><button type="button"id="btnGetSens" onclick="getSensCfg()">Get Sensor Settings</button> <button type="button"id="btnSetSens" onclick="setSensCfg()">Send Sensor Settings</button> <button type="button"id="btnRstSens" onclick="resetSensCfg()" title="Restore default sensor settings">Set Default</button><br>';
+   	if(cfg.ver >= 0x48) {
+		is += '<hr><b>Management GPIO_TRG:</b>';
+		is += '&nbsp;<button type="button" title="Get/read current setings" onclick="sendCustomSetting(&quot;44&quot;);">Get TRG</button><br>';
+		is += 'Temperature hysteresis: <input size="8" title="Step 0.01°, default -0.55°, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="trg_tmp_hst" maxlength="7" value="-0.55"> °';
+		is += ', Humidity hysteresis: <input size="8" title="Step 0.01%, default 0, =0 off, if less than zero - activation on decrease, if more than zero - activation on excess" id="trg_hm_hst" maxlength="7" value="0.0"> %<br>';
+		is += 'Temperature threshold: <input size="8" title="-40.00..80.00°C, default 21.00°C" id="trg_tmp_thr" maxlength="6" value="21.00"> °';
+		is += ', Humidity threshold: <input size="8" title="0..99.00%, default 50.00%" id="trg_hm_thr" maxlength="6" value="50.00"> %<br><br>';
+		is += '<b>Management GPIO_RS (Reed Switch):</b><br><br>';
+		is += 'RS mode: <select id="rds_type"><option value="0" selected>None</option><option value="1">Switch</option><option value="2">Counter</option>';
+		//is += '<option value="3" selected>Connect</option>';
+		is += '</select>, Invert RS event: <input type="checkbox" id="rds_invert">';
+		is += '<br>RS report interval: <input size="8" title="0 - Off, 1..65535 sec, default 3600 sec" id="rds_rpint" maxlength="6" value="3600"> sec';
+		is += '<br> <button type="button" title="Set/save current setings" onclick="sendTrg();">Set TRG</button>';
+		is += ' <button type="button" title="GPIO_TRG PullUp 10 kOm. Work only TRG off!" onclick="sendCustomSetting(&quot;4501&quot;);">Set pin to "1"</button>';
+		is += ' <button type="button" title="GPIO_TRG PullDown 100 kOm. Work only TRG off!" onclick="sendCustomSetting(&quot;4500&quot;);">Set pin to "0"</button><br><hr>';
+		trg.enable = true;
+   	}
 	is +='<hr><b>Keys and Codes:</b><br><br>EEP BindKey:<br><input size="40" maxlength="32" title="Bind Key must be 16 hex digits" type="text" id="cbind_key" value="?">';
 	is +=' <button type="button" title="Get EEP BindKey" onclick="getBKey();">Get EEP BindKey</button>';
 	is +=' <button type="button" title="Set new EEP BindKey" onclick="setBKey();">Set EEP BindKey</button><br>';
@@ -2907,6 +2968,8 @@ function CustomConfig() {
 	$("bt5_flags").checked = (cfg.flg2&0x20) != 0;
 	$("longrange_flags").checked = (cfg.flg2&0x40) != 0;
 	$("cfg_flg_tx_meas").checked = (cfg.flg&64) != 0;
+	if(cfg.ver >= 0x48)
+		$("cfg_flg_lp_meas").checked = (cfg.flg&128) != 0;
 	$("cfg_adv_crypto").checked = (cfg.flg2&0x08) != 0;
 	$("cfg_av_meas_mem").value = String(cfg.av_meas_mem);
 	$("cfg_av_meas_mem").onchange = function() {InfoIntervals();};
@@ -2979,6 +3042,8 @@ function SendCustomConfig() {
  } else {
 		cfg.flg = (cfg.flg & 0xbc) + ($("cfg_flg_adv_type").value & 3)+
 		(($("cfg_flg_tx_meas").checked) ? 64 : 0);
+		if(cfg.ver >= 0x48)
+			cfg.flg = (cfg.flg & 0x7f) + (($("cfg_flg_lp_meas").checked) ? 128 : 0)
 		cfg.flg2 = cfg.flg2 & 0x87;
 		cfg.flg2 += (($("cfg_adv_crypto").checked) ? 0x08 : 0);
 		cfg.flg2 += (($("adv_flags").checked )? 0x10 : 0);

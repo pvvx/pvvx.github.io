@@ -24,7 +24,7 @@ function log(data) {
     document.getElementById("log").innerHTML += logString + "<br>";
 }
 function onButtonClick() {
-  var deviceOptions = { optionalServices: [0xfe95, 0x181a, 0x181c, 0x181e, 0xfdcd, 0xfff9, 0x1f11, 0x2aeb] };
+  var deviceOptions = { optionalServices: [0xfe95, 0x181a, 0x181c, 0x181e, 0xfdcd, 0xfff9, 0x1f11, 0x2aeb, 0xfcd2] };
   deviceOptions.filters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz_#@!*';,.<>{}[]"
 	.split("").map((x) => ({namePrefix:x}));
   log('Requesting Bluetooth Scan...');
@@ -420,7 +420,18 @@ const logDataView = (labelOfDataSource, key, b) => {
 			}
 			log(s); 
 		}
+	} else if(key == '0000fcd2-0000-1000-8000-00805f9b34fb') {	// BTHome v2
+		if(b.byteLength > 1) {
+			let ver = b.getUint8(8);
+			if(ver & 0xe0 == 0x40) {
+				s = "BTHomeV2";
+				if(ver & 1 != 0)
+					s += ", Data encrypted";
+			} else s = "BTHomeV?";
+			log(s); 
+		}
 	}
+
 };
 </script>
 </html>
