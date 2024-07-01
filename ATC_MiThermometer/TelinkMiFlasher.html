@@ -1163,7 +1163,7 @@ function CustomBlkParse(value) {
 			if(wr != 0)
 				s += ', write '+wr+' bytes';
 			if(len > 2)
-				s += ', read '+ (len-3) +' bytes: '+bytesToHex(value.buffer.slice(3));
+				s += ', read '+ (len-2) +' bytes: '+bytesToHex(value.buffer.slice(3));
 		}
 		addAlog(s);
 	} else if(blkid == 0x05 && len > 3) {
