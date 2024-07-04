@@ -69,6 +69,7 @@ function resetVariables() {
 	pincode.enable = false;
 	cfg.enable = false;
 	trg.enable = false;
+	trg.rds2_enable = false;
 	cmf.enable = false;
 	dnm.enable = false;
 	cnt_buf11 = 0;
@@ -835,9 +836,9 @@ function CustomBlkParse(value) {
 		if((flg & 1) == 0) sw = 'Close';
 		let s = '';
 		if(cfg.ver >= 0x37)
-			s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', Reed switch counter: '+ rds_count+', Switch ' + sw +', TRG Out "' + ((flg & 2) >> 1) + '", flg: 0x'+hex(flg,2);
+			s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', Switch: '+ sw +', Counter: '+ rds_count+', TRG Out: ' + ((flg & 2) >> 1) + ', flg: 0x'+hex(flg,2);
 		else
-			s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', Switch ' + sw +', TRG Out "' + ((flg & 2) >> 1) + '", flg: 0x'+hex(flg,2);
+			s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', Switch ' + sw +', TRG Out: ' + ((flg & 2) >> 1) + ', flg: 0x'+hex(flg,2);
 		$("tempHumiData").innerHTML = s;
 		addClog(s);
 	} else if(blkid == 0x22 && len >= 7) {
@@ -1170,9 +1171,12 @@ function CustomBlkParse(value) {
 		addAlog('Sensor ID: ' + hex(value.getUint32(1,true),8));
 	} else if(blkid == 0x45) {
 		let flg = value.getUint8(1);
-		let sw = 'Close';
-		if((flg & 1) == 0) sw = 'Open';
-		let s = 'Switch ' + sw +', TRG Out "' + ((flg & 2) >> 1) + '", flg: 0x'+hex(flg,2);
+		let s = 'Switch1: Close';
+		if((flg & 1) == 0)
+			s = 'Switch1: Open';
+		let	sw = 'Close';
+		if((flg & 0x40) == 0) sw = 'Open';
+		s += ', Switch2: ' + sw +', TRG Out "' + ((flg & 2) >> 1) + '", flg: 0x'+hex(flg,2);
 		$("tempHumiData").innerHTML = s;
 		addClog(s);
 	} else {
@@ -2513,9 +2517,16 @@ function UpdTrg() {
 		if(cfg.ver >= 0x37) {
 			$("rds_rpint").value =	trg.rds_rpint;
 			$("rds_type").value =  trg.rds_type & 3;
+			if(trg.rds2_enable) {
+				$("rds2_type").value =  (trg.rds_type >> 2) & 3;
+			}
 		}
-		if(cfg.ver >= 0x39)
+		if(cfg.ver >= 0x39) {
 			$("rds_invert").checked = ((trg.rds_type & 0x10) != 0);
+			if(trg.rds2_enable) {
+				$("rds2_invert").checked = ((trg.rds_type & 0x20) != 0);
+			}
+		}
 	}
 }
 function setNewTBKey() {
@@ -2559,9 +2570,13 @@ function sendTrg() {
 			if(cfg.ver >= 0x37) {
 				trg.rds_rpint = parseInt($("rds_rpint").value);
 				trg.rds_type = $("rds_type").value & 3;
+				if(trg.rds2_enable)
+					trg.rds_type |= ($("rds2_type").value & 3) << 2;
 				if(cfg.ver >= 0x39) {
 					if(trg.rds_type == 3) trg.rds_type += 0x10;
 					else trg.rds_type += (($("rds_invert").checked)? 0x10 : 0);
+					if(trg.rds2_enable)
+						trg.rds_type += (($("rds2_invert").checked)? 0x20 : 0)
 				}
 				blk = new Uint8Array([0x44, trg.tmp_thr&0xff, (trg.tmp_thr>>8)&0xff,trg.hm_thr&0xff,(trg.hm_thr>>8)&0xff,trg.tmp_hst&0xff,(trg.tmp_hst>>8)&0xff,trg.hm_hst&0xff,(trg.hm_hst>>8)&0xff,trg.rds_rpint&0xff,(trg.rds_rpint>>8)&0xff,trg.rds_type]);
 			} else {
@@ -2944,14 +2959,23 @@ function CustomConfig() {
 		is += 'Temperature threshold: <input size="8" title="-40.00..80.00°C, default 21.00°C" id="trg_tmp_thr" maxlength="6" value="21.00"> °';
 		is += ', Humidity threshold: <input size="8" title="0..99.00%, default 50.00%" id="trg_hm_thr" maxlength="6" value="50.00"> %<br><br>';
 		is += '<b>Management GPIO_RS (Reed Switch):</b><br><br>';
-		is += 'RS mode: <select id="rds_type"><option value="0" selected>None</option><option value="1">Switch</option><option value="2">Counter</option>';
-		//is += '<option value="3" selected>Connect</option>';
-		is += '</select>, Invert RS event: <input type="checkbox" id="rds_invert">';
+		if(hwver_id == 18) {
+			is += 'RS1 mode: <select id="rds_type"><option value="0" selected>None</option><option value="1">Switch</option><option value="2">Counter</option>';
+			is += '</select>, Invert RS1 event: <input type="checkbox" id="rds_invert">';
+			is += '<br>RS2 mode: <select id="rds2_type"><option value="0" selected>None</option><option value="1">Switch</option><option value="2">Counter</option>';
+			is += '</select>, Invert RS2 event: <input type="checkbox" id="rds2_invert">';
+			trg.rds2_enable = true;
+		} else {
+			is += 'RS mode: <select id="rds_type"><option value="0" selected>None</option><option value="1">Switch</option><option value="2">Counter</option>';
+			is += '</select>, Invert RS event: <input type="checkbox" id="rds_invert">';
+			trg.rds2_enable = false;
+		}
 		is += '<br>RS report interval: <input size="8" title="0 - Off, 1..65535 sec, default 3600 sec" id="rds_rpint" maxlength="6" value="3600"> sec';
 		is += '<br> <button type="button" title="Set/save current setings" onclick="sendTrg();">Set TRG</button>';
 		is += ' <button type="button" title="GPIO_TRG PullUp 10 kOm. Work only TRG off!" onclick="sendCustomSetting(&quot;4501&quot;);">Set pin to "1"</button>';
 		is += ' <button type="button" title="GPIO_TRG PullDown 100 kOm. Work only TRG off!" onclick="sendCustomSetting(&quot;4500&quot;);">Set pin to "0"</button><br><hr>';
 		trg.enable = true;
+
    	}
 	is +='<hr><b>Keys and Codes:</b><br><br>EEP BindKey:<br><input size="40" maxlength="32" title="Bind Key must be 16 hex digits" type="text" id="cbind_key" value="?">';
 	is +=' <button type="button" title="Get EEP BindKey" onclick="getBKey();">Get EEP BindKey</button>';
