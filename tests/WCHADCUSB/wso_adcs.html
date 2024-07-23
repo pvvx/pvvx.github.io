@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<!-- style type="text/css"></style -->
+	<title>WSO ADC2COM v0.0</title>
+  </head>
+  <body>
+	<div id='divhdr' style="height:auto;width:auto;text-align:left;">
+	 <input type="button" id="butOpen" value="Open">
+	 <input type="button" id="butOnOff" value="Stop">
+	 <input type="button" id="butSave" value="Save data.csv"> &nbsp
+ 	 Render <span id='txtrend'>?</span> Hz, Sample Rate: <span id='txtsps'>?</span> sps 
+	 <br> 
+	 Sync: <input type="radio" value="0" name="radiosc" onclick="SetEdge(0);"/>None
+	 <input type="radio" value="1" checked name="radiosc" onclick="SetEdge(1);"/>Rising Edge
+	 <input type="radio" value="2" name="radiosc" onclick="SetEdge(2);"/>Falling Edge &nbsp 
+ 	 <input type="button" id="butAuto" value="Auto">
+	 &nbsp Level: <span id='txtlvsync'>32768</span><br>
+	 Y Scaling: <input type="radio" value="1" checked name="radiobx" onclick="SetYScaling(1);"/>x1
+	 <input type="radio" value="10" name="radiobx" onclick="SetYScaling(10);"/>x10
+	 <input type="radio" value="100" name="radiobx" onclick="SetYScaling(100);"/>x100 &nbsp
+ 	 <input type="button" id="butClrOf" value="SetTo0"> &nbsp
+ 	 <input type="button" id="butOfSyn" value="SetToSync"> &nbsp
+	 Offset: <span id='txtybase'>0</span>
+	 <br>
+	</div>
+	<div style="height:auto;width:auto;text-align:center;">
+	<table style="width:100%;padding:0px;">
+	<tr>
+		<td>
+		<input id='ybase' type="range" min="-65536.0" max="65536.0" step="1.0" style="width:10px;-webkit-appearance:slider-vertical;">
+		</td>
+		<td id='div_v' style="width:100%;">
+		<canvas id='scope'></canvas>
+		</td><td>
+		<input id='ysync' type="range" min="0" max="65536.0" step="0.5" style="width:10px;-webkit-appearance:slider-vertical;">
+		</td>
+	</tr>
+	<tr><td></td>
+		<td>
+		<input id='xsync' type="range" min="0" max="1.0" step="0.00001" style="width:100%;">
+	</td><td>
+	</td></tr>
+	</table>
+		Window: <span id='wdsize'>?</span> sec, Average: <span id='wdaver'>?</span>
+	</div>
+  </body>
+<script type="text/javascript">
+"use strict";
+var $ = function(id) {return document.getElementById(id);}
+//**************************************
+const smprate = 923000;
+//-----------
+var data_ch1 = [];
+var showData1 = [];
+var ctx = $('scope').getContext('2d');
+var wso = {
+levelEdge:32768,
+TypeEdge:1,
+xlineWidth:1,
+width:320,
+height:200,
+ybase:0,
+_xsync:0,
+xsync_:0,
+scaling:1,
+yscaling:65536,
+average:32768,
+maver:[0]
+};
+function delay(ms) {
+  return new Promise((resolve, reject) => {
+	setTimeout(resolve, ms);
+  });
+}
+function hex(number, length) {
+	var str = (number.toString(16)).toUpperCase();
+	while (str.length < length) str = '0' + str;
+	return str;
+}
+//*************************************************
+class SerialController {
+	async init(init_cb) {
+		if ('serial' in navigator) {
+			try {
+				this.port = await navigator.serial.requestPort();
+				console.log('USB-COM open.');
+				await this.port.open({baudRate: 115200, baudrate: 115200});
+				this.writer = this.port.writable.getWriter();
+		        this.reader = this.port.readable.getReader();
+				console.log('DTR off, RTS off.');
+				await this.port.setSignals({dataTerminalReady: false, requestToSend: false});
+				//await delay(10);
+				//console.log('RTS on.');
+				//await this.port.setSignals({requestToSend: false});
+				if (typeof init_cb == 'function') init_cb(this.port);
+			}
+			catch (err) {
+				console.error('There was an error opening the serial port:', err);
+			}
+		}
+		else {
+			console.error('Web serial doesn\'t seem to be enabled in your browser. Try enabling it by visiting:');
+			console.error('chrome://flags/#enable-experimental-web-platform-features');
+			console.error('opera://flags/#enable-experimental-web-platform-features');
+			console.error('edge://flags/#enable-experimental-web-platform-features');
+			alert('Web serial doesn\'t seem to be enabled in your browser. Try enabling it by visiting:\r\nchrome://flags/#enable-experimental-web-platform-features\r\nopera://flags/#enable-experimental-web-platform-features\r\nedge://flags/#enable-experimental-web-platform-features');
+			// chrome://device-log
+		}
+	}
+	async setdtrrts(dtr, rts) {
+		console.log('DTR='+dtr+', RTS='+rts+'.');
+		await this.port.setSignals({dataTerminalReady: dtr, requestToSend: rts});
+	}
+	async write_raw(data) {
+		return await this.writer.write(data);
+	}
+	async read_raw_all(add_data_cb) {
+		try {
+	        // this.reader = this.port.readable.getReader();
+			while (true) {
+				const { value, done } = await this.reader.read();
+				if (done) {
+					// console.log('|reader| has been canceled.');
+			        break;
+				}
+				// Do something with |value|...
+				if (typeof add_data_cb == 'function') add_data_cb(value);
+			}
+		}
+		catch (err) {
+			console.error('Error reading data:', err);
+		}
+	}
+	async reset(t_ms) {
+		console.log('DTR, RTS off.');
+		await this.port.setSignals({dataTerminalReady: true, requestToSend: true});
+		await delay(t_ms);
+		console.log('DTR, RTS on.');
+		return await this.port.setSignals({dataTerminalReady: false, requestToSend: false});
+	}
+	async close() {
+		await this.writer.close();
+		await this.reader.cancel();
+		await this.port.close();
+		console.log('USB-COM close.');
+	}
+}
+var serialController = new SerialController();
+const connect = $('butOpen');
+async function DeviceStart() {
+	connect.value = 'Close';
+	console.log('Device: StopADC...');
+	serialController.setdtrrts(false, false);
+	await delay(50);
+	blk = new Uint8Array(); // flush RX
+    console.log('Start ADC.');
+	serialController.setdtrrts(true, true);
+	if(!sttim) {
+		sttim = new Date().getTime();
+		sitim = setInterval(function(){wsSmpRate()}, 500);
+	}
+	serialController.read_raw_all(DeviceRead);
+}
+async function DeviceStop() {
+	console.log('Device: StopADC...');
+	serialController.setdtrrts(false, false);
+	await delay(10);
+	serialController.close();
+	if(sttim != 0) {
+		clearInterval(sitim);
+		sttim = 0;
+	}
+	cur_idx = 0;
+	old_idx = 0;
+	smpsa = [];
+	data_ch1 = [];
+	frend = 0;
+	blk = new Uint8Array(); // flush RX
+}
+connect.addEventListener('pointerdown', () => {
+	if(connect.value == 'Close') {
+		DeviceStop();
+		connect.value = 'Open';
+	} else {
+		serialController.init(DeviceStart);
+	}
+});
+var start_adc_ok = false;
+var blk;
+function DeviceRead(data) {
+	function concatTypedArrays(a, b) { // a, b TypedArray of same type
+		let c = new (b.constructor)(a.length + b.length);
+	    c.set(a, 0);
+	    c.set(b, a.length);
+	    return c;
+	}
+	if(data instanceof Uint8Array) {
+		blk = concatTypedArrays(blk, data);
+		while(blk.length > 1) {
+			let blksz = blk[0]*2;
+			if (blk.length < blksz + 2)	return;
+			let blkid = blk[1];
+			if (blkid == 0x0A) { // adc data
+				for (var i=0; i<blksz; i+=2) {
+					if(rend)
+						data_ch1.push([blk[i+2] | (blk[i+3]<<8)]);
+					cur_idx++;
+				}
+			} else
+				console.log('Error blk:', blk.slice(0,blksz+2));
+			blk = blk.slice(blksz+2);
+		}
+	} else console.log('Device data?', data);
+}
+function convertArrayOfObjectsToCSV(value){
+	var result, ctr, keys, columnDelimiter, lineDelimiter, data;
+
+	data = value.data || null;
+	if (data == null || !data.length) {return null;}
+	columnDelimiter = value.columnDelimiter || ';';
+	lineDelimiter = value.lineDelimiter || '\n';
+	keys = Object.keys(data[1]);
+	result = '';
+	result += keys.join(columnDelimiter);
+	result += lineDelimiter;
+	data.forEach(function(item){
+		ctr = 0;
+		keys.forEach(function(key){
+			if (ctr > 0)
+				result += columnDelimiter;
+			result += item[key];
+			ctr++;
+		});
+		result += lineDelimiter;
+	});
+	return result;
+}
+//**************************************
+var smps = smprate;
+var sttim = 0;
+var sitim;
+var cur_idx = 0;
+var old_idx = 0;
+var smpsa = [];
+var frend = 0;
+function wsSmpRate() {
+	let idx = cur_idx, tt = new Date().getTime();
+	let sps = (idx - old_idx) * 1000/ (tt - sttim);
+	sttim = tt;	old_idx = idx;
+	smpsa.push(sps);
+	let len = smpsa.length;
+	if(len > 100) { smpsa.shift(); len-- };
+	let csps = 0;
+	for (let i = 0; i < len; i++) csps += smpsa[i];
+	csps = csps/len;
+	$('txtsps').innerHTML = csps.toFixed(1);
+	$('txtrend').innerHTML = frend;
+	let avrl = wso.maver.length
+	let avrs = 0;
+	if(avrl) {
+		for (let i = 0; i < avrl; i++) avrs += wso.maver[i];
+		avrs = avrs / avrl;
+		if(avrl > frend) wso.maver = wso.maver.slice(avrl-frend);
+	}
+	wso.average = avrs;
+	$('wdaver').innerHTML = avrs.toFixed(3);
+	frend = 0;
+}
+var rend = true;
+$("butOnOff").onclick =  function() {
+	if(rend) {rend = false; $("butOnOff").value = "Run";}
+	else {rend = true; $("butOnOff").value = "Stop";}
+}
+window.onresize = function(){
+	wso.height = (window.innerHeight-150)&(-2);
+	ctx.canvas.height = wso.height;
+	$('ybase').style.height = wso.height + 'px';
+	$('ysync').style.height = wso.height + 'px';
+	wso.width = ($('div_v').clientWidth-20)&(-2);
+	if(wso.width > window.innerWidth-50)
+		wso.width = (window.innerWidth-50)&(-2);
+	ctx.canvas.width = wso.width;
+	$('wdsize').innerHTML = wso.width/smprate;
+	$('xsync').style.width = wso.width + 'px';
+}
+window.onresize();
+//*************************************************
+$('ysync').addEventListener('change', (event) => { $('txtlvsync').innerHTML = $('ysync').value; });
+$('ybase').addEventListener('change', (event) => { $('txtybase').innerHTML = $('ybase').value; });
+$("butAuto").onclick =  function() {
+    $('ysync').value = wso.average.toFixed(1);
+	$('txtlvsync').innerHTML = $('ysync').value;
+//	$('ybase').value = Math.round(wso.average - wso.yscaling/2);
+//	$('txtybase').innerHTML = $('ybase').value;
+}
+$("butClrOf").onclick =  function() {
+	$('ybase').value = 0;
+	$('txtybase').innerHTML = $('ybase').value;
+}
+$("butOfSyn").onclick =  function() {
+	$('ybase').value = Math.round(wso.levelEdge - wso.yscaling/2);
+	$('txtybase').innerHTML = $('ybase').value;
+}
+function SetEdge(edg) {
+	wso.TypeEdge = edg;
+}
+function SetYScaling(ys){
+	wso.yscaling = 65536/ys;
+	$('ybase').value = Math.round(wso.levelEdge - wso.yscaling/2);
+	$('txtybase').innerHTML = $('ybase').value;
+}
+function draw() {
+	wso.levelEdge = Number($('ysync').value);
+	wso.ybase = Number($('ybase').value);
+	wso._xsync = Math.round($('xsync').value * wso.width);
+	wso.xsync_ = wso.width - wso._xsync;
+	wso.scaling = wso.height / wso.yscaling;
+	let przdg = 0;
+
+	let dsize = data_ch1.length;
+	if (dsize > wso.width*2) {
+		przdg = wso._xsync;
+		if(wso.TypeEdge == 1) {
+			while (data_ch1[przdg] > wso.levelEdge-1 && przdg <= dsize - wso.xsync_) przdg++;
+			while (data_ch1[przdg] < wso.levelEdge+1 && przdg <= dsize - wso.xsync_) przdg++;
+		} else if(wso.TypeEdge == 2) {
+			while (data_ch1[przdg] < wso.levelEdge-1 && przdg <= dsize - wso.xsync_) przdg++;
+			while (data_ch1[przdg] > wso.levelEdge+1 && przdg <= dsize - wso.xsync_) przdg++;
+		} else
+			przdg = 0;
+		if (przdg > 0 && przdg < dsize - wso.xsync_) {
+			wso.xlineWidth = 1;
+			showData1 = data_ch1.slice(przdg - wso._xsync, przdg + wso.xsync_);
+			if(dsize > wso.width*4)
+				data_ch1 = data_ch1.slice(dsize - wso.width*2);
+			else
+				data_ch1 = data_ch1.slice(przdg + wso.xsync_);
+		} else if(dsize > wso.width*4) {
+		    if(wso.TypeEdge != 0)
+				wso.xlineWidth = 0.2;
+			else
+				wso.xlineWidth = 1;
+			showData1 = data_ch1.slice(0, wso.width);
+			data_ch1 = data_ch1.slice(dsize - wso.width*2);
+		}
+	}
+
+	ctx.fillStyle = 'rgba(0, 20, 0, 0.2)';
+	ctx.fillRect(0, 0, wso.width, wso.height);
+
+	ctx.beginPath();
+	ctx.strokeStyle = 'rgb(0, 255, 0)';
+	ctx.lineWidth = wso.xlineWidth;
+	ctx.setLineDash([]);
+	let maver = 0.0;
+	for (let x = 0; x < showData1.length && x < wso.width; x++) {
+		ctx.lineTo(x, wso.height - (showData1[x] - wso.ybase) * wso.scaling);
+		maver += Number(showData1[x]);
+	}
+	wso.maver.push(maver / showData1.length);
+
+	ctx.stroke();
+
+	ctx.beginPath();
+	ctx.lineWidth = 0.1;
+	ctx.strokeStyle = 'rgb(155, 155, 155)';
+	ctx.setLineDash([5,4]);
+	ctx.moveTo(0, wso.height - (wso.levelEdge - wso.ybase) * wso.scaling);
+	ctx.lineTo(wso.width, wso.height - (wso.levelEdge - wso.ybase) * wso.scaling);
+	ctx.moveTo(wso._xsync, 0);
+	ctx.lineTo(wso._xsync, wso.height);
+	ctx.stroke();
+	frend++;
+	requestAnimationFrame(draw);
+}
+draw();
+//***************************************
+function download(data, filename, type) {
+	let file = new Blob([data], {type: type});
+	if (window.navigator.msSaveOrOpenBlob) { // ie10+
+		window.navigator.msSaveOrOpenBlob(file, filename);
+	} else { // ff, chrome
+		let url = URL.createObjectURL(file);
+		let a = document.createElement("a");
+		a.href = url;
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		setTimeout(function(){document.body.removeChild(a);window.URL.revokeObjectURL(url);},0);
+		URL.revokeObjectURL(url);
+	}
+	//file.close();
+}
+$("butSave").onclick =  function() {
+	let csv = convertArrayOfObjectsToCSV({data: showData1});
+	download(csv, 'data.csv', 'text/csv;charset=utf-8');
+}
+</script>
+</html>
