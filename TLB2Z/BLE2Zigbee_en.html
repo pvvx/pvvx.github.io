@@ -388,7 +388,7 @@ function connect() {
 	$('btnReconnect').disabled = true;
 	if(typeof(navigator.bluetooth) != "undefined") {
 	    $('btnConnect').disabled = true;
-	    showState("Поиск устройств");
+	    showState("Search for devices");
 	    connectRetries = 0;
 		//console.log()
 	    navigator.bluetooth.requestDevice(deviceOptions).then(device => {
@@ -403,14 +403,14 @@ function connect() {
 }
 
 function disconnect() {
-	addLog("Отключение");
+	addLog("Disconnect");
 	isConnected = false;
 	if (bluetoothDevice != null)
 		bluetoothDevice.gatt.disconnect();
 }
 
 function reconnect() {
-	addLog("Переподключение");
+	addLog("Reconnect");
 	if (bluetoothDevice != null) {
 		bluetoothDevice.gatt.disconnect();
 		isConnected = false;
@@ -440,7 +440,7 @@ function getDevInfo(devInfEnabled) {
 	devInfo.vrstr = null;
 	if (devInfEnabled == true) {
 		gattServer.getPrimaryService(0x180a).then(service => {
-			console.log("Найден Device Information Service");
+			console.log("Device Information Service found");
 			infoService = service;
 			return getStrCharacteristic(infoService, 0x2a24).then(value => {
 				devInfo.nrstr = value;
@@ -478,12 +478,12 @@ function b2zConnect(info_flg) {
 			addLog("Software: "+devInfo.vrstr);
 	 	return gattServer.getPrimaryService(0xfffe);
 	}).then(service => {
-		console.log("Найден Main Service");
+		console.log("Main Service found");
 		mainService = service;
 		cmdCharacteristic = null;
 		return mainService.getCharacteristic(0xff01);
 	}).then(characteristic => {
-		console.log("Найдена CMD Characteristic");
+		console.log("CMD Characteristic found");
 		cmdCharacteristic = characteristic;
 		return cmdCharacteristic.addEventListener('characteristicvaluechanged', event => parseBlkCustom(event.target.value));
 	}).then(_ => {
@@ -491,7 +491,7 @@ function b2zConnect(info_flg) {
 	}).then(_ => {
 		return cmdCharacteristic.readValue();
 	}).then(value => {
-		showState("Устройство подключено.");
+		showState("The device is connected.");
 		isConnected = true;
 		$('btnDisconnect').disabled = false;
 		disableControls(false);
@@ -502,9 +502,9 @@ function b2zConnect(info_flg) {
 
 function doConnect() {
 	isConnected = false;
-	showState("Ожидание соединения с " + bluetoothDevice.name)
+	showState("Waiting for connection to" + bluetoothDevice.name)
 	return bluetoothDevice.gatt.connect().then(server => {
-		console.log("Найден GATT сервер");
+		console.log("GATT server found");
 		gattServer = server;
 		gattServer.getPrimaryServices().then(services => {
 			let cmd = false;
@@ -518,7 +518,7 @@ function doConnect() {
 			}
 			if(cmd)
 				return b2zConnect(true);
-		    addLog("Выбрано неверное устройтво!");
+		    addLog("Incorrect device selected!");
 		    bluetoothDevice.gatt.disconnect();
 		    connectRetries = 10;
 		    return null;
@@ -547,7 +547,7 @@ function disableControls(state) {
 function onDisconnected() {
 	isConnected = false;
 	resetVariables();
-	showState('Устройство отключено.');
+	showState('The device is disconnected.');
     $('btnConnect').disabled   = false;
 	$('btnReconnect').disabled = false;
 	// $('tabConfig').style.display = "none";
@@ -562,7 +562,7 @@ function addLog(logTXT) {
 }
 
 function showState(text) {
-	let s = "Состояние: " + text;
+	let s = "State: " + text;
 	$("lblStatus").className = "shadowbox";
 	$("lblStatus").innerHTML = s;
 	addLog(text);
@@ -570,7 +570,7 @@ function showState(text) {
 
 function showError(text) {
 //    console.log("Status: " + status);
-	let s = "Ошибка: " + text;
+	let s = "Error: " + text;
 	$("lblStatus").className = "shadowerror";
 	$("lblStatus").innerHTML = s;
 	addLog(text);
@@ -648,7 +648,7 @@ var sendCharMain = function(data, characteristic) {
 		characteristic.writeValue(hexToBytes(data)).then(function(character) {
 			resolve("OK");
 		}).catch(function(err) {
-			reject("Ошибка при отправке данных");
+			reject("Error sending data");
 		});
 	});
 }
@@ -660,7 +660,7 @@ function writeCmd(data) {
 			let blk = new Uint8Array(data);
 			cmdCharacteristic.writeValue(blk);
 		} else
-		    showError('Ошибка, длина команды от 1 до 20 байт!');
+		    showError('Error, command length from 1 to 20 bytes!');
 	}
 }
 
@@ -669,7 +669,7 @@ function sendCommand() {
 	if(data.length != 0 && data.length <= 20)
 		writeCmd(data);
 	else
-	    console.log('Должно быть от 1 до 20 hex байт!');
+	    console.log('Must be from 1 to 20 hex bytes!');
 }
 
 function showConfig() {
@@ -698,6 +698,7 @@ function parseBlkCustom(value) {
 	    	let vbat = value.getUint8(7) / 10.0;
 	    	let s = "T: "+temp.toFixed(2)+"°C, H: "+humi.toFixed(2)+"%, B: "+lbat.toFixed(1)+"%, V: "+vbat.toFixed(1)+"V";
 			$("lblMeasure"+nn).innerHTML = s;
+			console.log("Dev"+(nn+1)+" "+s);
 		}
 	} else if(blkId == 0x18 && len > 1) { // Get/set bindkeys
 		let nn = value.getUint8(1);
@@ -708,14 +709,14 @@ function parseBlkCustom(value) {
 				addLog("Bindkey"+ (nn+1) + " # " + s);
 				$("inpBindKey"+nn).value = s;
 			} else if(len == 3) {
-				addLog("Bindkey"+ (nn+1) + " # не записан");
+				addLog("Bindkey"+ (nn+1) + " # not recorded");
 			}
 			if(start_read == true) {
 			  if(nn < 2) writeCmd([0x18, nn+1]);
 			  else start_read = false;
 			}
 		} else {
-			addLog("Ошибка чтения BindKey устройств!");
+			addLog("Error reading BindKeys!");
 			console.log('blk: ' + dump8(value, value.byteLength));
 			$("inpBindKey"+nn).value = '?';
 		}
@@ -735,20 +736,20 @@ function parseBlkCustom(value) {
 				$("inpDevMAC"+nn).value = mac_txt;
 				addLog("MAC"+(nn+1)+" # "+ mac_txt);
 			} else if(len == 3) {
-				addLog("MAC"+ (nn+1) + " # не записан");
+				addLog("MAC"+ (nn+1) + " # not recorded");
 			}
 			if(start_read == true) {
 				if(nn < 2) writeCmd([0x10, nn+1]);
 				else if(nn == 2) writeCmd([0x18, 0]);
 			}
 		} else {
-			addLog("Ошибка чтения MAC устройств!");
+			addLog("Error reading MAC devices!");
 			console.log('blk: ' + dump8(value, value.byteLength));
 			$("inpDevMAC"+nn).value = '?';
 		}
 	} else {
 		console.log('blk: ' + dump8(value, value.byteLength));
-		addLog('Ответ на команду (' + hex(blkId,2) + '): ' + bytesToHex(value.buffer.slice(1)));
+		addLog('Response to command (' + hex(blkId,2) + '): ' + bytesToHex(value.buffer.slice(1)));
 	}
 }
 function getDevMAC(nn) {
@@ -782,7 +783,7 @@ function setDevMAC(nn) {
 				blk[7] = mac[0];
 				console.log("Send cmd New MAC N"+nn+" ("+dump(blk, blk.length)+")...");
 				cmdCharacteristic.writeValue(blk).then(_ => {
-					s = "Передача нового MAC"+(nn+1)+": "+dump(mac, 6);
+					s = "Transfer new MAC"+(nn+1)+": "+dump(mac, 6);
 					if(len == 8)
 						s += " RAND:" +dump(mac.slice(6), 2);
 					addLog(s+" ok");
@@ -790,7 +791,7 @@ function setDevMAC(nn) {
 				return;
 			}
 		}
-		addLog("Строка MAC должна содержать 6 байт в HEX виде!")
+		addLog("The MAC string must contain 6 bytes in HEX format!")
 		return;
 	}
 }
@@ -806,35 +807,35 @@ function setBindKey(nn) {
 				blk[0] = 0x18;
 				blk[1] = nn;
 				//console.log("Send bindkey...");
-				addLog("Сохранить новый BindKey"+(nn+1)+": " + bytesToHex(blk.slice(1)));
+				addLog("Save new BindKey"+(nn+1)+": " + bytesToHex(blk.slice(1)));
 				cmdCharacteristic.writeValue(blk).catch(error => { addLog("setBindKey("+nn+") Error: " + error); });
 				return;
 			}
 		}
-		addLog("BindKey должен содержать 16 байт в HEX виде (32 символа)!")
+		addLog("BindKey must contain 16 bytes in HEX format (32 characters)!")
 	}
 }
 
 
 window.onload = function() {
 
-	showState("Не подключено");
+	showState("Not connected");
 
 	disableControls(true);
 };
 </script>
 <h2>BLE2Zigbee <a href="https://github.com/pvvx/TLB2Z"><small>&#9432;</small></a></h2>
-<label for="inpNamePrefix">Префикс имени устройств(а)</label>
+<label for="inpNamePrefix">Device name prefix(es)</label>
 <input type="text" id="inpNamePrefix" value="" placeholder="B2Z">
 <br>
-<button type="button" id="btnConnect"     onclick="connect()">Соединение</button>
-<button type="button" id="btnDisconnect"  onclick="disconnect()" disabled="true">Отключение</button>
-<button type="button" id="btnReconnect"   onclick="reconnect()" disabled="true">Переподключение</button>
+<button type="button" id="btnConnect"     onclick="connect()">Connect</button>
+<button type="button" id="btnDisconnect"  onclick="disconnect()" disabled="true">Disconnect</button>
+<button type="button" id="btnReconnect"   onclick="reconnect()" disabled="true">ReConnect</button>
 <div id="tabService" class="tabcontent">
 <table>
   <tr>
-	<td style="width:100px;">Команда:</td>
-	<td><button type="button" id="btnSendCommand" onclick="sendCommand()" style="width:120px;">Выполнить</button></td>
+	<td style="width:100px;">Command:</td>
+	<td><button type="button" id="btnSendCommand" onclick="sendCommand()" style="width:120px;">Send</button></td>
 	<td><input type="text" id="inpCmdData" value="00" maxlength="40"></td>
   </tr>
 </table>
@@ -842,23 +843,23 @@ window.onload = function() {
 <table>
   <tr>
 	<td style="width:100px;">MAC1:</td>
-	<td><button type="button" id="btnGetMAC0" onclick="getDevMAC(0)">Прочитать</button></td>
+	<td><button type="button" id="btnGetMAC0" onclick="getDevMAC(0)">Read</button></td>
 	<td><input type="text" id="inpDevMAC0" value="?" maxlength="16"></td>
-	<td><button type="button" id="btnSetMAC0" onclick="setDevMAC(0)">Записать</button></td>
+	<td><button type="button" id="btnSetMAC0" onclick="setDevMAC(0)">Write</button></td>
 	<td><label id="lblMeasure0"></label></td>
   </tr>
   <tr>
 	<td style="width:100px;">MAC2:</td>
-	<td><button type="button" id="btnGetMAC1" onclick="getDevMAC(1)">Прочитать</button></td>
+	<td><button type="button" id="btnGetMAC1" onclick="getDevMAC(1)">Read</button></td>
 	<td><input type="text" id="inpDevMAC1" value="?" maxlength="16"></td>
-	<td><button type="button" id="btnSetMAC1" onclick="setDevMAC(1)">Записать</button></td>
+	<td><button type="button" id="btnSetMAC1" onclick="setDevMAC(1)">Write</button></td>
 	<td><label id="lblMeasure1"></label></td>
   </tr>
   <tr>
 	<td style="width:100px;">MAC3:</td>
-	<td><button type="button" id="btnGetMAC2" onclick="getDevMAC(2)">Прочитать</button></td>
+	<td><button type="button" id="btnGetMAC2" onclick="getDevMAC(2)">Read</button></td>
 	<td><input type="text" id="inpDevMAC2" value="?" maxlength="16"></td>
-	<td><button type="button" id="btnSetMAC2" onclick="setDevMAC(2)">Записать</button></td>
+	<td><button type="button" id="btnSetMAC2" onclick="setDevMAC(2)">Write</button></td>
 	<td><label id="lblMeasure2"></label></td>
   </tr>
 </table>
@@ -867,27 +868,27 @@ window.onload = function() {
  <table>
   <tr>
 	<td style="width:100px;">BindKey1:</td>
-	<td><button type="button" id="btnGetBindKey0" onclick="getBindKey(0)">Прочитать</button></td>
-	<td><input size="40" maxlength="32" title="Bind Key должен содержать 16 байт в hex виде" type="text" id="inpBindKey0" value="?"></td>
-	<td><button type="button" id="btnSetBindKey0" onclick="setBindKey(0)">Записать</button></td>
+	<td><button type="button" id="btnGetBindKey0" onclick="getBindKey(0)">Read</button></td>
+	<td><input size="40" maxlength="32" title="Bind Key must contain 16 bytes in hex format" type="text" id="inpBindKey0" value="?"></td>
+	<td><button type="button" id="btnSetBindKey0" onclick="setBindKey(0)">Write</button></td>
   </tr>
   <tr>
 	<td style="width:100px;">BindKey2:</td>
-	<td><button type="button" id="btnGetBindKey1" onclick="getBindKey(1)">Прочитать</button></td>
-	<td><input size="40" maxlength="32" title="Bind Key должен содержать 16 байт в hex виде" type="text" id="inpBindKey1" value="?"></td>
-	<td><button type="button" id="btnSetBindKey1" onclick="setBindKey(1)">Записать</button></td>
+	<td><button type="button" id="btnGetBindKey1" onclick="getBindKey(1)">Read</button></td>
+	<td><input size="40" maxlength="32" title="Bind Key must contain 16 bytes in hex format" type="text" id="inpBindKey1" value="?"></td>
+	<td><button type="button" id="btnSetBindKey1" onclick="setBindKey(1)">Write</button></td>
   </tr>
   <tr>
 	<td style="width:100px;">BindKey3:</td>
-	<td><button type="button" id="btnGetBindKey2" onclick="getBindKey(2)">Прочитать</button></td>
-	<td><input size="40" maxlength="32" title="Bind Key должен содержать 16 байт в hex виде" type="text" id="inpBindKey2" value="?"></td>
-	<td><button type="button" id="btnSetBindKey2" onclick="setBindKey(2)">Записать</button></td>
+	<td><button type="button" id="btnGetBindKey2" onclick="getBindKey(2)">Read</button></td>
+	<td><input size="40" maxlength="32" title="Bind Key must contain 16 bytes in hex format" type="text" id="inpBindKey2" value="?"></td>
+	<td><button type="button" id="btnSetBindKey2" onclick="setBindKey(2)">Write</button></td>
   </tr>
  </table>
 </div>
 </div>
 <hr>
-<button type="button" onclick="clearLog()">Очистить лог</button>
+<button type="button" onclick="clearLog()">Clean log</button>
 <label id="lblStatus"></label>
 <br>
 <div id="log"></div>
