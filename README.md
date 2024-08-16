@@ -70,6 +70,8 @@ Web files for projects:
 
 [RSH-GW018_DM](https://pvvx.github.io/RSH-GW018_DM) - Tuya Smart Gateway WiFi-BLE-Zigbee
 
+[PLANT-MON](https://pvvx.github.io/PLANT-MON) - Tuya BLE "Plant monitor"
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head><meta charset="utf-8">
+  <title>Tuya BLE "Plant monitor"</title>
+  </head>
+  <body>
+	<div style="height: auto; width: auto; text-align: center;">
+	<h2>Tuya BLE "Plant monitor"</h2><hr>
+	<h2>Bloetooth Plant monitor, Model: ECF-SGS01-A rev1.3</h2>
+	<img src="img/plm.gif""><br>
+	<hr>
+	SoC: TLSR8250F512ET32 (Tuya module: BT3L), Q: 16MHz, Sensor: <br>
+	<img src="img/plm_pcb1.gif" style="max-width:100%;"><br><br>
+	<img src="img/plm_pcb2.gif" style="max-width:100%;"><br><br>
+	<hr>
+	Average consumption in original firmware from Tuya<br>
+
+Стабилизатор на 2.5V типа XC6206P252MR с маркировкой "65T5"<br>
+При отключенной нагрузке выдает 3.08В (на входе 3.3В)! При падении напряжения имеет повышенное потребление (+20мкА)!<br>
+Коммутация нагрузки через P-канальный полевой транзистор AO3401A с маркировкой "A19T" коммутируемый N-P-N транзистором SS8050 с маркировкой "Y1".<br>
+Нагрузка - это TL555С у которой на выходе меандр 1MHz идущий через резистор 10 кОм на центральный электрод  емкостного  датчика. От электрода далее на диод типа 1N4148WT с конденсатором порядка 1 мкФ.<br><br>
+
+Среднее потребление в промежутке без замеров 49.5 мкА (период BLE рекламы 1 сек):<br>
+
+	<img src="img/plm_pow1.gif" style="max-width:100%;"><br><br>
+
+Замер:<br> 
+
+	<img src="img/plm_pow2.gif" style="max-width:100%;"><br><br>
+
+
+Потребление при открытом приложении Smart-Life или активеном режиме соединения с Tuya шлюзом:<br>
+
+	<img src="img/plm_pow3.gif" style="max-width:100%;"><br><br>
+
+Старт:<br>
+
+	<img src="img/plm_pow4.gif" style="max-width:100%;"><br><br>
+
+
+	<hr>
+	<a href="bin/ff_plmon.zip">FullFlash bin (Tuya ver)</a><br>
+	<a href="bin/ota_plmon.zip">OTA bin (Tuya ver)</a><br>
+	<hr>
+	</div>
+  </body>
+</html>

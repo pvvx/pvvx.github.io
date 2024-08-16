@@ -853,7 +853,7 @@ function CustomBlkParse(value) {
 		ext.flg = value.getUint8(7);
 		s = 'ExtShow: big_number: '+ext.big_number+', small_number: '+ext.small_number+', ext.vtime: '+ext.vtime+' s, flg: '+hex(ext.flg,2);
 		addAlog(s); UpdExt();
-	} else if((blkid == 0x25 || blkid == 0x26) && (len > 16)) {
+	} else if((blkid >= 0x25 && blkid <= 0x28) && (len > 16)) {
 	// CMD_ID_CFS Get/Set sensor config
 	    devSens.temp_k = value.getUint32(1, true);
 	    devSens.humi_k = value.getUint32(5, true);
@@ -864,9 +864,7 @@ function CustomBlkParse(value) {
 		$('inpHumK').value = (devSens.humi_k/100.0).toFixed(2);
 		$('inpTempZ').value = (devSens.temp_z/100.0).toFixed(2);
 		$('inpHumZ').value  = (devSens.humi_z/100.0).toFixed(2);
-
 		devSens.i2c_addr = value.getUint8(17);
-		let st = "Unknown";
 		if(len > 17) { // ver 4.9
 			devSens.id = value.getUint32(13, true);
 				let sentype = value.getUint8(18);
@@ -884,6 +882,12 @@ function CustomBlkParse(value) {
 					st = "CHT8215";
 				else if(sentype == 7)
 					st = "INA226";
+				else if(sentype == 8)
+					st = "MY18B20";
+				else if(sentype == 9)
+					st = "MY18B20x2";
+				else if(sentype == 10)
+					st = "HX71X";
 				else if(sentype == 0)
 				    st = "None"
 		} else {
@@ -899,7 +903,10 @@ function CustomBlkParse(value) {
 			else if(devSens.i2c_addr == 0x88 || devSens.i2c_addr == 0x8A)
 				st = "SHT4x";
 		}
-		$('lblSensor').innerHTML = "<b>Sensor Settings:</b> (" + st + ", I2C address: 0x"+hex(devSens.i2c_addr,2) + ", ID: " + hex(devSens.id, 8) + ")";
+		let s = "<b>Sensor Settings:</b> (" + st;
+		if(devSens.i2c_addr != 0)
+			s += ", I2C address: 0x"+hex(devSens.i2c_addr,2)
+		$('lblSensor').innerHTML = s + ", ID: " + hex(devSens.id, 8) + ")";
 		addAlog("Sensor "+st+" id: "+hex(devSens.id, 8)
 		   + ", I2C address: 0x" + hex(devSens.i2c_addr,2)
 		   + ", Kt: " + devSens.temp_k
