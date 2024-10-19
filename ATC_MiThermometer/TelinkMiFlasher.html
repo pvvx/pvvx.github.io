@@ -779,8 +779,9 @@ function CustomBlkParse(value) {
 			hwver_id = cfg.hver & 0x0F;
 		else
 			hwver_id = cfg.hver;
-		if((hwver_id == 0)||(hwver_id == 3)||(hwver_id == 4)||(hwver_id == 5)||(hwver_id == 10)) s +='LYWSD03MMC';
-		else if(hwver_id == 1) s +='MHO-C401';
+		if((hwver_id == 0)||(hwver_id == 3)||(hwver_id == 4)||(hwver_id == 5)||(hwver_id == 10)) {
+			s +='LYWSD03MMC';
+		} else if(hwver_id == 1) s +='MHO-C401';
 		else if(hwver_id == 2) s +='CGG1';
 		else if(hwver_id == 6) s +='CGDK2';
 		else if(hwver_id == 7) s +='CGG1-M';
@@ -806,16 +807,6 @@ function CustomBlkParse(value) {
 		if(devinfo.hrstr) s += ' ' + devinfo.hrstr;
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
 		setStatus(s);
-		if(hwver_id <= 15 && cfg.ver > 0x33) {
-			if((cfg.hver & 0x80) == 0) s += ', Sensor: SHT4x';
-			else s += ', Sensor: SHTC3 (SHTV3)';
-		} else {
-			if(hwver_id == 17) s +=', Sensor: CHT8305';
-			else if(hwver_id == 18) s +=', Sensor: AHT25';
-			else if(hwver_id == 22) s +=', Sensor: GXHT30';
-			else if(hwver_id == 27) s +=', Sensor: AHT30';
-			else if(hwver_id == 28) s +=', Sensor: AHT20';
-		}
 		addAlog(s);
 		addAlog('Custom config HEX string: 55' + bytesToHex(value.buffer.slice(2)));
 		if(cfg.ver >= 5) CustomConfig();
