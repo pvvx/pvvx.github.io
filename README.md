@@ -42,6 +42,8 @@ Web files for projects:
 
 [TS0201_TZ3000](https://pvvx.github.io/TS0201_TZ3000) - Tuya ZigBee Thermo-Hygrometer
 
+[TS0201_TZ3000_TH03](https://pvvx.github.io/TS0201_TZ3000_TH03) - Tuya ZigBee TH03 LCD Thermo-Hygrometer
+
 [TS0202_TZ3000](https://pvvx.github.io/TS0202_TZ3000) - Tuya ZigBee ZP01 IR-Motion sensor
 
 [TS0207_TZ3000](https://pvvx.github.io/TS0207_TZ3000) - Tuya ZigBee "Wireless Water Detector"
