@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v8.0</title>
+<title>Telink Flasher v8.1</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -801,6 +801,7 @@ function CustomBlkParse(value) {
 			else if(hwver_id == 22) s +='TH03Z';
 			else if(hwver_id == 27) s +='ZTH01';
 			else if(hwver_id == 28) s +='ZTH02';
+			else if(hwver_id == 30) s +='TH03';
 			else s += 'Unknown or DIY ('+hwver_id+')';
 		}
 		if(cfg.ver > 0x45 && hwver_id <= 15) bigOtaEnabled = true;
@@ -973,6 +974,7 @@ function CustomBlkParse(value) {
 						}
 						addLog(s);
 					} else if(cnt_buf11 == 8) {
+						addClog('Custom (0x1f1f) Notifications id: 0x'+hex(blkid,2)+' ['+bytesToHex(value.buffer.slice(1))+']');
 						// * public_mac:		[0][1][2][3][4][5], const: [3]=38;[4]=C1;[5]=A4
 						// * random_static_mac: [0][1][2][6][7]C0
 						m = hex(buf11[5],2)+hex(buf11[4],2)+hex(buf11[3],2)+hex(buf11[2],2)+hex(buf11[1],2)+hex(buf11[0],2);
