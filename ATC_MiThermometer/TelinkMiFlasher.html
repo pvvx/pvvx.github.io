@@ -804,7 +804,7 @@ function CustomBlkParse(value) {
 			else if(hwver_id == 30) s +='TH03';
 			else s += 'Unknown or DIY ('+hwver_id+')';
 		}
-		if(cfg.ver > 0x45 && hwver_id <= 15) bigOtaEnabled = true;
+		if(cfg.ver > 0x45) bigOtaEnabled = true;
 		if(devinfo.hrstr) s += ' ' + devinfo.hrstr;
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
 		setStatus(s);
