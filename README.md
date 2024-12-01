@@ -74,6 +74,8 @@ Web files for projects:
 
 [PLANT-MON](https://pvvx.github.io/PLANT-MON) - Tuya BLE "Plant monitor"
 
+[LKTMZL02](https://pvvx.github.io/LKTMZL02) - Tuya BLE Temperature & Humidity Sensor (LCD)
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
