@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v8.2</title>
+<title>Telink Flasher v8.2.1</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -2850,7 +2850,7 @@ function CustomConfig() {
 	is += '<br> <button type="button" title="Set/save current setings" onclick="sendTrg();">Set TRG</button>';
 	is += ' <button type="button" title="GPIO_TRG PullUp 10 kOm. Work only TRG off!" onclick="sendCustomSetting(&quot;4501&quot;);">Set pin to "1"</button>';
 	is += ' <button type="button" title="GPIO_TRG PullDown 100 kOm. Work only TRG off!" onclick="sendCustomSetting(&quot;4500&quot;);">Set pin to "0"</button><br><hr>';
-	if(cfg.ver >= 0x13) {
+	if(cfg.ver >= 0x13 && hwver_id != 31) {
 		is += '<b>Comfort parameters:</b>&nbsp;';
 		is += '<button type="button" title="Get current comfort parameters. The parameters are processed if the configuration is set to &quot;Comfort: On&quot;." onclick="sendCustomSetting(&quot;20&quot;);">Get current comfort parameters</button><br>';
 		is += 'Temperature Lo:<input size="8" title="-40.00..125.00°C, default 21.00°C" id="cmf_tmp_lo" maxlength="6" value="21.00">, ';
@@ -2861,7 +2861,7 @@ function CustomConfig() {
 		cmf.enable = true;
 	}
 	trg.enable = true;
-	if(hwver_id != 30)
+	if(hwver_id != 30 && hwver_id != 31)
 		is += '<b>Keys and Codes:</b>&nbsp;<button type="button" onclick="sendCustomSetting(&quot;15&quot;);">Show all mi keys</button><br>';
 	if(cfg.ver >= 0x11) {
 		is += '<input size="6" maxlength="6" type="text" title="000000..999999, 6 decimal digits, 000000 - PinCode Disable. Warning: If the PinCode is forgotten - only a hardware flasher!" id="pincode" value="000000"> <button title="Warning: If the PinCode is forgotten - only a hardware flasher!" type="button" onclick="sendPinCode();">!Set PinCode!</button><br>';
