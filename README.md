@@ -1,4 +1,51 @@
-Web files for projects:
+## ID numbers of alternative firmware.
+
+| HW ID | Zigbee Image Type | Device | Note
+|--|--|--|--|
+|  0 |        | LYWSD03MMC_B14    | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
+|  1 | 0x0201 | [MHO-C401(old)](https://pvvx.github.io/MHO_C401) | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
+|  2 | 0x0202 | [CGG1-M(2020,2021)](https://pvvx.github.io/CGG1) | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
+|  3 |        | LYWSD03MMC_B19	  | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
+|    | 0x0203 | [LYWSD03MMC_DEVBIS](https://github.com/devbis/z03mmc) | Default Telink Zigbee SDK and [old version from devbis](https://github.com/devbis/z03mmc) |
+|  4 |        | LYWSD03MMC_B16    | [BLE](https://github.com/pvvx/ATC_MiThermometer) | 
+|    | 0x0204 | [WATERMETER]((https://github.com/slacky1965/watermeter_zed) | Default Telink Zigbee SDK and [old version from slacky1965](https://github.com/slacky1965/watermeter_zed) |
+|  5 |        | LYWSD03MMC_B17    | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
+|  6 | 0x0206 | [CGDK2](https://pvvx.github.io/CGDK2) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc) |
+|  7 |        | [CGG1-M(2022)](https://pvvx.github.io/CGG1_2022) | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
+|  8 | 0x0208 | [MHO-C401(2022)](https://pvvx.github.io/MHO_C401N) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc) |
+|  9 | 0x0209 | [MJWSD05MMC](https://pvvx.github.io/MJWSD05MMC) | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
+| 10 |        | LYWSD03MMC_B15    | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
+|    | 0x020A | all [LYWSD03MMC](https://pvvx.github.io/ATC_MiThermometer) | [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc) |
+| 11 | 0x020B | [MHO-C122](https://pvvx.github.io/MHO_C122) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc) |
+| 12..15 |  |  | reserved for [BLE](https://github.com/pvvx/ATC_MiThermometer) |
+| 16 | 0x0210 | TB03F             | [BLE](https://github.com/pvvx/ATC_MiThermometer) (DIY TB-03F-Kit) |
+| 17 | 0x0211 | TS0201 [TS0201_TZ3000](https://pvvx.github.io/TS0201_TZ3000)  | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc) |
+| 18 | 0x0212 | TNKS              | [BLE](https://github.com/pvvx/ATC_MiThermometer) Water tank controller |
+| 19 | 0x0213 | [THB2](https://pvvx.github.io/THB2) | [BLE](https://github.com/pvvx/THB2) |
+| 20 | 0x0214 | [BTH01](https://pvvx.github.io/BTH01) | [BLE](https://github.com/pvvx/THB2) |
+| 21 | 0x0215 | [TH05](https://pvvx.github.io/TH-05) | [BLE](https://github.com/pvvx/THB2) |
+| 22 | 0x0216 | [TH03Z](https://pvvx.github.io/TH03Z) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc) |
+| 23 | 0x0217 | [THB1](https://pvvx.github.io/THB1) | [BLE](https://github.com/pvvx/THB2) |
+| 24 | 0x0218 | [TH05D](https://pvvx.github.io/TH05-v1.3) | [BLE](https://github.com/pvvx/THB2) |
+| 25 | 0x0219 | [TH05F](https://pvvx.github.io/TH05F) | [BLE](https://github.com/pvvx/THB2) |
+| 26 | 0x021A | [THB3](https://pvvx.github.io/THB3) | [BLE](https://github.com/pvvx/THB2) |
+| 27 | 0x021B | [ZTH01(TS0601_TZE200)](https://pvvx.github.io/TS0601_TZE200_zth01) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc) |
+| 28 | 0x021C | [ZTH02(TS0601_TZE200)](https://pvvx.github.io/TS0601_TZE200_zth02) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc) |
+| 29 | 0x021D | PLM1 [PLANT-MON](https://pvvx.github.io/PLANT-MON) | (not yet published at the moment) Tuya BLE Plant monitor ECF-SGS01-A rev1.3 (BT3L Tuya module) | 
+| 30 | 0x021E | [TH03(TS0201_TZ3000)](https://pvvx.github.io/TS0201_TZ3000_TH03) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc) |
+| 31 | 0x021F | [LKTMZL02(TS0201_TZ3210)](https://pvvx.github.io/LKTMZL02) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc) |
+
+
+### All [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc):
+
+| Manufacturer Code | Image Type | File Version | Stack Version |
+| -- | -- | -- | -- |
+| 0x1141 - Telink | 0x02nn - 02: TLSR825x, nn: HW | 0xrrbb - rr: App release, bb: App build | 0x3001 - Zigbee v3.0, Release 0.1 |
+
+* "Manufacture name" and "Device name" are user-defined. They have the write permission attribute.
+
+
+## Web files for projects:
 
 ![foto](https://raw.githubusercontent.com/pvvx/pvvx.github.io/master/SensorsTH.jpg)
 
@@ -85,6 +132,4 @@ Web files for projects:
 ---
 
 [ADV-repeater, ATC Temperatyre/Humidity Trigger](https://github.com/pvvx/AdScanerTrg)
-
-
 
