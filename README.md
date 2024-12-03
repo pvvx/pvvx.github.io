@@ -1,3 +1,4 @@
+
 ## ID numbers of alternative firmware.
 
 | HW ID | Zigbee Image Type | Device | Note
