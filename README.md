@@ -8,7 +8,7 @@
 |  3 |        | LYWSD03MMC_B19	  | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
 |    | 0x0203 | [LYWSD03MMC_DEVBIS](https://github.com/devbis/z03mmc) | Default Telink Zigbee SDK and [old version from devbis](https://github.com/devbis/z03mmc) |
 |  4 |        | LYWSD03MMC_B16    | [BLE](https://github.com/pvvx/ATC_MiThermometer) | 
-|    | 0x0204 | [WATERMETER]((https://github.com/slacky1965/watermeter_zed) | Default Telink Zigbee SDK and [old version from slacky1965](https://github.com/slacky1965/watermeter_zed) |
+|    | 0x0204 | [WATERMETER](https://github.com/slacky1965/watermeter_zed) | Default Telink Zigbee SDK and [old version from slacky1965](https://github.com/slacky1965/watermeter_zed) |
 |  5 |        | LYWSD03MMC_B17    | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
 |  6 | 0x0206 | [CGDK2](https://pvvx.github.io/CGDK2) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc) |
 |  7 |        | [CGG1-M(2022)](https://pvvx.github.io/CGG1_2022) | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
