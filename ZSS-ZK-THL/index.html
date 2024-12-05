@@ -10,8 +10,16 @@
 	The <a href="https://pvvx.github.io/THB2/CHT8305C Advanced Datasheet Ver2.5 2021-10-26.pdf">temperature and humidity sensor</a> is not designed to be powered by a CR2032, as it requires a minimum supply voltage of 2.5V.<br>Without replacing the sensor, there is no point in making alternative firmware.<br><br>
 	<img src="img/ts0222_box.jpg" style="max-width:100%;"><br><br><br>
 	Module: <a href="https://developer.tuya.com/en/docs/iot/zs3l?id=K97r37j19f496">Tuya ZS3L</a> (SoC: EFR32MG21A020F768IM32-B),
-	EPD: YMCE1031-0252AAAMFGN, TH Sensor: <a href="https://pvvx.github.io/THB2/CHT8305C Advanced Datasheet Ver2.5 2021-10-26.pdf">SHT8305</a>, Luminance Sensor: ?<br><br>
-	<img src="img/ts0222_pcb.jpg" style="max-width:100%;"><br>
+	EPD: YMCE1031-0252AAAMFGN, TH Sensor: <a href="https://pvvx.github.io/THB2/CHT8305C Advanced Datasheet Ver2.5 2021-10-26.pdf">CHT8305</a>, Luminance Sensor: ?<br><br>
+	<img src="img/ts0222_pcb.jpg" style="max-width:100%;"><br><br>
+	<li>Power consumption:</li><br>
+	Switching on with re-registration in ZHA:<br><br>
+	<img src="img/ts0222_power.gif" style="max-width:50%;"><br><br>
+	Average consumption - 84.4 uA for 420 seconds from 3.3 V. Sleep mode: 6.6 uA.<br>
+	A strong excess of peak current is observed for CR2032 (!)<br><br>
+	Voltage drop pulses on a CR2032 battery that has been running for 2 hours on a TS0222:<br>
+	<img src="img/ts0222_pulse.gif" style="max-width:50%;"><br>
+	CHT8305 sensor supply voltage lower threshold specification violation (!)<br>
 	</div>
   </body>
 </html>
