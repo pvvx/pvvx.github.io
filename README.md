@@ -122,6 +122,8 @@
 
 [LKTMZL02](https://pvvx.github.io/LKTMZL02) - Tuya BLE Temperature & Humidity Sensor (LCD)
 
+[ZSS-ZK-THL](https://pvvx.github.io/ZSS-ZK-THL) - E-ink Moes ZigBee "Smart Brightness Thermometer"
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
