@@ -803,6 +803,7 @@ function CustomBlkParse(value) {
 			else if(hwver_id == 28) s +='ZTH02';
 			else if(hwver_id == 30) s +='TH03';
 			else if(hwver_id == 31) s +='LKTMZL02';
+			else if(hwver_id == 33) s +='ZTH05';
 			else s += 'Unknown or DIY ('+hwver_id+')';
 		}
 		if(cfg.ver > 0x45) bigOtaEnabled = true;
@@ -2696,7 +2697,7 @@ function CustomConfig() {
  let is = '';
  if(cfg.ver >= 0x10) {
   is = '<hr>Send commands to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button>';
-  if(hwver_id <= 15 || hwver_id == 30 || hwver_id == 31) {
+  if(hwver_id <= 15 || (hwver_id >= 30 && hwver_id <= 33)) {
 	if(hwver_id == 0)
 		is += ' Test: [ <button type="button" onclick="lcd_clock();">Show clock on LCD</button> <button type="button" onclick="lcd_restore();">Repair LCD</button> ]<br>';
 	is += '<br>Show on device screen:<br>';
@@ -2764,7 +2765,7 @@ function CustomConfig() {
 		else
 			is += 'BT5+ PHY: <input title="Support BT5.0+ PHY (LE 2M/1M/500K/125K)" type="checkbox" id="bt5_flags">, CSA2: <input title="Channel Selection Algorithm 2 or 1" type="checkbox" id="csa2_flags"><br><br>';
 	}
-  if(hwver_id <= 15 || hwver_id == 30 || hwver_id == 31) {
+  if(hwver_id <= 15 || (hwver_id >= 30 && hwver_id <= 33)) {
 		is += 'Advertising type: <select id="cfg_flg_adv_type"><option value="0">ATC1441</option><option value="1">PVVX (Custom)</option><option value="2">MIJIA (MiHome)</option><option value="3" selected>';
 	if(cfg.ver >= 0x37)
 		if(cfg.ver >= 0x45)
@@ -2799,7 +2800,7 @@ function CustomConfig() {
   }
 	if(MAX_RF_TX_Power) is += 'RF TX Power: <select id="cfg_rf_tx"><option value="63">VBAT+10.46 dbm</option><option value="61">VBAT+10.29 dbm</option><option value="58">VBAT+10.01 dbm</option><option value="56">VBAT+9.81 dbm</option><option value="53">VBAT+9.48 dbm</option><option value="51">VBAT+9.24 dbm</option><option value="49">VBAT+8.97 dbm</option><option value="47">VBAT+8.73 dbm</option><option value="45">VBAT+8.44 dbm</option><option value="43">VBAT+8.13 dbm</option><option value="41">VBAT+7.79 dbm</option><option value="39">VBAT+7.41 dbm</option><option value="37">VBAT+7.02 dbm</option><option value="35">VBAT+6.60 dbm</option><option value="33">VBAT+6.14 dbm</option><option value="31">VBAT+5.65 dbm</option><option value="29">VBAT+5.13 dbm</option><option value="27">VBAT+4.57 dbm</option><option value="25">VBAT+3.94 dbm</option><option value="23">VBAT+3.23 dbm</option><option value="191" selected>VANT+3.01 dbm</option><option value="189">VANT+2.81 dbm</option><option value="187">VANT+2.61 dbm</option><option value="185">VANT+2.39 dbm</option><option value="182">VANT+1.99 dbm</option><option value="180">VANT+1.73 dbm</option><option value="178">VANT+1.45 dbm</option><option value="176">VANT+1.17 dbm</option><option value="174">VANT+0.90 dbm</option><option value="172">VANT+0.58 dbm</option><option value="169">VANT+0.04 dbm</option><option value="168">VANT-0.14 dbm</option><option value="164">VANT-0.97 dbm</option><option value="162">VANT-1.42 dbm</option><option value="160">VANT-1.89 dbm</option><option value="158">VANT-2.48 dbm</option><option value="156">VANT-3.03 dbm</option><option value="154">VANT-3.61 dbm</option><option value="152">VANT-4.26 dbm</option><option value="150">VANT-5.03 dbm</option><option value="148">VANT-5.81 dbm</option><option value="146">VANT-6.67 dbm</option><option value="144">VANT-7.65 dbm</option><option value="142">VANT-8.65 dbm</option><option value="140">VANT-9.89 dbm</option><option value="138">VANT-11.4 dbm</option><option value="136">VANT-13.29 dbm</option><option value="134">VANT-15.88 dbm</option><option value="132">VANT-19.27 dbm</option><option value="130">VANT-25.18 dbm</option></select><br><br>';
 	else is += 'RF TX Power: <select id="cfg_rf_tx"><option value="191" selected>VANT+3.01 dbm</option><option value="189">VANT+2.81 dbm</option><option value="187">VANT+2.61 dbm</option><option value="185">VANT+2.39 dbm</option><option value="182">VANT+1.99 dbm</option><option value="180">VANT+1.73 dbm</option><option value="178">VANT+1.45 dbm</option><option value="176">VANT+1.17 dbm</option><option value="174">VANT+0.90 dbm</option><option value="172">VANT+0.58 dbm</option><option value="169">VANT+0.04 dbm</option><option value="168">VANT-0.14 dbm</option><option value="164">VANT-0.97 dbm</option><option value="162">VANT-1.42 dbm</option><option value="160">VANT-1.89 dbm</option><option value="158">VANT-2.48 dbm</option><option value="156">VANT-3.03 dbm</option><option value="154">VANT-3.61 dbm</option><option value="152">VANT-4.26 dbm</option><option value="150">VANT-5.03 dbm</option><option value="148">VANT-5.81 dbm</option><option value="146">VANT-6.67 dbm</option><option value="144">VANT-7.65 dbm</option><option value="142">VANT-8.65 dbm</option><option value="140">VANT-9.89 dbm</option><option value="138">VANT-11.4 dbm</option><option value="136">VANT-13.29 dbm</option><option value="134">VANT-15.88 dbm</option><option value="132">VANT-19.27 dbm</option><option value="130">VANT-25.18 dbm</option></select><br><br>';
-  if(hwver_id <= 15  || hwver_id == 30 || hwver_id == 31) {
+  if(hwver_id <= 15  || (hwver_id >= 30 && hwver_id <= 33)) {
 	if(hwver_id != 9)
 		is += 'Minimum LCD refresh rate: <input size="5" title="0.5..12.75 sec, step: 0.05 s, default 2.45 s" id="cfg_lcd_tint" maxlength="6" value="2.45"> s, step: 0.05 s<br><br>';
 	if(cfg.ver == 0x19) {
@@ -2861,7 +2862,7 @@ function CustomConfig() {
 		cmf.enable = true;
 	}
 	trg.enable = true;
-	if(hwver_id != 30 && hwver_id != 31)
+	if(hwver_id < 30 || hwver_id > 33)
 		is += '<b>Keys and Codes:</b>&nbsp;<button type="button" onclick="sendCustomSetting(&quot;15&quot;);">Show all mi keys</button><br>';
 	if(cfg.ver >= 0x11) {
 		is += '<input size="6" maxlength="6" type="text" title="000000..999999, 6 decimal digits, 000000 - PinCode Disable. Warning: If the PinCode is forgotten - only a hardware flasher!" id="pincode" value="000000"> <button title="Warning: If the PinCode is forgotten - only a hardware flasher!" type="button" onclick="sendPinCode();">!Set PinCode!</button><br>';
@@ -2877,7 +2878,7 @@ function CustomConfig() {
 		if(cfg.ver >= 0x14)
 			is +=' <button type="button" title="Set Custom MAC. Warning: If the pin code is set, restart all Soft & Hard for the next connection!" onclick="sendMAC();">!Set MAC!</button> <button type="button" title="Clean MAC - Set Standart Random MAC: A4C138******. Warning: If the pin code is set, restart all Soft & Hard for the next connection!" onclick="CleanMAC();">!Clean MAC!</button>';
 		is +='<br>';
-	} else if(hwver_id == 30 || hwver_id == 31) {
+	} else if(hwver_id < 30 || hwver_id > 33) {
 		is +='Device MAC [+ 2 Rand]:<br><button type="button" title="Get MAC" onclick="sendCustomSetting(&quot;10&quot;);">Get MAC</button> <input size="40" maxlength="16" type="text" id="mi_mac" title="Must be 6 hex MAC digits [+ 2 hex RandMAC digits]!" value="?">';
 		is +=' <button type="button" title="Set Custom MAC. Warning: If the pin code is set, restart all Soft & Hard for the next connection!" onclick="sendMAC();">!Set MAC!</button> <button type="button" title="Clean MAC - Set Standart Random MAC: A4C138******. Warning: If the pin code is set, restart all Soft & Hard for the next connection!" onclick="CleanMAC();">!Clean MAC!</button><br>';
 	}
@@ -3029,7 +3030,7 @@ function hex(number, len) {
 	return str;
 }
 function SendCustomConfig() {
-  if(hwver_id < 15 || hwver_id == 30 || hwver_id == 31) {
+  if(hwver_id < 15 || (hwver_id >= 30 && hwver_id <= 33)) {
 	if(hwver_id != 9) {
 		cfg.flg = ($("cfg_flg_adv_type").value & 3)+
 		(($("cfg_flg_comfort").checked) ? 4 : 0) +
