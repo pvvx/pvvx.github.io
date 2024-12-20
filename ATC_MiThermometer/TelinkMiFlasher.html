@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v8.2.1</title>
+<title>Telink Flasher v8.3</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -758,10 +758,8 @@ function CustomBlkParse(value) {
 		cfg.ver = value.getUint8(1);
 		cfg.flg = value.getUint8(2);
 		cfg.flg2 = value.getUint8(3);
-		if(cfg.ver < 0x47) {
-			cfg.temp_offset = value.getInt8(4);
-			cfg.humi_offset = value.getInt8(5);
-		}
+		cfg.temp_offset = value.getInt8(4);
+		cfg.humi_offset = value.getInt8(5);
 		cfg.advertising_interval = value.getUint8(6);
 		cfg.measure_interval = value.getUint8(7);
 		cfg.rf_tx_power = value.getUint8(8);
@@ -847,7 +845,7 @@ function CustomBlkParse(value) {
 		ext.flg = value.getUint8(7);
 		s = 'ExtShow: big_number: '+ext.big_number+', small_number: '+ext.small_number+', ext.vtime: '+ext.vtime+' s, flg: '+hex(ext.flg,2);
 		addAlog(s); UpdExt();
-	} else if((blkid >= 0x25 && blkid <= 0x28) && (len > 16)) {
+	} else if((blkid >= 0x25 && blkid <= 0x26) && (len > 16)) {
 	// CMD_ID_CFS Get/Set sensor config
 	    devSens.temp_k = value.getUint32(1, true);
 	    devSens.humi_k = value.getUint32(5, true);
@@ -908,6 +906,13 @@ function CustomBlkParse(value) {
 		   + ", Zt: " + devSens.temp_z
 		   + ", Zh: " + devSens.humi_z);
 
+	} else if((blkid >= 0x27 && blkid <= 0x28) && (len > 6)) {
+	// CMD_ID_CFB20 Get/Set sensor MY18B20 config
+	    devSens.temp2_k = value.getUint32(1, true);
+	    devSens.temp2_z = value.getInt16(5, true);
+		$('inpTemp2K').value  = (devSens.temp2_k/100.0).toFixed(2);
+		$('inpTemp2Z').value = (devSens.temp2_z/100.0).toFixed(2);
+		addAlog("Sensor2: Kt: " + devSens.temp2_k + ", Zt: " + devSens.temp2_z);
 	} else if(blkid == 0x44 && len >= 7) {
 		trg.tmp_thr = value.getInt16(1, true) / 100.0; // temp threshold
 		trg.hm_thr = value.getInt16(3, true) / 100.0; // humi threshold
@@ -2640,16 +2645,39 @@ function setSensCfg() {
 		.catch(error => { addAlog("Send Sensor Settings Error: " + error); });
 	}
 }
+function setSens2Cfg() {
+	if(settingsCharacteristics != null) {
+		devSens.temp2_k = Math.round(100.0 * parseFloat($('inpTemp2K').value));
+		devSens.temp2_z = Math.round(100.0 * parseFloat($('inpTemp2Z').value));
+		blk = new Uint8Array([0x27,
+		    devSens.temp2_k & 0xff, (devSens.temp2_k >> 8) & 0xff, (devSens.temp2_k >> 16) & 0xff, (devSens.temp2_k >> 24) & 0xff,
+	    	devSens.temp2_z & 0xff, (devSens.temp2_z >> 8) & 0xff ]);
+		settingsCharacteristics.writeValue(new Uint8Array(blk)).then(_ => {	addAlog("Send Sensor2 Settings: "+dump(blk, blk.length)+" - ok")})
+		.catch(error => { addAlog("Send Sensor2 Settings Error: " + error); });
+	}
+}
 function getSensCfg() {
 	if(settingsCharacteristics != null) {
 		addAlog("Get Sensor Settings...");
 		settingsCharacteristics.writeValue(new Uint8Array([0x25])).catch(error => { addAlog("Get Sensor Settings Error: " + error); });
 	}
 }
+function getSens2Cfg() {
+	if(settingsCharacteristics != null) {
+		addAlog("Get Sensor2 Settings...");
+		settingsCharacteristics.writeValue(new Uint8Array([0x27])).catch(error => { addAlog("Get Sensor2 Settings Error: " + error); });
+	}
+}
 function resetSensCfg() {
 	if(settingsCharacteristics != null) {
 		addAlog("Restore Sensor Default Settings...");
 		settingsCharacteristics.writeValue(new Uint8Array([0x26])).catch(error => { addAlog("Restore Sensor Default Settings Error: " + error); });
+	}
+}
+function resetSens2Cfg() {
+	if(settingsCharacteristics != null) {
+		addAlog("Restore Sensor2 Default Settings...");
+		settingsCharacteristics.writeValue(new Uint8Array([0x28])).catch(error => { addAlog("Restore Sensor2 Default Settings Error: " + error); });
 	}
 }
 function getBKey() {
@@ -2736,7 +2764,10 @@ function CustomConfig() {
 	else
 		is += 'Smiley: <select id="cfg_smiley"><option value="0">&nbsp;&nbsp;&nbsp;</option><option value="1">&nbsp;^_^&nbsp;</option><option value="2">&nbsp;-&and;-&nbsp;</option><option value="3">&nbsp;&Delta;&#9651;&Delta;&nbsp;</option><option value="4">(&nbsp;&nbsp;&nbsp;)</option><option value="5">(^_^)</option><option value="6">(-&and;-)</option><option value="7">(&Delta;&#9651;&Delta;)</option></select>';
 	is += ', Comfort: <input type="checkbox" id="cfg_flg_comfort">';
-	if(hwver_id != 9)
+	if(hwver_id == 9) {
+	  if(cfg.ver > 0x48)
+		is += ', Show WeekDay: <input type="checkbox" id="cfg_flg3_weekday">';
+	} else
 		is += ', Show batt: <input type="checkbox" id="cfg_flg_show_batt">';
 	if(cfg.ver >= 0x18) {
 		if(hwver_id != 9)
@@ -2817,6 +2848,10 @@ function CustomConfig() {
 	is += ' <button type="button" onclick="sendCustomSetting(&quot;56&quot;);">Set default</button><br>';
 	if(cfg.ver >= 0x47)
 		is += '<hr><label id="lblSensor"><b>Sensor Settings:</b></label><br>Temperature Slope factor: <input size="8" type="text" id="inpTempK" maxlength="8" title="Tk: Slope factor (linear function) for temperature calculation (T=RegT*Tk/65536+Tz)"> , Zero offset: <input size="8" type="text" id="inpTempZ" maxlength="8" title="Tz: Zero offset with correction value for temperature calculation (T=RegT*Tk/65536+Tz)"><br>Humidity Slope factor: <input size="8" type="text" id="inpHumK" maxlength="8" title="Hk: Slope factor (linear function) for humidity calculation (H=RegH*Hk/65536+Hz)"> , Zero offset: <input size="8" type="text" id="inpHumZ" maxlength="8" title="Hz: Zero offset with correction value for humidity calculation (H=RegH*Hk/65536+Hz)"><br><button type="button"id="btnGetSens" onclick="getSensCfg()">Get Sensor Settings</button> <button type="button"id="btnSetSens" onclick="setSensCfg()">Send Sensor Settings</button> <button type="button"id="btnRstSens" onclick="resetSensCfg()" title="Restore default sensor settings">Set Default</button><br>';
+
+	if((hwver_id == 17) || (hwver_id == 27))
+		is += '<hr><label id="lblSensor2"><b>Sensor2 Settings:</b></label><br>Temperature Slope factor: <input size="8" type="text" id="inpTemp2K" maxlength="8" title="Tk: Slope factor (linear function) for temperature calculation (T=RegT*Tk/65536+Tz)"> , Zero offset: <input size="8" type="text" id="inpTemp2Z" maxlength="8" title="Tz: Zero offset with correction value for temperature calculation (T=RegT*Tk/65536+Tz)"><br><button type="button"id="btnGetSens2" onclick="getSens2Cfg()">Get Sensor2 Settings</button> <button type="button"id="btnSetSens2" onclick="setSens2Cfg()">Send Sensor2 Settings</button> <button type="button"id="btnRstSens2" onclick="resetSens2Cfg()" title="Restore default sensor2 settings">Set Default</button><br>';
+
 	if(cfg.ver >= 0x24 && hwver_id != 9) {
 		is += '<hr><button type="button" title="Get time clock delta" onclick="sendCustomSetting(&quot;24&quot;);">Get delta time</button>';
 		is += ' Adjust time clock delta: <input size="5" title="-32767..32767, in 1/16 us for 1 sec, default 0" id="cfg_time_step" maxlength="6" value="0">';
@@ -2911,6 +2946,7 @@ function CustomConfig() {
 		$("cfg_flg_am_pm").checked = (cfg.flg&32) != 0;
 		$("cfg_flg_x100").checked = (cfg.flg&8) != 0;
 		$("cfg_scr_type").value = cfg.flg2&7;
+	    if(cfg.ver > 0x48)	$("cfg_flg3_weekday").checked = (cfg.temp_offset&128) == 0;
 		$("adv_flags").checked = (cfg.flg2&0x10) != 0;
 		$("bt5_flags").checked = (cfg.flg2&0x20) != 0;
 		$("longrange_flags").checked = (cfg.flg2&0x40) != 0;
@@ -3073,6 +3109,7 @@ function SendCustomConfig() {
 		cfg.flg2 += (($("longrange_flags").checked) ? 0x40 : 0);
 		if(cfg.ver >= 0x43)
 			cfg.flg2 += (($("cfg_scr_off").checked) ? 0x80 : 0);
+		if(cfg.ver > 0x48)	cfg.temp_offset = (("cfg_flg3_weekday").checked) ? 0 : 128;
 	}
  } else {
 		cfg.flg = (cfg.flg & 0xbc) + ($("cfg_flg_adv_type").value & 3)+
