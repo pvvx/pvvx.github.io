@@ -86,6 +86,8 @@
 
 [TS0001_TZ3000](https://pvvx.github.io/TS0001_TZ3000) - Tuya ZigBee "DIY Smart Switch"
 
+[TS0001_TZ3000_fdxihpp7](https://pvvx.github.io/TS0001_TZ3000_fdxihpp7) - Tuya ZigBee "Mini Smart Switch"
+
 [DS01 zbeacon](https://pvvx.github.io/DS01_zbeacon) TS0003 _TZ3000_gohcgzj7 - Tuya ZigBee Door Window Sensor
 
 [TS0201_TZ3000](https://pvvx.github.io/TS0201_TZ3000) - Tuya ZigBee Thermo-Hygrometer
