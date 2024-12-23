@@ -3,17 +3,18 @@
 <html>
   <head><meta charset="utf-8">
 	<!-- style type="text/css"></style -->
-	<title>TLSR825x USB-COM Flash Writer (TX-SWS only!)</title>
+	<title>TLSR825x USB-COM Flash Writer</title>
   </head>
   <body>
-	<h3>TLSR825x USB-COM Flash Writer v0.4 (TX-SWS only!)</h3>
-	<div><br>
-	1. USB-COM: <input type="button" id="butOpen" value="Open">
+	<h3>TLSR825x USB-COM Flash Writer v0.5 (TX-SWS only!)</h3>
+	<div>
+	1. Connect: GND -> -Vbat, +3.3V -> +Vbat, TX -> SWS. [Additional option: RTS -> Reset]<br><br> 
+	2. USB-COM: <input type="button" id="butOpen" value="Open">
 	Baud: <select id="ubaud" title="Optimal: 460800 baud"><option value="115200">115200</option><option value="230400">230400</option><option value="460800" selected>460800</option><option value="921600">921600</option><option value="1500000">1500000</option><option value="2000000">2000000</option></select>
-	Atime: <select id="uatime" title="Activation time: Set above than Advertising interval or use manual power reset"><option value="0">0 ms</option><option value="100">100 ms</option><option value="1000">1 sec</option><option value="2000">2 sec</option><option value="3000" selected>3 sec</option><option value="4000">4 sec</option><option value="8000">8 sec</option><option value="16000">16 sec</option></select>
+	ActivationTime: <select id="uatime" title="Activation time: Set above than Advertising interval or use manual power reset"><option value="0">0 ms</option><option value="100">100 ms</option><option value="1000">1 sec</option><option value="2000">2 sec</option><option value="3000">3 sec</option><option value="4000">4 sec</option><option value="5000" selected>5 sec</option><option value="8000">8 sec</option><option value="16000">16 sec</option></select>
 	<br><br>
-	2. Select Firmware: <input type="file" accept=".bin" id="file"/><br><br>
-	3. <input type="button" title="Write firmware in to Flash" id="butWrite" value="Write to Flash" disabled> <span id="swrite">Open COM & Select file</span><br><br>
+	3. Select Firmware: <input type="file" accept=".bin" id="file"/><br><br>
+	4. <input type="button" title="Write firmware in to Flash" id="butWrite" value="Write to Flash" disabled> <span id="swrite">Open COM & Select file</span><br><br>
 	<input type="button" title="Clean all flash" id="butErase" value="Erase All Flash" disabled> <input type="button" id="butReset" title="Test restart of MÑU" value="Soft Reset MCU" disabled> <input type="button" id="butClrlog" value="Clear log"><br><hr>
 	</div>
 	<div id="slog"></div>
