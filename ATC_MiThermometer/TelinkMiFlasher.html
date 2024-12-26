@@ -2947,7 +2947,7 @@ function CustomConfig() {
 		$("cfg_flg_am_pm").checked = (cfg.flg&32) != 0;
 		$("cfg_flg_x100").checked = (cfg.flg&8) != 0;
 		$("cfg_scr_type").value = cfg.flg2&7;
-	    if(cfg.ver > 0x48)	$("cfg_flg3_weekday").checked = (cfg.temp_offset&128) == 0;
+	    if(cfg.ver > 0x48)	$("cfg_flg3_weekday").checked = ((cfg.temp_offset&128) == 0);
 		$("adv_flags").checked = (cfg.flg2&0x10) != 0;
 		$("bt5_flags").checked = (cfg.flg2&0x20) != 0;
 		$("longrange_flags").checked = (cfg.flg2&0x40) != 0;
@@ -3108,9 +3108,8 @@ function SendCustomConfig() {
 		cfg.flg2 += (($("adv_flags").checked )? 0x10 : 0);
 		cfg.flg2 += (($("bt5_flags").checked) ? 0x20 : 0);
 		cfg.flg2 += (($("longrange_flags").checked) ? 0x40 : 0);
-		if(cfg.ver >= 0x43)
-			cfg.flg2 += (($("cfg_scr_off").checked) ? 0x80 : 0);
-		if(cfg.ver > 0x48)	cfg.temp_offset = (("cfg_flg3_weekday").checked) ? 0 : 128;
+		if(cfg.ver >= 0x43)	cfg.flg2 += (($("cfg_scr_off").checked) ? 0x80 : 0);
+		if(cfg.ver > 0x48) cfg.temp_offset = ($("cfg_flg3_weekday").checked) ? 0 : 128;
 	}
  } else {
 		cfg.flg = (cfg.flg & 0xbc) + ($("cfg_flg_adv_type").value & 3)+
