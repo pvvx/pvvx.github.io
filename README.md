@@ -14,11 +14,12 @@
 |  6 | 0x0206 | [CGDK2](https://pvvx.github.io/CGDK2) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc) |
 |  7 |        | [CGG1-M(2022)](https://pvvx.github.io/CGG1_2022) | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
 |  8 | 0x0208 | [MHO-C401(2022)](https://pvvx.github.io/MHO_C401N) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc) |
-|  9 | 0x0209 | [MJWSD05MMC](https://pvvx.github.io/MJWSD05MMC) | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
+|  9 | 0x0209 | [MJWSD05MMC(ch)](https://pvvx.github.io/MJWSD05MMC) | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
 | 10 |        | LYWSD03MMC_B15    | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
 |    | 0x020A | all [LYWSD03MMC](https://pvvx.github.io/ATC_MiThermometer) | [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc) |
 | 11 | 0x020B | [MHO-C122](https://pvvx.github.io/MHO_C122) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc) |
-| 12..15 |  |  | reserved for [BLE](https://github.com/pvvx/ATC_MiThermometer) |
+| 12 | 0x020C | [MJWSD05MMC(en)](https://pvvx.github.io/MJWSD05MMC) | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
+| 13..15 |  |  | reserved for [BLE](https://github.com/pvvx/ATC_MiThermometer) |
 | 16 | 0x0210 | TB03F             | [BLE](https://github.com/pvvx/ATC_MiThermometer) (DIY TB-03F-Kit) |
 | 17 | 0x0211 | TS0201 [TS0201_TZ3000](https://pvvx.github.io/TS0201_TZ3000)  | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc) |
 | 18 | 0x0212 | TNKS              | [BLE](https://github.com/pvvx/ATC_MiThermometer) Water tank controller |
