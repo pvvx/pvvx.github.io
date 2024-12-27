@@ -1622,8 +1622,10 @@ function miAuthorization() {
 					else if (bluetoothDevice.name.substr(0,20) == "Qingping Temp & RH M") cfg.hver = 2;
 					else if (bluetoothDevice.name.substr(0,18) == "Qingping Temp RH M") cfg.hver = 7;
 					else if (bluetoothDevice.name.substr(0,21) == "Qingping Temp RH Lite") cfg.hver = 6;
-					else if (bluetoothDevice.name == "MJWSD05MMC") cfg.hver = 9;
-					else {
+					else if (bluetoothDevice.name == "MJWSD05MMC") {
+						if(devinfo.frstr.substr(0,4) == "0005") cfg.hver = 12;
+						else cfg.hver = 9;
+					} else {
 						cfg.hver = null;
 						$("ldfile").hidden = false;
 					}
