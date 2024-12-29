@@ -38,6 +38,7 @@
 | 31 | 0x021F | [LKTMZL02(TS0201_TZ3210)](https://pvvx.github.io/LKTMZL02) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc) |
 | 32 |        | [KEY2(iSearching)](https://pvvx.github.io/iSearching) | [BLE](https://github.com/pvvx/THB2) |
 | 33 | 0x0221 | [ZTH05(TS0601_TZE204)](https://pvvx.github.io/TS0601_TZE204) | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
+| 34 | 0x0222 | https://github.com/pvvx/THB2/discussions/82 |
 
 
 ### All [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc):
@@ -132,10 +133,6 @@
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
-
-![SCH](https://github.com/pvvx/UBIA/blob/master/DOCs/img/tBLETST_JDY10_sch.gif)
-
----
 
 [ADV-repeater, ATC Temperatyre/Humidity Trigger](https://github.com/pvvx/AdScanerTrg)
 
