@@ -84,7 +84,11 @@
 
 [CX0726B](https://pvvx.github.io/CX0726B) - BLE Thermo-Hygrometer Beijing OnMicro Electronics LT_96F2
 
-[iSearching](https://pvvx.github.io/iSearching) - BLE
+[iSearching](https://pvvx.github.io/iSearching) - BLE, Flash
+
+[iSearching2](https://pvvx.github.io/iSearching2) - BLE, Flash
+
+[iSearching3](https://pvvx.github.io/iSearching3) - BLE, OTP
 
 [TS0001_TZ3000](https://pvvx.github.io/TS0001_TZ3000) - Tuya ZigBee "DIY Smart Switch"
 
