@@ -134,6 +134,8 @@
 
 [ZSS-ZK-THL](https://pvvx.github.io/ZSS-ZK-THL) - E-ink Moes ZigBee "Smart Brightness Thermometer"
 
+[CB3S](https://pvvx.github.io/TS0041_TZ3000_fa9mlvja) - Tuya ZigBee "Smart Button"
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
