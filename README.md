@@ -41,6 +41,7 @@
 | 34 | 0x0222 | https://github.com/pvvx/THB2/discussions/82 |
 | 35 | 0x0223 | [CB3S](https://pvvx.github.io/TS0041_TZ3000_fa9mlvja) In developing... |
 
+* [Telegram: New devices & develops](https://t.me/pvvx_new_ble_zigbee_devices).
 
 ### All [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc):
 
