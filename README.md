@@ -39,6 +39,7 @@
 | 32 |        | [KEY2(iSearching)](https://pvvx.github.io/iSearching) | [BLE](https://github.com/pvvx/THB2) |
 | 33 | 0x0221 | [ZTH05(TS0601_TZE204)](https://pvvx.github.io/TS0601_TZE204) | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
 | 34 | 0x0222 | https://github.com/pvvx/THB2/discussions/82 |
+| 35 | 0x0223 | [CB3S](https://pvvx.github.io/TS0041_TZ3000_fa9mlvja) In developing... |
 
 
 ### All [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc):
