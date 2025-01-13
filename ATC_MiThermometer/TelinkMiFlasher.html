@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v8.4</title>
+<title>Telink Flasher v9.0</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -18,7 +18,9 @@ var otazfiles = { loaded: false };
 var fzigbeeota = { used : false };
 var firmwareArray = "",
 	startTime = 0,
-	blockCount = 0;
+	blockCount = 0,
+	fsignota = "";
+var addSignArray = "";
 var flg_memo_act = false;
 var devinfo = { hrstr: null, srstr: null, frstr: null };
 var devSens = {};
@@ -1708,6 +1710,7 @@ function getDevVersion(devInfEnabled) {
 
 function doConnect() {
  if(bluetoothDevice != null) {
+	fsignota = "";
 	bluetoothDevice.gatt.connect().then(server => {
 		addClog("Found GATT server");
 		gattServer = server;
@@ -1756,15 +1759,15 @@ function doConnect() {
 		if (miEnabled) {
 			addLog("Detected Mi device");
 			setStatus("Detected Mi device");
-			$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
 			if (bluetoothDevice.name.substr(0,10) == "MJWSD05MMC") fwmaxsize = 0x34000;
-			if ((bluetoothDevice.name.substr(0,10) == "LYWSD03MMC") && (devinfo.frstr.substr(0,2) == "2.")) {
-			    s = "(!) Version: "+devinfo.frstr+" is temporarily not supported (!)";
-				addLog(s);
-				connectTrys = 1000;
-				disconnect();
-			} else
+			if ((bluetoothDevice.name.substr(0,10) == "LYWSD03MMC") && (devinfo.frstr.substr(0,10) == "2.1.1_0159")) {
+			    $("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
+				fsignota = "sign_2.1.1_0159.bin";
 				miAction();
+			} else {
+				$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
+				miAction();
+			}
 		} else if (customEnabled) {
 			let s = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send commands to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
 			if (devTest) {
@@ -2003,7 +2006,40 @@ function testOTAFirmware(data) {
 	}
 	return "ok";
 }
+
+var firmwareAdd = "";
 //-------------
+function getSignFile(data, filename) {
+	addAlog("Add signature file.");
+	addClog("AddFile: " + filename);
+	let fwsize = firmwareArray.length/2;
+	fsize = data.byteLength;
+	let head = new DataView(data, 0, 0x18);
+	let key1 = head.getUint32(0, true);
+	let key2 = head.getUint32(0x14, true);
+	let fdata = new Uint8Array(data);
+	fdata[0] = 0; fdata[1] = 0; fdata[2] = 0; fdata[3] = 0; fdata[0x14] = 0; fdata[0x15] = 0; fdata[0x16] = 0; fdata[0x17] = 0;
+	let xcrc = crc32(fdata);
+	key1 -= xcrc; key2 ^= xcrc;
+	addClog("AddFile size = 0x"+ fsize.toString(16));
+	let x1 = (key2 & 0xffff) - fsize;
+	let x2 = key2 >> 16;
+	fdata[0x14] = fwsize & 0xff; fdata[0x15] = (fwsize>>8) & 0xff; fdata[0x16] = (fwsize>>16) & 0xff; fdata[0x17] = (fwsize>>24) & 0xff;
+	firmwareArray += bytesToHex(fdata);
+	let xdata = new Uint8Array(x2);
+	xdata.fill(0xff);
+	xdata[x1] = key1 & 0xff; xdata[x1+1] = (key1>>8) & 0xff; xdata[x1+2] = (key1>>16) & 0xff; xdata[x1+3] = (key1>>24) & 0xff;
+	firmwareArray += bytesToHex(xdata);
+	addClog("OTA File size: " + (firmwareArray.length/2).toString(10) + " bytes");
+	if (firmwareArray.length % 32 !== 0) { // pad last block to 16bytes
+		var padHex = "ffffffffffffffffffffffffffffffff";
+		firmwareArray += padHex.substr(0, 32 - firmwareArray.length % 32);
+	}
+	blockCount = firmwareArray.length / 32;
+	addAlog("Count: " + blockCount);
+	menuUpgrade();
+}
+
 function getFirmwareArray(data, filename) {
 	addAlog("File: " + filename);
 	addClog("File: " + filename);
@@ -2019,16 +2055,20 @@ function getFirmwareArray(data, filename) {
 	}
 	if(fzigbeeota.used)
 		firmwareArray = bytesToHex(data.slice(0x3E, fzigbeeota.size+0x3E));
-	else
+	else 
 		firmwareArray = bytesToHex(data);
 	addAlog("File size: " + (firmwareArray.length/2).toString(10) + " bytes");
+	fwname = filename;
+	if(fsignota != "") {
+		ajax_file("signfiles/" + fsignota, getSignFile);
+		return;
+	}
 	if (firmwareArray.length % 32 !== 0) { // pad last block to 16bytes
 		var padHex = "ffffffffffffffffffffffffffffffff";
 		firmwareArray += padHex.substr(0, 32 - firmwareArray.length % 32);
 	}
 	blockCount = firmwareArray.length / 32;
 	addAlog("Count: " + blockCount);
-	fwname = filename;
 	menuUpgrade();
 }
 
@@ -2091,6 +2131,7 @@ function getOtaJson(d, name) {
 		}
 	}
 }
+
 
 function FirmwareZdevbis() {
 		if(!confirm("Attention: Zigbee firmware converts the thermometer to the Zigbee protocol! All data for MiHome and measurement memory will be erased! The devbis version consumes twice as much as ZigbeeTlc!"))
