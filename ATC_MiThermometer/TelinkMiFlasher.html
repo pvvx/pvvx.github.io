@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v9.0</title>
+<title>Telink Flasher v9.1</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -1365,34 +1365,48 @@ function menuUpgrade() {
 					is += ' <button type="button" id="btfrmupg" onclick="BetaFirmwareUpgrade();">Beta Firmware: ' + fn + '</button><br>';
 				}
 			}
-			if(otafiles.zbjson != null && otazfiles.loaded) {
-				let fn = otazfiles.bin[hwver_id];
-				if(fn != null && fn != "" && fn != "?" && fn != "/") {
-					try {
-						if(fn.slice(0,6) == "https:")
-							fn = (new URL(fn)).pathname.split("/").pop();
-					} catch (error) {
-						console.log(error);
+			if(fsignota == "") {
+				if(otafiles.zbjson != null && otazfiles.loaded) {
+					let fn = otazfiles.bin[hwver_id];
+					if(fn != null && fn != "" && fn != "?" && fn != "/") {
+						try {
+							if(fn.slice(0,6) == "https:")
+								fn = (new URL(fn)).pathname.split("/").pop();
+						} catch (error) {
+							console.log(error);
+						}
+						fn = fn.substring(fn.lastIndexOf('/')+1);
+						is +=' <button type="button" id="btzrupg" onclick="FirmwareZigbee();">Zigbee Firmware: ' + fn +'</button><br>';
 					}
-					fn = fn.substring(fn.lastIndexOf('/')+1);
-					is +=' <button type="button" id="btzrupg" onclick="FirmwareZigbee();">Zigbee Firmware: ' + fn +'</button><br>';
+				}
+				if(otafiles.original != null) {
+					let fn = otafiles.original[hwver_id];
+					if(fn != null && fn != "" && fn != "?" && fn != "/") {
+						try {
+							if(fn.slice(0,6) == "https:")
+								fn = (new URL(fn)).pathname.split("/").pop();
+						} catch (error) {
+							console.log(error);
+						}
+						fn = fn.substring(fn.lastIndexOf('/')+1);
+						is +=' <button type="button" id="btorupg" onclick="BackToOriginal();">' + fn +'</button><br>';
+					}
+				}
+			} else {
+				if(otafiles.signed != null) {
+					let fn = otafiles.signed[hwver_id];
+					if(fn != null && fn != "" && fn != "?" && fn != "/") {
+						try {
+							if(fn.slice(0,6) == "https:")
+								fn = (new URL(fn)).pathname.split("/").pop();
+						} catch (error) {
+							console.log(error);
+						}
+						fn = fn.substring(fn.lastIndexOf('/')+1);
+						is +=' <button type="button" id="btorupg" onclick="LastOriginal();">' + fn +'</button><br>';
+					}
 				}
 			}
-			if(otafiles.original != null) {
-				let fn = otafiles.original[hwver_id];
-				if(fn != null && fn != "" && fn != "?" && fn != "/") {
-					try {
-						if(fn.slice(0,6) == "https:")
-							fn = (new URL(fn)).pathname.split("/").pop();
-					} catch (error) {
-						console.log(error);
-					}
-					fn = fn.substring(fn.lastIndexOf('/')+1);
-					is +=' <button type="button" id="btorupg" onclick="BackToOriginal();">' + fn +'</button><br>';
-				}
-			}
-			//if(hwver_id == 0 || hwver_id == 3 || hwver_id == 4 || hwver_id == 5 || hwver_id ==10)
-			//	is +=' <button type="button" id="btzdevbis" onclick="FirmwareZdevbis();">Zigbee devbis Firmware: 1.1.0.0</button><br>';
 		}
 	}
 	if(fwname != "" && firmwareArray != "") {
@@ -2040,7 +2054,7 @@ function getSignFile(data, filename) {
 	menuUpgrade();
 }
 
-function getFirmwareArray(data, filename) {
+function getFwArray(data, filename, flg) {
 	addAlog("File: " + filename);
 	addClog("File: " + filename);
 	let s = testOTAFirmware(data);
@@ -2059,7 +2073,7 @@ function getFirmwareArray(data, filename) {
 		firmwareArray = bytesToHex(data);
 	addAlog("File size: " + (firmwareArray.length/2).toString(10) + " bytes");
 	fwname = filename;
-	if(fsignota != "") {
+	if(flg == 0 && fsignota != "") {
 		ajax_file("signfiles/" + fsignota, getSignFile);
 		return;
 	}
@@ -2071,6 +2085,15 @@ function getFirmwareArray(data, filename) {
 	addAlog("Count: " + blockCount);
 	menuUpgrade();
 }
+
+function getFirmwareArray(data, filename) {
+ 	getFwArray(data, filename, 0)
+}
+
+function getSignFirmwareArray(data, filename) {
+ 	getFwArray(data, filename, 1)
+}
+
 
 function ajax_file(filename, fn, rawurl = "https://raw.githubusercontent.com/pvvx/ATC_MiThermometer/master/") {
 	let xhr;
@@ -2183,6 +2206,17 @@ function BackToOriginal() {
 			ajax_file(fn, getFirmwareArray);
 	}
 }
+function LastOriginal() {
+	if(hwver_id != null) {
+		let fn = otafiles.signed[hwver_id];
+		addAlog("Load firmware file '"+fn+"'...");
+		if(fn.slice(0,6) == "https:")
+			ajax_file(fn, getSignFirmwareArray, "");
+		else
+			ajax_file(fn, getSignFirmwareArray);
+	}
+}
+
 
 window.onload = function() {
 	//TODO Test enable -web-platform-features
