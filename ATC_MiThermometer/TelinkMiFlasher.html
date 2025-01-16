@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v9.1</title>
+<title>Telink Flasher v9.3</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -1776,7 +1776,7 @@ function doConnect() {
 			if (bluetoothDevice.name.substr(0,10) == "MJWSD05MMC") fwmaxsize = 0x34000;
 			if ((bluetoothDevice.name.substr(0,10) == "LYWSD03MMC") && (devinfo.frstr.substr(0,10) == "2.1.1_0159")) {
 			    $("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
-				fsignota = "sign_2.1.1_0159.bin";
+				fsignota = "sign_2.1.1_0159c.bin";
 				miAction();
 			} else {
 				$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
@@ -2018,6 +2018,10 @@ function testOTAFirmware(data) {
 	if(fcrc[0] != fcrc[1]) {
 		return "Incorrect CRC in Telink OTA binary firmware!";
 	}
+	if((hsize < fsize) && (fsize - hsize  > 1024)) {
+	 	if(bytesToHex(data.slice(hsize, hsize + 12)) == "000000004d49ef54464f5441")
+			return "sign";
+	}
 	return "ok";
 }
 
@@ -2027,23 +2031,44 @@ function getSignFile(data, filename) {
 	addAlog("Add signature file.");
 	addClog("AddFile: " + filename);
 	let fwsize = firmwareArray.length/2;
-	fsize = data.byteLength;
-	let head = new DataView(data, 0, 0x18);
-	let key1 = head.getUint32(0, true);
-	let key2 = head.getUint32(0x14, true);
-	let fdata = new Uint8Array(data);
-	fdata[0] = 0; fdata[1] = 0; fdata[2] = 0; fdata[3] = 0; fdata[0x14] = 0; fdata[0x15] = 0; fdata[0x16] = 0; fdata[0x17] = 0;
-	let xcrc = crc32(fdata);
-	key1 -= xcrc; key2 ^= xcrc;
-	addClog("AddFile size = 0x"+ fsize.toString(16));
-	let x1 = (key2 & 0xffff) - fsize;
-	let x2 = key2 >> 16;
-	fdata[0x14] = fwsize & 0xff; fdata[0x15] = (fwsize>>8) & 0xff; fdata[0x16] = (fwsize>>16) & 0xff; fdata[0x17] = (fwsize>>24) & 0xff;
-	firmwareArray += bytesToHex(fdata);
-	let xdata = new Uint8Array(x2);
-	xdata.fill(0xff);
-	xdata[x1] = key1 & 0xff; xdata[x1+1] = (key1>>8) & 0xff; xdata[x1+2] = (key1>>16) & 0xff; xdata[x1+3] = (key1>>24) & 0xff;
-	firmwareArray += bytesToHex(xdata);
+	cdata = new Uint8Array(data);
+	let cl = cdata[0] | (cdata[1] << 8);
+	console.log("cl: " + cl);
+	if(cl < 64 || cl > cdata.byteLength) {
+		addAlog("Invalid signature file!");
+		return;
+	}
+	let crc = crc32(new Uint8Array(data.slice(0, cl)));
+	console.log("crc: " + hex(crc,8));
+	cdata[0x14] = fwsize & 0xff; cdata[0x15] = (fwsize>>8) & 0xff; cdata[0x16] = (fwsize>>16) & 0xff; cdata[0x17] = (fwsize>>24) & 0xff;
+	firmwareArray += "00000000";
+	firmwareArray += bytesToHex(cdata.slice(4, cl));
+	if(cl < cdata.byteLength) {
+		let cx = cl;
+		let x = cdata[cl] | (cdata[cl+1] << 8);
+		cl += 2
+		let xdata = new Uint8Array((crc ^ x) & 0xffff);
+		crc &= 0xffff0000; crc |= x;
+		xdata.fill(0xff);
+		console.log("fill: " + xdata.byteLength);
+		while(cl < cdata.byteLength) {
+		    x = (cdata[cl] | (cdata[cl+1] << 8));
+			cl += 2;
+			let lx = (crc ^ x) & 0xffff;
+			console.log("addr: " + hex(lx, 4));
+		    crc &= 0xffff0000; crc |= x;
+			x = cdata[cl] | (cdata[cl+1] << 8) | (cdata[cl+2] << 16) | (cdata[cl+3] << 24);
+			cl += 4;
+			console.log("x: " + hex(crc ^ x, 8));
+			crc ^= x;
+			xdata[lx] = crc & 0xff;
+			xdata[lx+1] = (crc >> 8) & 0xff;
+			xdata[lx+2] = (crc >> 16) & 0xff;
+			xdata[lx+3] = (crc >> 24) & 0xff;
+			crc = x;
+		}
+		firmwareArray += bytesToHex(xdata);
+	}
 	addClog("OTA File size: " + (firmwareArray.length/2).toString(10) + " bytes");
 	if (firmwareArray.length % 32 !== 0) { // pad last block to 16bytes
 		var padHex = "ffffffffffffffffffffffffffffffff";
@@ -2059,13 +2084,16 @@ function getFwArray(data, filename, flg) {
 	addClog("File: " + filename);
 	let s = testOTAFirmware(data);
 	if(s != "ok") {
-		addAlog(s);
-		blockCount = 0;
-		firmwareArray = "";
-		fwname = "";
-		$("ldfrmw").innerHTML=s;
-		alert(s);
-		return;
+		if(s == "sign")	flg = 1;
+		else {
+			addAlog(s);
+			blockCount = 0;
+			firmwareArray = "";
+			fwname = "";
+			$("ldfrmw").innerHTML=s;
+			alert(s);
+			return;
+		}
 	}
 	if(fzigbeeota.used)
 		firmwareArray = bytesToHex(data.slice(0x3E, fzigbeeota.size+0x3E));
