@@ -138,6 +138,8 @@
 
 [CB3S](https://pvvx.github.io/TS0041_TZ3000_fa9mlvja) - Tuya ZigBee "Smart Button"
 
+[HS09: TS0201_TZ3000_1twfmkcc](https://pvvx.github.io/TS0201_TZ3000_1twfmkcc) - Tuya Zigbee "Smart Humidity Sensor"
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
