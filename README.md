@@ -41,7 +41,7 @@
 | 34 | 0x0222 | https://github.com/pvvx/THB2/discussions/82 |
 | 35 | 0x0223 | [CB3S](https://pvvx.github.io/TS0041_TZ3000_fa9mlvja) TS0041_TZ3000_fa9mlvja | [In developing...](https://t.me/pvvx_new_ble_zigbee_devices) |
 | 36 |        | [HS09](https://pvvx.github.io/TS0201_TZ3000_1twfmkcc) TS0201_TZ3000_1twfmkcc | [In developing...](https://t.me/pvvx_new_ble_zigbee_devices) |
-| 37 |        | ZY-ZTH02Pro | [In developing...](https://t.me/pvvx_new_ble_zigbee_devices) |
+| 37 |        | [ZY-ZTH02Pro](https://pvvx.github.io/ZY-ZTH02Pro) | [In developing...](https://t.me/pvvx_new_ble_zigbee_devices) |
 
 * [Telegram: New devices & develops](https://t.me/pvvx_new_ble_zigbee_devices).
 
