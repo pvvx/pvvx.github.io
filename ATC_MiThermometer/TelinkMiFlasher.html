@@ -2296,7 +2296,7 @@ function sendOTAblock(blockNr) {
 		sendLastOTA();
 		return;
 	}
-	setStatus("Sending block nr: " + blockNr + " from " + blockCount + ", " + Math.floor(blockNr / (blockCount * 1.0) * 100) + "% done, time since start " + (new Date().getTime() - startTime) / 1000.0 + "s");
+	$("percent").innerHTML = "Status: Sending block nr: " + blockNr + " from " + blockCount + ", " + Math.floor(blockNr / (blockCount * 1.0) * 100) + "% done, time since start " + (new Date().getTime() - startTime) / 1000.0 + "s";
 	var blockNrString = getHexBLockCount(blockNr);
 	var blockString = blockNrString + firmwareArray.substring(blockNr * 32, blockNr * 32 + 32);
 	var blockCRC = getHexCRC(blockString);
@@ -2304,7 +2304,8 @@ function sendOTAblock(blockNr) {
 		setTimeout(function() {
 			if ((blockNr + 1) % 8 == 0) {
 				writeCharacteristic.readValue().then(function(result) {
-					addClog('reading OTA');
+					if(result.byteLength > 0)
+						addClog('OTA status after block ' + blockNr + ' is  ' + result.getUint8(0));
 					sendOTAblock(blockNr + 1);
 				}).catch(function(err) {
 					updateFail(err);
@@ -2340,7 +2341,7 @@ function sendLastOTA() {
 
 var otaCharSend = function(data) {
 	return new Promise(function(resolve, reject) {
-		addClog("OTA: " + data);
+		//addClog("OTA: " + data);
 		writeCharacteristic.writeValue(hexToBytes(data)).then(function(character) {
 			resolve("ok");
 		}).catch(function(err) {
@@ -2549,8 +2550,8 @@ function sendMAC() {
 					addAlog(s+" ok");
 				});
 			}
-		}
-		addLog("Must be 6 hex MAC digits [+ 2 hex RandMAC digits]!")
+		} else
+			addLog("Must be 6 hex MAC digits [+ 2 hex RandMAC digits]!")
 		return;
 	}
 }

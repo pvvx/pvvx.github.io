@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html>
+  <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <link rel="stylesheet" href="styles.css">
+  <title>BLE T&H repeater v1.0</title>
+  </head>
+<script type="text/javascript">
+var cfg = {};
+var devid = {};
+var sw_version;
+var bluetoothDevice;
+var devServer;
+var	connectTrys = 0;
+var cmdCharacteristic;
+
+const CMD_ID_DEV_ID   = 0x00, // Get Info
+	CMD_ID_DEV_MAC	= 0x10, // Get/Set MAC [+RandMAC], [size][mac[6][randmac[2]]]
+	CMD_ID_UTC_TIME = 0x23, // Get/set utc time
+	CMD_ID_TADJUST  = 0x24, // Get/set adjust time clock delta (in 1/16 us for 1 sec)
+	CMD_ID_CFG      = 0x55,	// Get/set device config
+	CMD_ID_EMAC     = 0x58, // Get/set ext MAC
+	CMD_ID_EBKEY 	= 0x5C, // Get/set ext beacon bindkey in EEP (for MAC)
+	CMD_ID_PINCODE  = 0x70, // Set new PinCode 0..999999
+	CMD_ID_MTU		= 0x71, // Request Mtu Size Exchange (23..255)
+	CMD_ID_REBOOT	= 0x72; // Set Reboot on disconnect
+
+var $ = function(id) { return document.getElementById(id);}
+
+function clearLog() {
+	$("log").innerHTML = "";
+}
+
+function connect() {
+  $('butConnect').disabled = true;
+  return requestDevice().then(doConnect)
+  .catch(error => {
+    log(error);
+    $('butConnect').disabled = false;
+  });
+}
+
+function reConnect() {
+	connectTrys = 0;
+	doConnect();
+}
+
+function disConnect() {
+    resetVariables();
+}
+
+
+function requestDevice() {
+  log('Requesting any Bluetooth Device...');
+  return navigator.bluetooth.requestDevice({
+   // filters: [...] <- Prefer filters to save energy & show relevant devices.
+	  filters: [{namePrefix: 'STH'}],
+      optionalServices: [0x180a, 0xffe0]})
+  .then(device => {
+    bluetoothDevice = device;
+    bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
+  });
+}
+
+function hexToBytes(hex) {
+	for (var bytes = [], c = 0; c < hex.length; c += 2)
+		bytes.push(parseInt(hex.substr(c, 2), 16));
+	return new Uint8Array(bytes);
+}
+
+function bytesToHex(data) {
+	return new Uint8Array(data).reduce(function(memo, i) {
+		return memo + ("0" + i.toString(16)).slice(-2);
+	}, "");
+}
+
+function dump(ar, len) {
+	let s = '';
+	for(let i=0; i < len; i++) {
+		s += hex(ar[i],2);
+	}
+	return s;
+}
+
+function dump8(ar, len) {
+	let s = '';
+	for(let i=0; i < len; i++) {
+		s += hex(ar.getUint8(i),2);
+	}
+	return s;
+}
+
+function updateCfg() {
+	let t = parseInt($("cfg_interval").value);
+	if (t != 0) { if(t > 10000) t = 10000; else if (t < 3000) t = 3000; }
+	$("cfg_interval").value = t;
+	cfg.scan_interval = t;
+	cfg.rf_tx_power = parseInt($("cfg_rf_tx").value);
+	cfg.flg = ($("cfg_flg_cf").value != 0) ? 1 : 0;
+}
+
+function showConfig() {
+	$("cfg_rf_tx").value = String(cfg.rf_tx_power);
+	$("cfg_interval").value = cfg.scan_interval;
+	$("cfg_flg_cf").value = ((cfg.flg&1) != 0 ? 1 : 0);
+}
+
+
+function getCfg() {
+	if(cmdCharacteristic) {
+		cmdCharacteristic.writeValue(new Uint8Array([CMD_ID_CFG])).then(_ => {
+    		log('Read Config...');
+		})
+	}
+}
+
+function setCfg() {
+	if(cmdCharacteristic) {
+		updateCfg();
+		blk = new Uint8Array([CMD_ID_CFG,
+			cfg.flg&0xff,
+			cfg.rf_tx_power&0xff,
+			cfg.scan_interval&0xff, (cfg.scan_interval>>8)&0xff
+			]);
+		cmdCharacteristic.writeValue(blk).then(_ => {
+			log('Send Config: ' + dump(blk, blk.length) + "...");
+			});
+	}
+}
+
+function readEMAC() {
+	if(cmdCharacteristic) {
+		cmdCharacteristic.writeValue(new Uint8Array([CMD_ID_EMAC])).then(_ => {
+    			log('Read ext.MAC...');
+		});
+	}
+}
+function readEBkey(mid) {
+	if(cmdCharacteristic) {
+		cmdCharacteristic.writeValue(new Uint8Array([CMD_ID_EBKEY])).then(_ => {
+    			log('Read ext.BindKey...');
+		});
+	}
+}
+function readDMAC() {
+	if(cmdCharacteristic) {
+		cmdCharacteristic.writeValue(new Uint8Array([CMD_ID_DEV_MAC])).then(_ => {
+    			log('Read MAC...');
+		});
+	}
+}
+function sendEMAC() {
+	if(cmdCharacteristic) {
+		let el = $("dev_emac").value;
+		let len = el.length;
+		if(len == 12) {
+			let mac = hexToBytes(el);
+			len = mac.length;
+			if(len == 6)  {
+				cmdCharacteristic.writeValue(new Uint8Array([CMD_ID_EMAC, mac[5], mac[4], mac[3], mac[2], mac[1], mac[0]])).then(_ => {
+    				log('Set ext.MAC: '+dump(mac,6));
+			});
+			} else
+				log("Must be 6 hex MAC digits!")
+		} else
+			log("Must be 6 hex MAC digits!")
+		return;
+	}
+}
+function CleanDMAC() {
+	if(cmdCharacteristic) {
+		console.log("Send cmd Clean MAC (1000)...");
+		cmdCharacteristic.writeValue(new Uint8Array([CMD_ID_DEV_MAC, 0])).then(_ => {
+			log('Send Clean MAC ok');
+		});
+	}
+}
+function sendDMAC() {
+	if(cmdCharacteristic) {
+		let el = $("dev_dmac").value;
+		let len = el.length;
+		console.log(len + ' ' + el);
+		if(len == 12 || len == 16) {
+			let mac = hexToBytes(el);
+			len = mac.length;
+			console.log(len + ' ' + el);
+			if(len == 6 || len == 8) {
+				let blk = new Uint8Array(len+2);
+				blk[0] = CMD_ID_DEV_MAC;
+				blk[1] = len;
+				blk[2] = mac[5];
+				blk[3] = mac[4];
+				blk[4] = mac[3];
+				blk[5] = mac[2];
+				blk[6] = mac[1];
+				blk[7] = mac[0];
+				if(len == 8) {
+					blk[8] = mac[7];
+					blk[9] = mac[6];
+				}
+				console.log(blk);
+				console.log("Send cmd New MAC ("+dump(blk, blk.length)+")...");
+				cmdCharacteristic.writeValue(blk).then(_ => {
+					s = "Send New MAC: "+dump(mac, 6);
+					if(len == 8)
+						s += " RAND:" +dump(mac.slice(6), 2);
+					log(s+" ok");
+				});
+			}
+		} else
+			log("Must be 6 hex MAC digits [+ 2 hex RandMAC digits]!")
+		return;
+	}
+}
+// 522a79d97580579dcc5854135d6c01b4
+function sendEBkey() {
+	if(cmdCharacteristic) {
+		let bk = $("cbind_key").value;
+		if(bk.length == 32) {
+			let bkey = hexToBytes(bk);
+			if(bkey.length == 16) {
+				let blk = new Uint8Array(17);
+				blk.set(bkey,1);
+				blk[0] = CMD_ID_EBKEY;
+				log("Send ext.bindkey...");
+				cmdCharacteristic.writeValue(blk).then(_ => {
+					log("Set new ext.bindkey: " + dump(blk.slice(1), 16));
+					$("cbind_key").value = dump(blk.slice(1), 16);
+				});
+				return;
+			}
+		}
+		log("BindKey must be 16 hex digits!")
+	}
+}
+
+function getSwVersion() {
+ return new Promise((resolve, reject) => {
+	devServer.getPrimaryService(0x180a).then(service => { 
+ 		console.log("Found Device Information Service");
+		return service.getCharacteristic(0x2a28); // Software Revision String
+	}).then(characteristic => {
+		console.log("Get Software Revision String"); 
+		return characteristic.readValue();
+	}).then(value => {
+		let hw = new TextDecoder("utf-8").decode(value);
+		log('Softwaree Revision String: ' + hw);
+		return resolve(hw);
+	}).catch(error => {
+		log("No Software Revision String."); 
+		console.log(error);
+		return resolve(null);
+	});
+ })
+}
+function deviceAction() {
+    log('Read Device Config...');
+    return cmdCharacteristic.writeValue(new Uint8Array([CMD_ID_DEV_ID]))
+  .then(_ => {
+    return cmdCharacteristic.writeValue(new Uint8Array([CMD_ID_CFG]));})
+  .then(_ => {
+    return cmdCharacteristic.writeValue(new Uint8Array([CMD_ID_EMAC]));})
+  .then(_ => {
+    return cmdCharacteristic.writeValue(new Uint8Array([CMD_ID_EBKEY]));})
+  .then(_ => {
+	$('butSendEMAC').disabled = false;
+	$('butReadEMAC').disabled = false;
+	$('butReadEBkey').disabled = false;
+	$('butSendEBkey').disabled = false;
+	$('butSendDMAC').disabled = false;
+	$('butReadDMAC').disabled = false;
+	$('butCleanDMAC').disabled = false;
+	$('butSetCfg').disabled = false;
+	$('butGetCfg').disabled = false;
+   	$('butConnect').disabled = false;
+    connectTrys = 1000;
+   	log('BLE Device Connected');});
+}
+
+function doConnect() {
+  $('butConnect').disabled = true;
+  $('butDisConnect').disabled = false;
+  $('butReConnect').disabled = false;
+  connectTrys = 0;
+  log("Connecting to: " + bluetoothDevice.name);
+  return bluetoothDevice.gatt.connect()
+  .then(server => {
+    devServer = server;
+   	console.log('Getting CMD Service...');
+	return devServer.getPrimaryService(0xffe0);})
+  .then(service => {
+    console.log('Getting CMD Characteristic...');
+    return service.getCharacteristic(0xffe1);})
+  .then(characteristic => {
+	cmdCharacteristic = characteristic;
+    console.log('Start Notify CMD Characteristic...');
+    cmdCharacteristic.addEventListener('characteristicvaluechanged', cfghandleChanged);
+    return cmdCharacteristic.startNotifications();})
+  .then(_ => {
+    return getSwVersion();})
+  .then(value => {
+    if(value != null && value.length > 3 && value[0] == 'V' && value[2] == '.') sw_version = Math.round(parseFloat(value.slice(1)) * 10);
+    else sw_version = 0;
+  	setTimeout(deviceAction, 1050); })
+  .catch(err => { handleError(err); 
+    $('butConnect').disabled = false; });
+}
+
+function cfghandleChanged(event) {
+	let value = event.target.value.buffer ? event.target.value : new DataView(event.target.value);
+	let len = value.byteLength;
+	console.log("blk:"+dump8(value,len));
+	if(len == 0) return;
+	let blkid = value.getUint8(0);
+	if(blkid == CMD_ID_CFG && len >= 5) {
+		cfg.flg = value.getUint8(1);
+		cfg.rf_tx_power = value.getUint8(2);
+		cfg.scan_interval = value.getInt16(3, true);
+		log("Config: " + dump8(value,len));
+        showConfig();
+	} else if(blkid == CMD_ID_DEV_ID && len > 11) {
+		devid.revision = value.getUint8(1);
+		devid.hw_version = value.getUint16(2, true);
+		devid.sw_version = value.getUint16(4, true);
+		devid.dev_spec_data = value.getUint16(6, true);
+		devid.services = value.getUint32(8, true);
+		log("Device Protocol version: "+devid.revision+
+		", HW: " +hex(devid.hw_version, 4)+
+		", SW: " +hex(devid.sw_version, 4)+
+		", Option: " +hex(devid.dev_spec_data, 4)+
+		", Services: "+hex(devid.services, 8));
+	} else if(blkid == CMD_ID_EBKEY && len >= 1) { // Get/set beacon bkey in EEP
+		if(len > 16) {
+			let s = bytesToHex(value.buffer.slice(1),16);
+			log("Read ext.BindKey: "+ s);
+			$("cbind_key").value = s;
+		} else {
+			if(len == 2 && value.getUint8(1) == 0xff)
+				log("No ext.BindKey in EEP!");
+			else
+				log("Error read ext.BindKey from EEP!");
+			$("cbind_key").value = "none";
+		}
+	} else if(blkid == CMD_ID_EMAC && len > 6) {
+		$("dev_emac").value = hex(value.getUint32(3,true),8) + hex(value.getUint16(1,true),4);
+	} else if(blkid == CMD_ID_DEV_MAC && len > 8 && value.getUint8(1) == 8) {
+		$("dev_dmac").value = hex(value.getUint32(4,true),8) + hex(value.getUint16(2,true),4) + hex(value.getUint16(8,true),4);
+	} else
+		log("blk?:"+dump8(value,len));
+}
+
+function resetVariables() {
+  if(bluetoothDevice && bluetoothDevice.gatt.connected) {
+   bluetoothDevice.gatt.disconnect();
+   log('BLE Device Disconnected');
+  }
+  cmdCharacteristic = null;
+  devServer = null;
+  connectTrys = 0;
+  $('butSendEMAC').disabled = true;
+  $('butReadEMAC').disabled = true;
+  $('butReadEBkey').disabled = true;
+  $('butSendEBkey').disabled = true;
+  $('butSendDMAC').disabled = true;
+  $('butReadDMAC').disabled = true;
+  $('butCleanDMAC').disabled = true;
+  $('butSetCfg').disabled = true;
+  $('butGetCfg').disabled = true;
+  $('butConnect').disabled = false;
+  $('butReConnect').disabled = false;
+  $('butDisConnect').disabled = true;
+}
+
+function onDisconnected() {
+  resetVariables();
+}
+
+function handleError(error) {
+	if (connectTrys == 1000) {
+		resetVariables();
+	} else {
+		log(error);
+		resetVariables();
+		if (connectTrys < 5) {
+			connectTrys++;
+			log("Reconnect " + connectTrys + " from " + 5);
+			doConnect();
+		} else {
+			log("Something went wrong, too many reconnects");
+			connectTrys = 0;
+		}
+	}
+}
+
+function log(data) {
+    var time = new Date().toLocaleTimeString();
+    var logString = time + ": " + data;
+    document.getElementById("log").innerHTML += logString + "<br>";
+}
+
+function hex(number, len) {
+	var str = (number.toString(16)).toUpperCase();
+	while (str.length < len) str = '0' + str;
+	return str;
+}
+	
+</script>
+  <body>
+	<big><big>BLE T&H repeater</big></big> <a href="https://github.com/pvvx/BLETHR">&#9432;</a><br>
+	Set Web Experimental Features!<br>
+ 	#enable-experimental-web-platform-features (copy link:
+  	<a href=chrome://flags/#enable-experimental-web-platform-features>Chrome</a>,
+ 	<a href=opera://flags/#enable-experimental-web-platform-features>Opera</a>,
+  	<a href=edge://flags/#enable-experimental-web-platform-features>Edge</a>)<br><hr>
+    <button type="button" id="butConnect" onclick="connect();">Connect</button>
+    <button type="button" id="butDisConnect" disabled="true" onclick="disConnect();">Disconnect</button>
+    <button type="button" id="butReConnect" disabled="true" onclick="reConnect();">Reconnect</button><br><hr>
+	T&H SensorDevice MAC: <input size="12" maxlength="12" type="text" id="dev_emac" title="Must be 6 hex MAC digits!">
+	<input type="button" id="butReadEMAC" onclick="readEMAC()" disabled="true" value="Read">
+	<input type="button" id="butSendEMAC" onclick="sendEMAC()" disabled="true" value="Set"><br>
+	BindKey1:<br><input size="40" maxlength="32" title="Bind Key must be 16 hex digits" type="text" id="cbind_key" value="?">
+	<input type="button" id="butReadEBkey" onclick="readEBkey()" disabled="true" value="Read">
+	<input type="button" id="butSendEBkey" onclick="sendEBkey()" disabled="true" value="Set"><br><br>
+	<hr>
+	Temperature: <select id="cfg_flg_cf"><option value="0">°C</option><option value="1">°F</option></select><br><br>
+	RF TX Power: <select id="cfg_rf_tx"><option value="191">VANT+3.01 dbm</option><option value="189">VANT+2.81 dbm</option><option value="187">VANT+2.61 dbm</option><option value="185">VANT+2.39 dbm</option><option value="182">VANT+1.99 dbm</option><option value="180">VANT+1.73 dbm</option><option value="178">VANT+1.45 dbm</option><option value="176">VANT+1.17 dbm</option><option value="174">VANT+0.90 dbm</option><option value="172">VANT+0.58 dbm</option><option value="169" selected>VANT+0.04 dbm</option><option value="168">VANT-0.14 dbm</option><option value="164">VANT-0.97 dbm</option><option value="162">VANT-1.42 dbm</option><option value="160">VANT-1.89 dbm</option><option value="158">VANT-2.48 dbm</option><option value="156">VANT-3.03 dbm</option><option value="154">VANT-3.61 dbm</option><option value="152">VANT-4.26 dbm</option><option value="150">VANT-5.03 dbm</option><option value="148">VANT-5.81 dbm</option><option value="146">VANT-6.67 dbm</option><option value="144">VANT-7.65 dbm</option><option value="142">VANT-8.65 dbm</option><option value="140">VANT-9.89 dbm</option><option value="138">VANT-11.4 dbm</option><option value="136">VANT-13.29 dbm</option><option value="134">VANT-15.88 dbm</option><option value="132">VANT-19.27 dbm</option><option value="130">VANT-25.18 dbm</option></select><br><br>
+	Advertising interval: <input size="8" title="0 - Off, 3000..10000 ms" id="cfg_interval" maxlength="5" value="0"> ms<br>
+	<input type="button" id="butGetCfg" disabled="true" onclick="getCfg()" value="Get Config">
+	<input type="button" id="butSetCfg" disabled="true" onclick="setCfg()" value="Set Config"><br>
+	<hr>
+	Device MAC [+ 2 Rand]:<br><button type="button" id="butReadDMAC" disabled="true" onclick="readDMAC();">Get MAC</button> <input size="40" maxlength="16" type="text" id="dev_dmac" title="Must be 6 hex MAC digits [+ 2 hex RandMAC digits]!" value="?"><br>
+	<button type="button" id="butSendDMAC" disabled="true" title="Set Custom MAC. Warning: If the pin code is set, restart all Soft & Hard for the next connection!" onclick="sendDMAC();">!Set MAC!</button>
+	<button type="button" id="butCleanDMAC" disabled="true" title="Clean MAC - Set Standart Random MAC: A4C138******. Warning: If the pin code is set, restart all Soft & Hard for the next connection!" onclick="CleanDMAC();">!Clean MAC!</button><br>
+	<hr>
+    <a href="file:///E:/Telink/git/pvvx.github.io/ATC_MiThermometer/TelinkOTA.html">OTA Flasher</a>
+	<hr>
+    <button type="button" onclick="clearLog();">Clear Log</button>
+	<div id="log"></div>
+  </body>
+</html>
