@@ -3,10 +3,10 @@
   <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
  <link rel="stylesheet" href="styles.css">
-  <title>BLE T&H repeater v1.0</title>
+  <title>BLE T&H repeater v1.1</title>
   </head>
 <script type="text/javascript">
-var cfg = {};
+var cfg = {win_min: 1250, win_max: 2500};
 var devid = {};
 var sw_version;
 var bluetoothDevice;
@@ -94,15 +94,19 @@ function updateCfg() {
 	let t = parseInt($("cfg_interval").value);
 	if (t != 0) { if(t > 10000) t = 10000; else if (t < 3000) t = 3000; }
 	$("cfg_interval").value = t;
-	cfg.scan_interval = t;
-	cfg.rf_tx_power = parseInt($("cfg_rf_tx").value);
 	cfg.flg = ($("cfg_flg_cf").value != 0) ? 1 : 0;
+	cfg.rf_tx_power = parseInt($("cfg_rf_tx").value);
+	cfg.scan_interval = t;
+	cfg.win_min = Math.round(parseFloat($("cfg_win_min").value) * 125.0);
+	cfg.win_max = Math.round(parseFloat($("cfg_win_max").value) * 125.0);
 }
 
 function showConfig() {
 	$("cfg_rf_tx").value = String(cfg.rf_tx_power);
 	$("cfg_interval").value = cfg.scan_interval;
 	$("cfg_flg_cf").value = ((cfg.flg&1) != 0 ? 1 : 0);
+	$("cfg_win_min").value = String((cfg.win_min / 125.0).toFixed(3));
+	$("cfg_win_max").value = String((cfg.win_max / 125.0).toFixed(3));
 }
 
 
@@ -120,7 +124,9 @@ function setCfg() {
 		blk = new Uint8Array([CMD_ID_CFG,
 			cfg.flg&0xff,
 			cfg.rf_tx_power&0xff,
-			cfg.scan_interval&0xff, (cfg.scan_interval>>8)&0xff
+			cfg.scan_interval&0xff, (cfg.scan_interval>>8)&0xff,
+			cfg.win_min&0xff, (cfg.win_min>>8)&0xff,
+			cfg.win_max&0xff, (cfg.win_max>>8)&0xff
 			]);
 		cmdCharacteristic.writeValue(blk).then(_ => {
 			log('Send Config: ' + dump(blk, blk.length) + "...");
@@ -316,6 +322,13 @@ function cfghandleChanged(event) {
 		cfg.flg = value.getUint8(1);
 		cfg.rf_tx_power = value.getUint8(2);
 		cfg.scan_interval = value.getInt16(3, true);
+		if(len >= 8) {
+			cfg.win_min = value.getInt16(5, true);
+			cfg.win_max = value.getInt16(7, true);
+		} else {
+			cfg.win_min = 1250;
+			cfg.win_max = 2500;
+		}
 		log("Config: " + dump8(value,len));
         showConfig();
 	} else if(blkid == CMD_ID_DEV_ID && len > 11) {
@@ -422,10 +435,11 @@ function hex(number, len) {
 	<input type="button" id="butReadEBkey" onclick="readEBkey()" disabled="true" value="Read">
 	<input type="button" id="butSendEBkey" onclick="sendEBkey()" disabled="true" value="Set"><br><br>
 	<hr>
+	<input type="button" id="butGetCfg" disabled="true" onclick="getCfg()" value="Get Config"><br>
 	Temperature: <select id="cfg_flg_cf"><option value="0">°C</option><option value="1">°F</option></select><br><br>
 	RF TX Power: <select id="cfg_rf_tx"><option value="191">VANT+3.01 dbm</option><option value="189">VANT+2.81 dbm</option><option value="187">VANT+2.61 dbm</option><option value="185">VANT+2.39 dbm</option><option value="182">VANT+1.99 dbm</option><option value="180">VANT+1.73 dbm</option><option value="178">VANT+1.45 dbm</option><option value="176">VANT+1.17 dbm</option><option value="174">VANT+0.90 dbm</option><option value="172">VANT+0.58 dbm</option><option value="169" selected>VANT+0.04 dbm</option><option value="168">VANT-0.14 dbm</option><option value="164">VANT-0.97 dbm</option><option value="162">VANT-1.42 dbm</option><option value="160">VANT-1.89 dbm</option><option value="158">VANT-2.48 dbm</option><option value="156">VANT-3.03 dbm</option><option value="154">VANT-3.61 dbm</option><option value="152">VANT-4.26 dbm</option><option value="150">VANT-5.03 dbm</option><option value="148">VANT-5.81 dbm</option><option value="146">VANT-6.67 dbm</option><option value="144">VANT-7.65 dbm</option><option value="142">VANT-8.65 dbm</option><option value="140">VANT-9.89 dbm</option><option value="138">VANT-11.4 dbm</option><option value="136">VANT-13.29 dbm</option><option value="134">VANT-15.88 dbm</option><option value="132">VANT-19.27 dbm</option><option value="130">VANT-25.18 dbm</option></select><br><br>
 	Advertising interval: <input size="8" title="0 - Off, 3000..10000 ms" id="cfg_interval" maxlength="5" value="0"> ms<br>
-	<input type="button" id="butGetCfg" disabled="true" onclick="getCfg()" value="Get Config">
+	Scan windows: min <input size="8" title="5.0..50.0 ms" id="cfg_win_min" maxlength="5" value="10.000">, max <input size="8" title="5.0..50.0 ms" id="cfg_win_max" maxlength="5" value="20.000"> ms<br>
 	<input type="button" id="butSetCfg" disabled="true" onclick="setCfg()" value="Set Config"><br>
 	<hr>
 	Device MAC [+ 2 Rand]:<br><button type="button" id="butReadDMAC" disabled="true" onclick="readDMAC();">Get MAC</button> <input size="40" maxlength="16" type="text" id="dev_dmac" title="Must be 6 hex MAC digits [+ 2 hex RandMAC digits]!" value="?"><br>
