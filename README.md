@@ -146,6 +146,8 @@
 
 [TH04](https://pvvx.github.io/TH04) - Tuya BLE "Wireless Temperature & Humidity Sensor"
 
+[FindMyQMDv1](https://pvvx.github.io/FindMyQMDv1) - Apple FindMy-QMD-v1
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
