@@ -37,7 +37,7 @@
 | 31 | 0x021F | [LKTMZL02(TS0201_TZ3210)](https://pvvx.github.io/LKTMZL02) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc) |
 | 32 | 0x0220 | [KEY2(iSearching)](https://pvvx.github.io/iSearching) | [BLE](https://github.com/pvvx/THB2) |
 | 33 | 0x0221 | [ZTH05(TS0601_TZE204)](https://pvvx.github.io/TS0601_TZE204) | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
-| 34 | 0x0222 | https://github.com/pvvx/THB2/discussions/82 |
+| 34 | 0x0222 | [TH04](https://pvvx.github.io/TH04) | [BLE](https://github.com/pvvx/THB2) |
 | 35 | 0x0223 | [CB3S](https://pvvx.github.io/TS0041_TZ3000_fa9mlvja) TS0041_TZ3000_fa9mlvja | [In developing...](https://t.me/pvvx_new_ble_zigbee_devices) |
 | 36 | 0x0224 | [HS09](https://pvvx.github.io/TS0201_TZ3000_1twfmkcc) TS0201_TZ3000_1twfmkcc | [In developing...](https://t.me/pvvx_new_ble_zigbee_devices) |
 | 37 | 0x0225 | [ZY-ZTH02](https://pvvx.github.io/ZY-ZTH02) TS0201_TZ3000_v1w2k9dd without LCD | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
@@ -143,6 +143,8 @@
 [CB3S](https://pvvx.github.io/TS0041_TZ3000_fa9mlvja) - Tuya ZigBee "Smart Button"
 
 [HS09: TS0201_TZ3000_1twfmkcc](https://pvvx.github.io/TS0201_TZ3000_1twfmkcc) - Tuya Zigbee "Smart Humidity Sensor"
+
+[TH04](https://pvvx.github.io/TH04) - Tuya BLE "Wireless Temperature & Humidity Sensor"
 
 ---
 
