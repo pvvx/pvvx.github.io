@@ -42,6 +42,7 @@
 | 36 | 0x0224 | [HS09](https://pvvx.github.io/TS0201_TZ3000_1twfmkcc) TS0201_TZ3000_1twfmkcc | [In developing...](https://t.me/pvvx_new_ble_zigbee_devices) |
 | 37 | 0x0225 | [ZY-ZTH02](https://pvvx.github.io/ZY-ZTH02) TS0201_TZ3000_v1w2k9dd without LCD | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
 | 38 | 0x0226 | [ZY-ZTH02Pro](https://pvvx.github.io/ZY-ZTH02Pro) TS0201_TZ3000_v1w2k9dd LCD | [In developing...](https://t.me/pvvx_new_ble_zigbee_devices) |
+| 39 | 0x0227 | [ZG-227Z](https://github.com/pvvx/ZG-227Z) | https://github.com/pvvx/ZigbeeTLc/issues/161 |
 
 * [Telegram: New devices & develops](https://t.me/pvvx_new_ble_zigbee_devices).
 
@@ -149,6 +150,8 @@
 [FindMyQMDv1](https://pvvx.github.io/FindMyQMDv1) - Apple FindMy-QMD-v1
 
 [ZG-103Z: TS0601_TZE200_iba1ckek](https://pvvx.github.io/ZG-103Z) - Tuya ZigBee Vibration Sensors
+
+[ZG-227Z](https://github.com/pvvx/ZG-227Z)  - Tuya Zigbee ["Smart Humidity Sensor"](https://github.com/pvvx/ZigbeeTLc/issues/161)
 
 ---
 
