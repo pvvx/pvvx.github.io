@@ -151,7 +151,7 @@
 
 [ZG-103Z: TS0601_TZE200_iba1ckek](https://pvvx.github.io/ZG-103Z) - Tuya ZigBee Vibration Sensors
 
-[ZG-227Z](https://github.com/pvvx/ZG-227Z)  - Tuya Zigbee ["Smart Humidity Sensor"](https://github.com/pvvx/ZigbeeTLc/issues/161)
+[ZG-227Z: TS0601_TZE200_a8sdabtg](https://github.com/pvvx/ZG-227Z)  - Tuya Zigbee ["Smart Humidity Sensor"](https://github.com/pvvx/ZigbeeTLc/issues/161)
 
 ---
 
