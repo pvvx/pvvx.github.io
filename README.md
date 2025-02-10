@@ -148,6 +148,8 @@
 
 [FindMyQMDv1](https://pvvx.github.io/FindMyQMDv1) - Apple FindMy-QMD-v1
 
+[ZG-103Z: TS0601_TZE200_iba1ckek](https://pvvx.github.io/ZG-103Z) - Tuya ZigBee Vibration Sensors
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
