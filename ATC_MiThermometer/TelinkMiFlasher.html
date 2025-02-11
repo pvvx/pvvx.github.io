@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v9.4</title>
+<title>Telink Flasher v9.5</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -2900,6 +2900,11 @@ function CustomConfig() {
 	if(cfg.ver < 0x47) {
 		is += 'Temperature offset: <input size="5" title="-12.7..12.7°, default 0" id="cfg_tmp_off" maxlength="5" value="0"> °';
 		is += ', Humidity offset: <input size="5" title="-12.7..12.7%, default 0" id="cfg_hm_off" maxlength="5" value="0"> %<br><br>';
+	} else if(cfg.ver > 0x50) {
+		$("cfg_flg3_adv_delay").value = String(cfg.temp_offset&15);
+		$("cfg_event_adv_cnt").value = String(cfg.humi_offset);
+		is += 'Pseudo-random delay to advInterval: <input size="5" title="A pseudo-random value in the range from 0 to 10 ms is added to a fixed advInterval so that advertising events change over time. Value in 0.625 ms." id="cfg_flg3_adv_delay" maxlength="5" value="10"> x0.625 ms';
+		is += ', Number of duplicates when transmitting events beacons: <input size="5" title="Range: 5..255. Number of duplicates when transmitting events beacons, default 6" id="cfg_event_adv_cnt" maxlength="5" value="6"><br><br>';
 	}
 	if(cfg.ver >= 0x36) {
 		if(cfg.ver >= 0x42)
@@ -3092,6 +3097,9 @@ function CustomConfig() {
 	if(cfg.ver < 0x47) {
 		$("cfg_tmp_off").value = String((cfg.temp_offset / 10.0).toFixed(1));
 		$("cfg_hm_off").value = String((cfg.humi_offset / 10.0).toFixed(1));
+	} else if(cfg.ver > 0x50) {
+		$("cfg_flg3_adv_delay").value = String(cfg.temp_offset&15);
+		$("cfg_event_adv_cnt").value = String(cfg.humi_offset);
 	}
 	$("cfg_adv_int").value = String((cfg.advertising_interval * 62.5).toFixed(1));
 	$("cfg_adv_int").onchange = function() {InfoIntervals();};
@@ -3160,6 +3168,9 @@ function CustomConfig() {
 	if(cfg.ver < 0x47) {
 		$("cfg_tmp_off").value = String((cfg.temp_offset / 10.0).toFixed(1));
 		$("cfg_hm_off").value = String((cfg.humi_offset / 10.0).toFixed(1));
+	} else if(cfg.ver > 0x50) {
+		$("cfg_flg3_adv_delay").value = String(cfg.temp_offset&15);
+		$("cfg_event_adv_cnt").value = String(cfg.humi_offset);
 	}
 	$("cfg_adv_int").value = String((cfg.advertising_interval * 62.5).toFixed(1));
 	$("cfg_adv_int").onchange = function() {InfoIntervals();};
@@ -3242,6 +3253,15 @@ function SendCustomConfig() {
 		cfg.humi_offset = Math.round(10.0 * parseFloat($("cfg_hm_off").value));
 		if(cfg.humi_offset < -127) cfg.humi_offset = -127;
 		else if(cfg.humi_offset > 127) cfg.humi_offset = 127;
+	} else if(cfg.ver > 0x50) {
+		let adv_delay = parseInt($("cfg_flg3_adv_delay").value);
+		if (adv_delay < 0) adv_delay = 0;
+		else if (adv_delay > 15) adv_delay = 15;
+		cfg.temp_offset = adv_delay | (cfg.temp_offset & 0x0f0);
+		let event_adv_cnt = parseInt($("cfg_event_adv_cnt").value);
+		if(event_adv_cnt < 6) event_adv_cnt = 5;
+		else if(event_adv_cnt > 255) event_adv_cnt = 255;
+		cfg.humi_offset = event_adv_cnt;
 	}
 	cfg.advertising_interval = Math.round(parseFloat($("cfg_adv_int").value) / 62.5)
 	if(cfg.advertising_interval < 1) cfg.advertising_interval = 1;
