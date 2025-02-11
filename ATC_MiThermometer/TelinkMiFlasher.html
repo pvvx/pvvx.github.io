@@ -2901,8 +2901,6 @@ function CustomConfig() {
 		is += 'Temperature offset: <input size="5" title="-12.7..12.7°, default 0" id="cfg_tmp_off" maxlength="5" value="0"> °';
 		is += ', Humidity offset: <input size="5" title="-12.7..12.7%, default 0" id="cfg_hm_off" maxlength="5" value="0"> %<br><br>';
 	} else if(cfg.ver > 0x50) {
-		$("cfg_flg3_adv_delay").value = String(cfg.temp_offset&15);
-		$("cfg_event_adv_cnt").value = String(cfg.humi_offset);
 		is += 'Pseudo-random delay to advInterval: <input size="5" title="A pseudo-random value in the range from 0 to 10 ms is added to a fixed advInterval so that advertising events change over time. Value in 0.625 ms." id="cfg_flg3_adv_delay" maxlength="5" value="10"> x0.625 ms';
 		is += ', Number of duplicates when transmitting events beacons: <input size="5" title="Range: 5..255. Number of duplicates when transmitting events beacons, default 6" id="cfg_event_adv_cnt" maxlength="5" value="6"><br><br>';
 	}
