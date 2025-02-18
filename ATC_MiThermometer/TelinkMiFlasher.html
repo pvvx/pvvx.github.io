@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v9.5</title>
+<title>Telink Flasher v9.6</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -15,6 +15,7 @@ var ServiceMain, writeCharacteristicSpeed = null, nitifiyCharTemp, time_char, en
 var fwmaxsize = 0x20000;
 var otafiles = { loaded: false };
 var otazfiles = { loaded: false };
+var otazbfiles = { loaded: false };
 var fzigbeeota = { used : false };
 var firmwareArray = "",
 	startTime = 0,
@@ -1384,6 +1385,19 @@ function menuUpgrade() {
 						is +=' <button type="button" id="btzrupg" onclick="FirmwareZigbee();">Zigbee Firmware: ' + fn +'</button><br>';
 					}
 				}
+				if(otafiles.zbdjson != null && otazbfiles.loaded) {
+					let fn = otazbfiles.bin[hwver_id];
+					if(fn != null && fn != "" && fn != "?" && fn != "/") {
+						try {
+							if(fn.slice(0,6) == "https:")
+								fn = (new URL(fn)).pathname.split("/").pop();
+						} catch (error) {
+							console.log(error);
+						}
+						fn = fn.substring(fn.lastIndexOf('/')+1);
+						is +=' <button type="button" id="btzrupg" onclick="FirmwareZB();">ZB Firmware: ' + fn +'</button><br>';
+					}
+				}
 				if(otafiles.original != null) {
 					let fn = otafiles.original[hwver_id];
 					if(fn != null && fn != "" && fn != "?" && fn != "/") {
@@ -1753,16 +1767,23 @@ function doConnect() {
 			else if (services[i].uuid == "0000fcd2-0000-1000-8000-00805f9b34fb") phy62x2bthome = true;
 			else if (services[i].uuid == "0000180a-0000-1000-8000-00805f9b34fb") devInfEnabled = true; // Device Information Service
 		}
-		if(otaEnabled)
+		if(otaEnabled) {
 			return gattServer.getPrimaryService('00010203-0405-0607-0809-0a0b0c0d1912');
-		else {
+		} else {
 			addAlog("Not found Telink OTA service!");
 			if(phy62x2bthome) {
-				addAlog('<a href="https://pvvx.github.io/THB2/web/PHY62x2BTHome.html" target="_blank">PHY62x2BTHome</a>');
+				connectTrys = 1000;
+				addLog("Detected THBdevice");
+				setStatus("Detected THBdevice");
+				addAlog('Use: <a href="https://pvvx.github.io/THB2/web/PHY62x2BTHome.html" target="_blank">PHY62x2BTHome</a>');
+		    	return getDevVersion(devInfEnabled).then(_ => {
+				if (devinfo.hrstr) addLog('Hardware Revision String: ' + devinfo.hrstr);
+				if (devinfo.srstr) addLog('Software Revision String: ' + devinfo.srstr);
+				if (devinfo.frstr) addLog('Firmware Revision String: ' + devinfo.frstr); });
 			}
 		}
 		connectTrys = 1000;
-		return resolve(null);
+		return;
 	}).then(service => {
 		addClog("Found Telink OTA service");
 		Theservice = service;
@@ -1787,6 +1808,11 @@ function doConnect() {
 				$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
 				miAction();
 			}
+		} else if(phy62x2bthome) {
+				connectTrys = 1000;
+				addLog("Detected ZBdevice");
+				setStatus("Detected ZBdevice");
+				addAlog('GitHub: <a href="https://github.com/pvvx/ZBdevices" target="_blank">ZBdevices</a> or Use: <a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html" target="_blank">TelinkOTA.html</a>');
 		} else if (customEnabled) {
 			let s = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send commands to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
 			if (devTest) {
@@ -2167,6 +2193,24 @@ function getZOtaJson(d, name) {
 	}
 }
 
+function getZBOtaJson(d, name) {
+	if (!d) {
+		addClog("No load index file!");
+	} else {
+		let str = '';
+		if (typeof d === 'string')
+			str = d;
+		else
+			str = new TextDecoder("utf-8").decode(d);
+		let x = JSON.parse(str);
+		if(x.version) {
+			otazbfiles = x;
+			otazbfiles.loaded = true;
+			addClog(otazbfiles);
+		}
+	}
+}
+
 function getOtaJson(d, name) {
 	if (!d) {
 		addClog("No load index file!");
@@ -2184,6 +2228,9 @@ function getOtaJson(d, name) {
 			if(otafiles.zbjson != null && otafiles.zbjson.slice(0,6) == "https:") {
 				ajax_file(otafiles.zbjson, getZOtaJson, "" );
 			}
+			if(otafiles.zbdjson != null && otafiles.zbdjson.slice(0,6) == "https:") {
+				ajax_file(otafiles.zbdjson, getZBOtaJson, "" );
+			}
 		}
 	}
 }
@@ -2197,9 +2244,21 @@ function FirmwareZdevbis() {
 		ajax_file(fn, getFirmwareArray, "");
 }
 
+function FirmwareZB() {
+	if(hwver_id != null) {
+		if(!confirm("Attention: This firmware is a Beta version for testing! ZB firmware converts the thermometer to the Zigbee protocol and BLE OTA only! All data for MiHome and measurement memory will be erased!"))
+		   return;
+		let fn = otazbfiles.bin[hwver_id];
+		addAlog("Load firmware file '"+fn+"'...");
+		if(fn.slice(0,6) == "https:")
+			ajax_file(fn, getFirmwareArray, "");
+		else
+			ajax_file(fn, getFirmwareArray);
+	}
+}
 function FirmwareZigbee() {
 	if(hwver_id != null) {
-		if(!confirm("Attention: This firmware is a Beta version for testing! Zigbee firmware converts the thermometer to the Zigbee protocol! All data for MiHome and measurement memory will be erased!"))
+		if(!confirm("Attention: Zigbee firmware converts the thermometer to the Zigbee protocol! All data for MiHome and measurement memory will be erased!"))
 		   return;
 		let fn = otazfiles.bin[hwver_id];
 		addAlog("Load firmware file '"+fn+"'...");
