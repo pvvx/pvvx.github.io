@@ -153,6 +153,8 @@
 
 [ZG-227Z: TS0601_TZE200_a8sdabtg](https://pvvx.github.io/ZG-227Z)  - Tuya Zigbee ["Smart Humidity Sensor"](https://github.com/pvvx/ZigbeeTLc/issues/161)
 
+[SP621E](https://pvvx.github.io/SP621E) - Bluetooth Controller for WS2812/WS2811
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)

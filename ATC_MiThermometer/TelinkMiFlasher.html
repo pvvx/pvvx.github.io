@@ -1755,7 +1755,7 @@ function doConnect() {
 		devTest = false;
 		devInfEnabled = false;
 		EnabledQinping = false;
-		phy62x2bthome = false;
+		bthomeEnabled = false;
 		for (var i = 0; i < services.length; i++) {
 			addClog("Services: " + services[i].uuid);
 			if (services[i].uuid == "00010203-0405-0607-0809-0a0b0c0d1912") otaEnabled = true;
@@ -1764,18 +1764,18 @@ function doConnect() {
 			else if (services[i].uuid == "ebe0ccb0-7a0a-4b0c-8a1a-6ff2997da3a6") miEnabled = true;
 			else if (services[i].uuid == "0000181a-0000-1000-8000-00805f9b34fb") devIdEnabled = true;
 			else if (services[i].uuid == "0000ffe0-0000-1000-8000-00805f9b34fb") devTest = true;
-			else if (services[i].uuid == "0000fcd2-0000-1000-8000-00805f9b34fb") phy62x2bthome = true;
+			else if (services[i].uuid == "0000fcd2-0000-1000-8000-00805f9b34fb") bthomeEnabled = true;
 			else if (services[i].uuid == "0000180a-0000-1000-8000-00805f9b34fb") devInfEnabled = true; // Device Information Service
 		}
 		if(otaEnabled) {
 			return gattServer.getPrimaryService('00010203-0405-0607-0809-0a0b0c0d1912');
 		} else {
 			addAlog("Not found Telink OTA service!");
-			if(phy62x2bthome) {
+			if(bthomeEnabled) {
 				connectTrys = 1000;
 				addLog("Detected THBdevice");
-				setStatus("Detected THBdevice");
-				addAlog('Use: <a href="https://pvvx.github.io/THB2/web/PHY62x2BTHome.html" target="_blank">PHY62x2BTHome</a>');
+				setStatus("Detected <a href='https://github.com/pvvx/THB2' target='_blank'>THBdevice</a>");
+				addLog('GitHub: <a href="https://github.com/pvvx/THB2" target="_blank">THB2</a> or Use: <a href="https://pvvx.github.io/THB2/web/PHY62x2BTHome.html" target="_blank">PHY62x2BTHome</a>');
 		    	return getDevVersion(devInfEnabled).then(_ => {
 				if (devinfo.hrstr) addLog('Hardware Revision String: ' + devinfo.hrstr);
 				if (devinfo.srstr) addLog('Software Revision String: ' + devinfo.srstr);
@@ -1808,11 +1808,11 @@ function doConnect() {
 				$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
 				miAction();
 			}
-		} else if(phy62x2bthome) {
+		} else if(bthomeEnabled) {
 				connectTrys = 1000;
 				addLog("Detected ZBdevice");
-				setStatus("Detected ZBdevice");
-				addAlog('GitHub: <a href="https://github.com/pvvx/ZBdevices" target="_blank">ZBdevices</a> or Use: <a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html" target="_blank">TelinkOTA.html</a>');
+				setStatus("Detected <a href='https://github.com/pvvx/ZBdevices' target='_blank'>ZBdevice</a>");
+				addLog('GitHub: <a href="https://github.com/pvvx/ZBdevices" target="_blank">ZBdevices</a> or Use: <a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html" target="_blank">TelinkOTA.html</a>');
 		} else if (customEnabled) {
 			let s = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send commands to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
 			if (devTest) {
@@ -1854,7 +1854,7 @@ function doConnect() {
 function reConnect() {
 	if (bluetoothDevice != null) bluetoothDevice.gatt.disconnect();
 	resetVariables();
-	addLog("Reconnect");
+	addLog("Reconnect to: " + bluetoothDevice.name);
 	connectTrys = 0;
 	doConnect();
 }
