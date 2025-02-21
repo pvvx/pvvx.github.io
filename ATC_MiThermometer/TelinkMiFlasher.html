@@ -1355,7 +1355,7 @@ function menuUpgrade() {
 						console.log(error);
 					}
 					fn = fn.substring(fn.lastIndexOf('/')+1);
-					is += '<button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware: ' + fn + '</button>';
+					is += '<button type="button" id="firmupg" onclick="FirmwareUpgrade();">Custom Firmware: ' + fn + '</button>  <a href="https://github.com/pvvx/ATC_MiThermometer" target="_blank">Info</a><br>';
 				}
 			}
 			if(otafiles.betafw && otafiles.betaver != null) {
@@ -1368,7 +1368,7 @@ function menuUpgrade() {
 						console.log(error);
 					}
 					fn = fn.substring(fn.lastIndexOf('/')+1);
-					is += ' <button type="button" id="btfrmupg" onclick="BetaFirmwareUpgrade();">Beta Firmware: ' + fn + '</button><br>';
+					is += '<button type="button" id="btfrmupg" onclick="BetaFirmwareUpgrade();">Beta Firmware: ' + fn + '</button>  <a href="https://github.com/pvvx/ATC_MiThermometer" target="_blank">Info</a><br>';
 				}
 			}
 			if(fsignota == "") {
@@ -1382,7 +1382,7 @@ function menuUpgrade() {
 							console.log(error);
 						}
 						fn = fn.substring(fn.lastIndexOf('/')+1);
-						is +=' <button type="button" id="btzrupg" onclick="FirmwareZigbee();">Zigbee Firmware: ' + fn +'</button><br>';
+						is +=' <button type="button" id="btzrupg" onclick="FirmwareZigbee();">Zigbee Firmware: ' + fn +'</button> <a href="https://github.com/pvvx/ZigbeeTLc" target="_blank">Info</a><br>';
 					}
 				}
 				if(otafiles.zbdjson != null && otazbfiles.loaded) {
@@ -1395,7 +1395,7 @@ function menuUpgrade() {
 							console.log(error);
 						}
 						fn = fn.substring(fn.lastIndexOf('/')+1);
-						is +=' <button type="button" id="btzrupg" onclick="FirmwareZB();">ZB Firmware: ' + fn +'</button><br>';
+						is +=' <button type="button" id="btzrupg" onclick="FirmwareZB();">ZB Firmware: ' + fn +'</button> <a href="https://github.com/pvvx/ZBdevices" target="_blank">Info</a><br>';
 					}
 				}
 				if(otafiles.original != null) {
@@ -1422,7 +1422,7 @@ function menuUpgrade() {
 							console.log(error);
 						}
 						fn = fn.substring(fn.lastIndexOf('/')+1);
-						is +=' <button type="button" id="btorupg" onclick="LastOriginal();">' + fn +'</button><br>';
+						is +=' <button type="button" id="btorupg" onclick="LastOriginal();">' + fn +'</button><br> <a href="https://github.com/pvvx/ATC_MiThermometer/issues/602#issue-2786915630" target="_blank">Info</a>';
 					}
 				}
 			}
