@@ -2356,7 +2356,7 @@ function sendOTAblock(blockNr) {
 		sendLastOTA();
 		return;
 	}
-	$("percent").innerHTML = "Status: Sending block nr: " + blockNr + " from " + blockCount + ", " + Math.floor(blockNr / (blockCount * 1.0) * 100) + "% done, time since start " + (new Date().getTime() - startTime) / 1000.0 + "s";
+	$("percent").innerHTML = "Status: Sending block nr: " + blockNr + " from " + blockCount + ", " + Math.floor(blockNr / (blockCount * 1.0) * 100) + "% done, time since start " + ((new Date().getTime() - startTime) / 1000.0).toFixed(2) + "s";
 	var blockNrString = getHexBLockCount(blockNr);
 	var blockString = blockNrString + firmwareArray.substring(blockNr * 32, blockNr * 32 + 32);
 	var blockCRC = getHexCRC(blockString);
