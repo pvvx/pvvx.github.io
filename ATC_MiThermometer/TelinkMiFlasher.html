@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v9.6</title>
+<title>Telink Flasher v9.7</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -823,23 +823,35 @@ function CustomBlkParse(value) {
 		else addLog('Old version - out of service!');
 	} else if(blkid == 0x33 && len >= 8) {
 		let vbat = value.getUint16(1, true);
-		let temp = value.getInt16(3, true) / 100.0;
-		let humi = value.getUint16(5, true) / 100.0;
-		let count = value.getUint16(7, true);
-		let flg = 0;
-		let rds_count = 0;
-		if(len > 8) {
-			flg = value.getUint8(9);
-			if(len > 12)
-				rds_count = value.getUint32(10, true);
-		}
-		let sw = 'Open';
-		if((flg & 1) == 0) sw = 'Close';
 		let s = '';
-		if(cfg.ver >= 0x37)
-			s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', Switch: '+ sw +', Counter: '+ rds_count+', TRG Out: ' + ((flg & 2) >> 1) + ', flg: 0x'+hex(flg,2);
-		else
-			s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', Switch ' + sw +', TRG Out: ' + ((flg & 2) >> 1) + ', flg: 0x'+hex(flg,2);
+		if(len == 17) {
+			let i1 = value.getInt16(3, true);
+			let i2 = value.getInt16(5, true);
+			let i3 = value.getInt16(7, true);
+			let u1 = value.getUint16(9, true);
+			let u2 = value.getUint16(11, true);
+			let u3 = value.getUint16(13, true);
+			let count = value.getUint16(15, true);
+			let flg = value.getUint8(17);
+			s = 'Vbat: '+vbat+' mV , I: '+i1+':'+i2+':'+i3+' mA, U: '+u1+':'+u2+':'+u3+' mV, ID: '+count+', TRG Out: ' + ((flg & 2) >> 1) + ', flg: 0x'+hex(flg,2);
+		} else {
+			let temp = value.getInt16(3, true) / 100.0;
+			let humi = value.getUint16(5, true) / 100.0;
+			let count = value.getUint16(7, true);
+			let flg = 0;
+			let rds_count = 0;
+			if(len > 8) {
+				flg = value.getUint8(9);
+				if(len > 12)
+					rds_count = value.getUint32(10, true);
+			}
+			let sw = 'Open';
+			if((flg & 1) == 0) sw = 'Close';
+			if(cfg.ver >= 0x37)
+				s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', Switch: '+ sw +', Counter: '+ rds_count+', TRG Out: ' + ((flg & 2) >> 1) + ', flg: 0x'+hex(flg,2);
+			else
+				s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', Switch ' + sw +', TRG Out: ' + ((flg & 2) >> 1) + ', flg: 0x'+hex(flg,2);
+		}
 		$("tempHumiData").innerHTML = s;
 		addClog(s);
 	} else if(blkid == 0x22 && len >= 7) {
@@ -854,7 +866,7 @@ function CustomBlkParse(value) {
 		ext.flg = value.getUint8(7);
 		s = 'ExtShow: big_number: '+ext.big_number+', small_number: '+ext.small_number+', ext.vtime: '+ext.vtime+' s, flg: '+hex(ext.flg,2);
 		addAlog(s); UpdExt();
-	} else if((blkid >= 0x25 && blkid <= 0x26) && (len > 16)) {
+	} else if((blkid == 0x25 || blkid == 0x26 || blkid == 0x2b || blkid == 0x2c)  && (len > 16)) {
 	// CMD_ID_CFS Get/Set sensor config
 	    devSens.temp_k = value.getUint32(1, true);
 	    devSens.humi_k = value.getUint32(5, true);
@@ -889,6 +901,12 @@ function CustomBlkParse(value) {
 					st = "MY18B20x2";
 				else if(sentype == 10)
 					st = "HX71X";
+				else if(sentype == 11)
+					st = "PWMRH";
+				else if(sentype == 12)
+					st = "NTC";
+				else if(sentype == 13)
+					st = "INA3221";
 				else if(sentype == 0)
 				    st = "None"
 		} else {
@@ -907,7 +925,10 @@ function CustomBlkParse(value) {
 		let s = "<b>Sensor Settings:</b> (" + st;
 		if(devSens.i2c_addr != 0)
 			s += ", I2C address: 0x"+hex(devSens.i2c_addr,2)
-		$('lblSensor').innerHTML = s + ", ID: " + hex(devSens.id, 8) + ")";
+		s += ", ID: " + hex(devSens.id, 8) + ")";
+		if(blkid == 0x2b || blkid == 0x2c)
+			 s += ", part: " + (3 - (blkid & 1));
+		$('lblSensor').innerHTML = s;
 		addAlog("Sensor "+st+" id: "+hex(devSens.id, 8)
 		   + ", I2C address: 0x" + hex(devSens.i2c_addr,2)
 		   + ", Kt: " + devSens.temp_k
@@ -1830,6 +1851,8 @@ function doConnect() {
 			if(bluetoothDevice.name.substr(0,15) == "Qingping Motion")
 				CGPR1_Action();
 			else if(bluetoothDevice.name.substr(0,21) == "Qingping Temp RH Lite")
+				CGDK2_Action();
+			else if(bluetoothDevice.name.substr(0,23) == "Qingping Temp & RH Lite")
 				CGDK2_Action();
 			else if(bluetoothDevice.name.substr(0,20) == "Qingping Temp & RH M")
 				CGG1_Action("2020-2021");
