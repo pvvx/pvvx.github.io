@@ -907,8 +907,12 @@ function CustomBlkParse(value) {
 					st = "NTC";
 				else if(sentype == 13)
 					st = "INA3221";
+				else if(sentype == 14)
+					st = "SCD41";
 				else if(sentype == 0)
-				    st = "None"
+				    st = "None";
+				else
+				    st = "N:" + sentype;
 		} else {
 			devSens.id = value.getUint32(13, false);
 			if((devSens.id & 0xFFFF) == 0x2000)
