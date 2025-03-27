@@ -155,6 +155,8 @@
 
 [SP621E](https://pvvx.github.io/SP621E) - Bluetooth Controller for WS2812/WS2811
 
+[MJWSD06MMC](https://pvvx.github.io/MJWSD06MMC) - Xiaomi Bloetooth Temp & Humidity BLE Sensor
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
