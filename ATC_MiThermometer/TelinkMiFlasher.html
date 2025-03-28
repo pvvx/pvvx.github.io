@@ -206,7 +206,8 @@ const tabid2name = [
   { id: 0x069F, name: "ZNMS17LM"},
   { id: 0x04E9, name: "MJZNMSQ01YD"},
   { id: 0x098C, name: "XMZNMST02YD"},
-  { id: 0x2832, name: "MJWSD05MMC"}
+  { id: 0x2832, name: "MJWSD05MMC"},
+  { id: 0x55B5, name: "MJWSD06MMC"}
 ];
 function id2name(dev_id) {
 	let did = tabid2name.map(el => el.id);
@@ -790,6 +791,7 @@ function CustomBlkParse(value) {
 		else if(hwver_id == 9) { s +='MJWSD05MMC(ch)'; bigOtaEnabled = true; }
 		else if(hwver_id == 11) { s +='MHO-C122'; bigOtaEnabled = true; }
 		else if(hwver_id == 12) { s +='MJWSD05MMC(en)'; bigOtaEnabled = true; }
+		else if(hwver_id == 13) { s +='MJWSD06MMC'; bigOtaEnabled = true; }
 		else {
 			if(cfg.ver < 0x48) {
 				if((hwver_id == 15)&&(len >= 11))  {

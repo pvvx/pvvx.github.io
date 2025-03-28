@@ -2,16 +2,43 @@
 <html>
   <head><meta charset="utf-8">
   <title>MJWSD06MMC</title>
+  <style>
+	body {text-align: center;}
+	table {margin: 0 auto; width: 10vh;}
+    table, th, td {border-collapse: collapse;}
+  </style>
   </head>
   <body>
 	<div style="height: auto; width: auto; text-align: center;">
-	<h2>Xiaomi Bloetooth Temp & Humidity Sensor, Model: MJWSD06MMC</h2>
+	<h2>Mijia Smart Temperature and Humidity Monitor 3 Mini, BLE, Model: MJWSD06MMC</h2>
 	<img src="img/box1.jpg" style="max-width:30%;"><img src="img/box2.jpg" style="max-width:30%;"><br>
 	<img src="img/dev1.jpg" style="max-width:30%;"><img src="img/dev2.jpg" style="max-width:30%;"><br>
 	<hr>
 	SoC: TLSR8251, Sensor: SHV4, LCD driver: <a href="AIP31620.pdf">AIP31620E</a><br>
 	<img src="img/pcb.jpg" style="max-width:40%;"><br><br>
+	<table align="center" border="1">
+	<tr><td>V</td><td>Vcc</td></tr>
+	<tr><td>G</td><td>GND</td></tr>
+	<tr><td>R</td><td>RX PB7</td></tr>
+	<tr><td>T</td><td>TX PD7</td></tr>
+	<tr><td>S</td><td>SWS PA7</td></tr>
+	<tr><td>G</td><td>GND</td></tr>
+	<tr><td>V</td><td>Vcc</td></tr>
+	<tr><td>B6</td><td>PB6</td></tr>
+ 	</table><br>
+	<table align="center" border="1">
+	<tr><td>SDA</td><td>PC2</td></tr>
+	<tr><td>SCK</td><td>PC3</td></tr>
+	<tr><td>A5</td><td>PA5</td></tr>
+	<tr><td>A6</td><td>PA6</td></tr>
+ 	</table><br>
+	<table align="center" border="1">
+	<tr><td>PC4</td><td>Vbat</td></tr>
+	<tr><td>PD2</td><td>KEY to GND</td></tr>
+ 	</table><br>
 	<a href="bin/MJWSD06MMC_ff.zip">Original FullFlash</a><br>
+	Power consumption of the original firmware:<br>
+	Averge: 26..29uA, Sleep: 11uA, RF TX: 15mA<br>
 	</div>
   </body>
 </html>
