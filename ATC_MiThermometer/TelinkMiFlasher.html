@@ -3286,20 +3286,15 @@ function SendCustomConfig() {
 		(($("cfg_flg_tx_meas").checked) ? 64 : 0) +
 		(($("cfg_flg_lp_meas").checked) ? 128 : 0);
 		cfg.flg2 = (parseInt($("cfg_smiley").value) & 7);
-		if(cfg.ver == 0x19)
-			cfg.flg2 += (($("cfg_flg2_memo").checked) ? 8 : 0);
-		if(cfg.ver >= 0x22)
-			cfg.flg2 += (($("cfg_adv_crypto").checked) ? 0x08 : 0);
-		if(cfg.ver >= 0x30)
-			cfg.flg2 += (($("adv_flags").checked )? 0x10 : 0);
+		if(cfg.ver == 0x19)	cfg.flg2 += (($("cfg_flg2_memo").checked) ? 8 : 0);
+		if(cfg.ver >= 0x22)	cfg.flg2 += (($("cfg_adv_crypto").checked) ? 0x08 : 0);
+		if(cfg.ver >= 0x30)	cfg.flg2 += (($("adv_flags").checked )? 0x10 : 0);
 		if(cfg.ver >= 0x36) {
 			cfg.flg2 += (($("bt5_flags").checked) ? 0x20 : 0);
 			if(cfg.ver >= 0x42) {
 				cfg.flg2 += (($("longrange_flags").checked) ? 0x40 : 0);
-				if(cfg.ver >= 0x43)
-					cfg.flg2 += (($("cfg_scr_off").checked) ? 0x80 : 0);
-			} else if(cfg.ver < 0x40)
-				cfg.flg2 += (($("csa2_flags").checked) ? 0x40 : 0);
+				if(cfg.ver >= 0x43)	cfg.flg2 += (($("cfg_scr_off").checked) ? 0x80 : 0);
+			} else if(cfg.ver < 0x40) cfg.flg2 += (($("csa2_flags").checked) ? 0x40 : 0);
 		}
 		cfg.lcd_tint = Math.round(parseFloat($("cfg_lcd_tint").value) / 0.05);
 		if(cfg.lcd_tint < 10) cfg.lcd_tint = 10;
@@ -3321,10 +3316,8 @@ function SendCustomConfig() {
 		if(cfg.ver > 0x48) cfg.temp_offset = ($("cfg_flg3_weekday").checked) ? 0 : 128;
 	}
  } else {
-		cfg.flg = (cfg.flg & 0xbc) + ($("cfg_flg_adv_type").value & 3)+
-		(($("cfg_flg_tx_meas").checked) ? 64 : 0);
-		if(cfg.ver >= 0x48)
-			cfg.flg = (cfg.flg & 0x7f) + (($("cfg_flg_lp_meas").checked) ? 128 : 0)
+		cfg.flg = (cfg.flg & 0xbc) + ($("cfg_flg_adv_type").value & 3)+(($("cfg_flg_tx_meas").checked) ? 64 : 0);
+		if(cfg.ver >= 0x48)	cfg.flg = (cfg.flg & 0x7f) + (($("cfg_flg_lp_meas").checked) ? 128 : 0);
 		cfg.flg2 = cfg.flg2 & 0x87;
 		cfg.flg2 += (($("cfg_adv_crypto").checked) ? 0x08 : 0);
 		cfg.flg2 += (($("adv_flags").checked )? 0x10 : 0);
