@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v9.7</title>
+<title>Telink Flasher v9.8</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -34,7 +34,7 @@ var customEnabled, devTest = false;
 var settingsCharacteristics = null;
 // Custom config
 var MAX_RF_TX_Power = false;
-var cfg = {enable: false, ver: 0, hver: 0, ext_hw_id: 0, flg: 0, flg2: 0, temp_offset: 0, humi_offset: 0, advertising_interval: 32, measure_interval: 5, rf_tx_power: 191, connect_latency: 49, lcd_tint: 55, av_meas_mem: 60, step_time: 16000000};
+var cfg = {enable: false, zbdevice: false, ver: 0, hver: 0, ext_hw_id: 0, flg: 0, flg2: 0, temp_offset: 0, humi_offset: 0, advertising_interval: 32, measure_interval: 5, rf_tx_power: 191, connect_latency: 49, lcd_tint: 55, av_meas_mem: 60, step_time: 16000000};
 var trg = {enable: false, tmp_thr: 2100, hm_thr: 5000, tmp_hst: -1, hm_hst: 0, flg: 0, rds_type: 0, rds_rpint: 0};
 var cmf = {enable: false, tmp_lo: 2100, tmp_hi: 2600, hm_lo: 3000, hm_hi: 6000};
 var dnm = {enable: false, name: ""};
@@ -71,6 +71,7 @@ function resetVariables() {
 	ext.enable = false;
 	pincode.enable = false;
 	cfg.enable = false;
+	cfg.zbdevice = false;
 	trg.enable = false;
 	trg.rds2_enable = false;
 	cmf.enable = false;
@@ -161,6 +162,49 @@ function connect() {
 				doConnect();
 	}).catch(handleError);
 }
+
+const hw_version_str = [
+"LYWSD03MMC-B1.4",
+"MHO_C401",
+"CGG1",
+"LYWSD03MMC-B1.9",
+"LYWSD03MMC-B1.6",
+"LYWSD03MMC-B2.0",
+"CGDK2",
+"CGG1N",
+"MHO_C401N",
+"MJWSD05MMC(ch)",
+"LYWSD03MMC-B1.5",
+"MHO-C122",
+"MJWSD05MMC(en)",
+"MJWSD06MMC",
+"14",
+"15",
+"TB03F",
+"TS0201",
+"TNKS",
+"THB2",
+"BTH01",
+"TH05",
+"TH03Z",
+"THB1",
+"TH05D",
+"TH05F",
+"THB3",
+"ZTH01",
+"ZTH02",
+"PLM1",
+"ZTH03",
+"LKTMZL02",
+"KEY2",
+"ZTH05",
+"TH04",
+"CB3S",
+"HS09",
+"ZYZTH02",
+"ZYZTH01",
+"ZG_227Z"
+];
 
 const tabid2name = [
   { id: 0x01AA, name: "LYWSDCGQ"},
@@ -823,6 +867,55 @@ function CustomBlkParse(value) {
 		addAlog('Custom config HEX string: 55' + bytesToHex(value.buffer.slice(2)));
 		if(cfg.ver >= 5) CustomConfig();
 		else addLog('Old version - out of service!');
+	} else if((blkid == 0x57 || blkid == 0x58) && len >= 5) { // Get/Set zb device config
+		cfg.temp_offset = value.getInt16(1, true);
+		cfg.humi_offset = value.getInt16(3, true);
+		if(len >= 16) {
+			cfg.temp_comfort_min = value.getInt16(5, true);
+			cfg.temp_comfort_max = value.getInt16(7, true);
+			cfg.humi_comfort_min = value.getInt16(9, true);
+			cfg.humi_comfort_max = value.getInt16(11, true);
+			cfg.c_f = value.getUint8(13);	   
+			cfg.showSmiley = value.getUint8(14);
+			cfg.display_off = value.getUint8(15);
+			cfg.measure_interval = value.getUint8(16);
+		} else {
+			cfg.measure_interval = value.getUint8(5);
+		}
+		if(cfg.zbdevice) {
+			addAlog('Custom config HEX string: 57' + bytesToHex(value.buffer.slice(2)));
+			zbdeviceConfig();
+		}
+	} else if(blkid == 0 && len >= 11) { // Get dev id, version, services
+		cfg.revision  = value.getUint8(1); // protocol version/revision
+		cfg.hw_version = value.getUint16(2, true); // hardware version
+		cfg.sw_version  = value.getUint16(4, true);	// software version (BCD)
+		cfg.dev_spec_data  = value.getUint16(6, true); // device-specific data (bit0..3: sensor_type)
+		cfg.services  = value.getUint32(8, true); // supported services by the device
+		if(bthomeEnabled) {
+			cfg.zbdevice = ((cfg.services & 0x01000000) != 0); // SERVICE_ZIGBEE
+			if(cfg.zbdevice) {  
+				let s = " ?";
+				if(cfg.hw_version < hw_version_str.length) {
+					hwver_id = cfg.hw_version;
+					s = " " + hw_version_str[cfg.hw_version];
+					fwmaxsize = 212992;
+				} else {
+
+				}
+				cfg.ver = cfg.sw_version & 0xff;
+				addLog("Device"+s+" info # hw: 0x" + hex(cfg.hw_version,4)
+				   + ", sw: 0x" + hex(cfg.sw_version,4)
+				   + ", services: 0x" + hex(cfg.services,8)
+				   + ", sd: 0x" + hex(cfg.dev_spec_data, 4));
+				s = "ZBdevice: " + hw_version_str[cfg.hw_version]+', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
+				setStatus(s);
+				menuUpgrade();
+			} else {
+				addLog("Unknown device version!");
+				setStatus("Unknown device version!");
+			}
+		}
 	} else if(blkid == 0x33 && len >= 8) {
 		let vbat = value.getUint16(1, true);
 		let s = '';
@@ -1315,6 +1408,34 @@ function mapper_send() {
 	sendCustomSetting(segment_bytes_to_send);
 }
 
+function zbdeviceAction() {
+	gattServer.getPrimaryService('0000fcd2-0000-1000-8000-00805f9b34fb').then(service => {
+		addClog("Found Main service (0xfdc2)");
+		ServiceMain = service;
+		return ServiceMain.getCharacteristic('0000fff4-0000-1000-8000-00805f9b34fb');
+	}).then(characteristic => {
+		settingsCharacteristics = characteristic;
+		addClog("Found read-write characteristic (0xfffe)");
+		addClog("Start Notifications (0xfffe)");
+		settingsCharacteristics.startNotifications()
+		.then(characteristic => {
+			addClog("Add EventListener (0xfffe)");
+			settingsCharacteristics.addEventListener('characteristicvaluechanged', event => CustomBlkParse(event.target.value));
+			addClog("Read Characteristics (0xfffe)");
+			settingsCharacteristics.readValue()
+			.then(value => {
+				$("ldfile").hidden = false;
+				addClog("Send cmd (0x57): Get zb device config");
+				settingsCharacteristics.writeValue(new Uint8Array([0x57]))
+				.then(_ => {addClog('Send cmd ok');})
+				.catch(error => addClog(error));
+			}).catch(error => { addClog(error);
+				addLog("Detected alternative Firmware? Use: https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html");
+				setStatus('Detected alternative Firmware? <a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html" target="_blank">TelinkOTA</a>');
+			});
+		}).catch(error => addClog(error));
+	}).catch(handleError);
+}
 
 function customAction() {
 	gattServer.getPrimaryService('00001f10-0000-1000-8000-00805f9b34fb').then(service => {
@@ -1344,7 +1465,9 @@ function customAction() {
 				});
 			}).catch(error => addClog(error));
 		} else {
-			$("custcfg").innerHTML = '<b>ATC1441 firmware:</b> Use <a href="https://atc1441.github.io/TelinkFlasher.html" target="_blank">Atc1441 TelinkOTA</a> or <a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html">SDK TelinkOTA</a>!<br><br>Send commands to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>Settings: <button type="button" onclick="sendCustomSetting(&quot;DF&quot;);">Save current settings in flash</button><button type="button" onclick="sendCustomSetting(&quot;DE&quot;);">Reset settings to default</button><br><br>Smiley: <button type="button" onclick="sendCustomSetting(&quot;A0&quot;);">Off</button> <button type="button" onclick="sendCustomSetting(&quot;A1&quot;);">Happy</button> <button type="button" onclick="sendCustomSetting(&quot;A2&quot;);">Sad</button> <button type="button" onclick="sendCustomSetting(&quot;AB&quot;);">Blinking</button> <button type="button" onclick="sendCustomSetting(&quot;A3&quot;);">Comfort Indicator</button><br><br>Advertising Type:<button type="button" onclick="sendCustomSetting(&quot;AE&quot;);">Custom</button> <button type="button" onclick="sendCustomSetting(&quot;AF&quot;);">Mi Like</button> <br><br> Sensor display: <button type="button" onclick="sendCustomSetting(&quot;CC&quot;);">In °C</button> <button type="button" onclick="sendCustomSetting(&quot;FF&quot;);">In °F</button> <br><br> Sensor advertising: <button type="button" onclick="sendCustomSetting(&quot;0C&quot;);">In °C</button> <button type="button" onclick="sendCustomSetting(&quot;0F&quot;);">In °F</button> <br><br> Show battery in LCD: <button type="button" onclick="sendCustomSetting(&quot;B1&quot;);">Enabled</button> <button type="button" onclick="sendCustomSetting(&quot;B0&quot;);">Disabled</button> <br><br> Advertising interval: <button type="button" onclick="sendCustomSetting(&quot;FE01&quot;);">10 Seconds</button> <button type="button" onclick="sendCustomSetting(&quot;FE06&quot;);">1 Minute</button> <button type="button" onclick="sendCustomSetting(&quot;FE1E&quot;);">5 Minutes</button> <button type="button" onclick="sendCustomSetting(&quot;FE3C&quot;);">10 Minutes</button> <br><br> Sensor offset: <button type="button" onclick="sendCustomSetting(&quot;FA00&quot;);">Temp 0°C offset</button> <button type="button" onclick="sendCustomSetting(&quot;FB00&quot;);">Humi 0% offset</button><br> To set a precise offset use the text input field with FA+offset for Temp and FB+offset for Humiditiy convert an int8 to hex. <br><br> Sensor instant Advertising: <button type="button" onclick="sendCustomSetting(&quot;FC05&quot;);">Temp 0,5°C instant alarm</button> <button type="button" onclick="sendCustomSetting(&quot;FD05&quot;);">Humi 5% instant alarm</button><br> To set other values use the text input with FC+temp alarm or FD+humi alarm with uint8_t values. This can be used to get instant advertising if the sensor data changes to fast. Temp divided by 10 <br> To set a precise offset use the text input field with FA+offset for Temp and FB+offset for Humiditiy convert an int8 to hex. <br><hr> <div id="mapper"><button id="mapper_toggle_button" type="button" onclick="mapper_toggle();">Show LCD Segment Mapper</button><br> <div style="display: none" id="mapper_content"> <div> Byte0 <input type="checkbox" id="check00">0</input> <input type="checkbox" id="check01">1</input> <input type="checkbox" id="check02">2</input> <input type="checkbox" id="check03">3</input> <input type="checkbox" id="check04">4</input> <input type="checkbox" id="check05">5</input> <input type="checkbox" id="check06">6</input> <input type="checkbox" id="check07">7</input></div> <div>Byte1: <input type="checkbox" id="check10">0</input>  <input type="checkbox" id="check11">1</input>  <input type="checkbox" id="check12">2</input>  <input type="checkbox" id="check13">3</input>  <input type="checkbox" id="check14">4</input>  <input type="checkbox" id="check15">5</input>  <input type="checkbox" id="check16">6</input>  <input type="checkbox" id="check17">7</input> </div> <div> Byte2:  <input type="checkbox" id="check20">0</input>  <input type="checkbox" id="check21">1</input>  <input type="checkbox" id="check22">2</input>  <input type="checkbox" id="check23">3</input>  <input type="checkbox" id="check24">4</input>  <input type="checkbox" id="check25">5</input>  <input type="checkbox" id="check26">6</input>  <input type="checkbox" id="check27">7</input> </div> <div> Byte3:  <input type="checkbox" id="check30">0</input>  <input type="checkbox" id="check31">1</input>  <input type="checkbox" id="check32">2</input>  <input type="checkbox" id="check33">3</input>  <input type="checkbox" id="check34">4</input>  <input type="checkbox" id="check35">5</input>  <input type="checkbox" id="check36">6</input>  <input type="checkbox" id="check37">7</input> </div> <div> Byte4:  <input type="checkbox" id="check40">0</input>  <input type="checkbox" id="check41">1</input>  <input type="checkbox" id="check42">2</input>  <input type="checkbox" id="check43">3</input>  <input type="checkbox" id="check44">4</input>  <input type="checkbox" id="check45">5</input>  <input type="checkbox" id="check46">6</input>  <input type="checkbox" id="check47">7</input> </div> <div> Byte5:  <input type="checkbox" id="check50">0</input>  <input type="checkbox" id="check51">1</input>  <input type="checkbox" id="check52">2</input>  <input type="checkbox" id="check53">3</input>  <input type="checkbox" id="check54">4</input>  <input type="checkbox" id="check55">5</input>  <input type="checkbox" id="check56">6</input>  <input type="checkbox" id="check57">7</input> </div> <button type="button" onclick="mapper_send()">Send bytes</button><br> </div> </div>';
+			let s = '<b>ATC1441 firmware:</b> Use <a href="https://atc1441.github.io/TelinkFlasher.html" target="_blank">Atc1441 TelinkOTA</a> or <a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html">SDK TelinkOTA</a>!<br><br>Send commands to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>Settings: <button type="button" onclick="sendCustomSetting(&quot;DF&quot;);">Save current settings in flash</button><button type="button" onclick="sendCustomSetting(&quot;DE&quot;);">Reset settings to default</button><br><br>Smiley: <button type="button" onclick="sendCustomSetting(&quot;A0&quot;);">Off</button> <button type="button" onclick="sendCustomSetting(&quot;A1&quot;);">Happy</button> <button type="button" onclick="sendCustomSetting(&quot;A2&quot;);">Sad</button> <button type="button" onclick="sendCustomSetting(&quot;AB&quot;);">Blinking</button> <button type="button" onclick="sendCustomSetting(&quot;A3&quot;);">Comfort Indicator</button><br><br>';
+			s += 'Advertising Type:<button type="button" onclick="sendCustomSetting(&quot;AE&quot;);">Custom</button> <button type="button" onclick="sendCustomSetting(&quot;AF&quot;);">Mi Like</button> <br><br> Sensor display: <button type="button" onclick="sendCustomSetting(&quot;CC&quot;);">In °C</button> <button type="button" onclick="sendCustomSetting(&quot;FF&quot;);">In °F</button> <br><br> Sensor advertising: <button type="button" onclick="sendCustomSetting(&quot;0C&quot;);">In °C</button> <button type="button" onclick="sendCustomSetting(&quot;0F&quot;);">In °F</button> <br><br> Show battery in LCD: <button type="button" onclick="sendCustomSetting(&quot;B1&quot;);">Enabled</button> <button type="button" onclick="sendCustomSetting(&quot;B0&quot;);">Disabled</button> <br><br> Advertising interval: <button type="button" onclick="sendCustomSetting(&quot;FE01&quot;);">10 Seconds</button> <button type="button" onclick="sendCustomSetting(&quot;FE06&quot;);">1 Minute</button> <button type="button" onclick="sendCustomSetting(&quot;FE1E&quot;);">5 Minutes</button> <button type="button" onclick="sendCustomSetting(&quot;FE3C&quot;);">10 Minutes</button> <br><br> Sensor offset: <button type="button" onclick="sendCustomSetting(&quot;FA00&quot;);">Temp 0°C offset</button> <button type="button" onclick="sendCustomSetting(&quot;FB00&quot;);">Humi 0% offset</button><br> To set a precise offset use the text input field with FA+offset for Temp and FB+offset for Humiditiy convert an int8 to hex. <br><br> Sensor instant Advertising: <button type="button" onclick="sendCustomSetting(&quot;FC05&quot;);">Temp 0,5°C instant alarm</button> <button type="button" onclick="sendCustomSetting(&quot;FD05&quot;);">Humi 5% instant alarm</button><br> To set other values use the text input with FC+temp alarm or FD+humi alarm with uint8_t values. This can be used to get instant advertising if the sensor data changes to fast. Temp divided by 10 <br> To set a precise offset use the text input field with FA+offset for Temp and FB+offset for Humiditiy convert an int8 to hex. <br><hr> <div id="mapper"><button id="mapper_toggle_button" type="button" onclick="mapper_toggle();">Show LCD Segment Mapper</button><br> <div style="display: none" id="mapper_content"> <div> Byte0 <input type="checkbox" id="check00">0</input> <input type="checkbox" id="check01">1</input> <input type="checkbox" id="check02">2</input> <input type="checkbox" id="check03">3</input> <input type="checkbox" id="check04">4</input> <input type="checkbox" id="check05">5</input> <input type="checkbox" id="check06">6</input> <input type="checkbox" id="check07">7</input></div> <div>Byte1: <input type="checkbox" id="check10">0</input>  <input type="checkbox" id="check11">1</input>  <input type="checkbox" id="check12">2</input>  <input type="checkbox" id="check13">3</input>  <input type="checkbox" id="check14">4</input>  <input type="checkbox" id="check15">5</input>  <input type="checkbox" id="check16">6</input>  <input type="checkbox" id="check17">7</input> </div> <div> Byte2:  <input type="checkbox" id="check20">0</input>  <input type="checkbox" id="check21">1</input>  <input type="checkbox" id="check22">2</input>  <input type="checkbox" id="check23">3</input>  <input type="checkbox" id="check24">4</input>  <input type="checkbox" id="check25">5</input>  <input type="checkbox" id="check26">6</input>  <input type="checkbox" id="check27">7</input> </div> <div> Byte3:  <input type="checkbox" id="check30">0</input>  <input type="checkbox" id="check31">1</input>  <input type="checkbox" id="check32">2</input>  <input type="checkbox" id="check33">3</input>  <input type="checkbox" id="check34">4</input>  <input type="checkbox" id="check35">5</input>  <input type="checkbox" id="check36">6</input>  <input type="checkbox" id="check37">7</input> </div> <div> Byte4:  <input type="checkbox" id="check40">0</input>  <input type="checkbox" id="check41">1</input>  <input type="checkbox" id="check42">2</input>  <input type="checkbox" id="check43">3</input>  <input type="checkbox" id="check44">4</input>  <input type="checkbox" id="check45">5</input>  <input type="checkbox" id="check46">6</input>  <input type="checkbox" id="check47">7</input> </div> <div> Byte5:  <input type="checkbox" id="check50">0</input>  <input type="checkbox" id="check51">1</input>  <input type="checkbox" id="check52">2</input>  <input type="checkbox" id="check53">3</input>  <input type="checkbox" id="check54">4</input>  <input type="checkbox" id="check55">5</input>  <input type="checkbox" id="check56">6</input>  <input type="checkbox" id="check57">7</input> </div> <button type="button" onclick="mapper_send()">Send bytes</button><br> </div> </div>';
+			$("custcfg").innerHTML = s;
 		}
 	}).catch(handleError);
 }
@@ -1425,7 +1548,7 @@ function menuUpgrade() {
 						is +=' <button type="button" id="btzrupg" onclick="FirmwareZB();">ZB Firmware: ' + fn +'</button> <a href="https://github.com/pvvx/ZigbeeTLc/blob/master/ZBdevices.md" target="_blank">Info</a><br>';
 					}
 				}
-				if(otafiles.original != null) {
+				if(otafiles.original != null && !cfg.zbdevice) {
 					let fn = otafiles.original[hwver_id];
 					if(fn != null && fn != "" && fn != "?" && fn != "/") {
 						try {
@@ -1836,10 +1959,10 @@ function doConnect() {
 				miAction();
 			}
 		} else if(bthomeEnabled) {
-				connectTrys = 1000;
-				addLog("Detected ZBdevice");
-				setStatus("Detected <a href='https://github.com/pvvx/ZBdevices' target='_blank'>ZBdevice</a>");
-				addLog('GitHub: <a href="https://github.com/pvvx/ZBdevices" target="_blank">ZBdevices</a> or Use: <a href="https://pvvx.github.io/ATC_MiThermometer/TelinkOTA.html" target="_blank">TelinkOTA.html</a>');
+			setStatus("Detected ZBdevice");
+			addLog("Detected ZBdevice");
+			$("custcfg").innerHTML = '<button type="button" onclick="sendCustomSetting(&quot;57&quot;);">Get Config</button><br>Send commands to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
+			zbdeviceAction();
 		} else if (customEnabled) {
 			let s = '<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br>Send commands to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
 			if (devTest) {
@@ -2275,7 +2398,7 @@ function FirmwareZdevbis() {
 
 function FirmwareZB() {
 	if(hwver_id != null) {
-		if(!confirm("Attention: This firmware is a Beta version for testing! ZB firmware converts the thermometer to the Zigbee protocol and BLE OTA only! All data for MiHome and measurement memory will be erased!"))
+		if(!confirm("Attention: This is a 'trial' firmware. Created to be able to test the operation with Zigbee, but having the ability to use BLE and Zigbee OTA for those whose Zigbee coordinator does not allow Zigbee OTA. Which is relevant for closed gateways of different brands. ZB firmware converts the thermometer to the Zigbee protocol and BLE OTA only! All data for MiHome and measurement memory will be erased!"))
 		   return;
 		let fn = otazbfiles.bin[hwver_id];
 		addAlog("Load firmware file '"+fn+"'...");
@@ -2920,6 +3043,83 @@ function InfoIntervals() {
 				}
 			}
 		}
+}
+function SendZbConfig() {
+	if ((cfg.services & 0x80) != 0) { // SERVICE_THS
+		cfg.temp_offset = Math.round(100.0 * parseFloat($("cfg_tmp_off").value));
+		cfg.humi_offset = Math.round(100.0 * parseFloat($("cfg_hm_off").value));
+	}
+	if((cfg.services & 0x20) != 0) { // SERVICE_SCREEN
+		cfg.temp_comfort_min = Math.round(100.0 * parseFloat($("cmf_tmp_lo").value));
+		cfg.temp_comfort_max = Math.round(100.0 * parseFloat($("cmf_tmp_hi").value));
+		cfg.humi_comfort_min = Math.round(100.0 * parseFloat($("cmf_hm_lo").value));
+		cfg.humi_comfort_max = Math.round(100.0 * parseFloat($("cmf_hm_hi").value));
+		cfg.c_f = (($("cfg_flg_cf").value != 0) ? 1 : 0);
+		cfg.showSmiley = (($("cfg_flg_comfort").checked) ? 0 : 1);
+		cfg.display_off = (($("cfg_scr_off").checked) ? 1 : 0);
+	}
+	cfg.measure_interval = parseInt($("cfg_meas_int").value);
+	
+	if((cfg.services & 0xA0) == 0xA0) { // SERVICE_SCREEN | SERVICE_THS
+		addClog("Send config...");
+		settingsCharacteristics.writeValue(new Uint8Array([0x57,
+			cfg.temp_offset&0xff, (cfg.temp_offset>>8)&0xff,
+			cfg.humi_offset&0xff, (cfg.humi_offset>>8)&0xff,
+			cfg.temp_comfort_min&0xff, (cfg.temp_comfort_min>>8)&0xff,
+			cfg.temp_comfort_max&0xff, (cfg.temp_comfort_max>>8)&0xff,
+			cfg.humi_comfort_min&0xff, (cfg.humi_comfort_min>>8)&0xff,
+		    cfg.humi_comfort_max&0xff, (cfg.humi_comfort_max>>8)&0xff,
+		    cfg.c_f, cfg.showSmiley, cfg.display_off,
+		    cfg.measure_interval])).then(_ => { addClog('ok'); });
+	} else if((cfg.services & 0xA0) == 0x80) {
+		addClog("Send config...");
+		settingsCharacteristics.writeValue(new Uint8Array([0x57,
+			cfg.temp_offset&0xff, (cfg.temp_offset>>8)&0xff,
+			cfg.humi_offset&0xff, (cfg.humi_offset>>8)&0xff,
+		    cfg.measure_interval])).then(_ => { addClog('ok'); });
+	}
+}
+
+function zbdeviceConfig() {
+	menuUpgrade();
+  	is = '<hr>Send commands to custom firmware:<br><input type="text" id="cmdTXT" value=""><button type="button" onclick="sendCustomSetting($(&quot;cmdTXT&quot;).value,settingsCharacteristics);">Send</button><br>';
+	is += '<hr><b>Configuration:</b><br>';
+	if((cfg.services & 0x20) != 0) { // SERVICE_SCREEN
+		is += 'Temperature: <select id="cfg_flg_cf"><option value="0">°C</option><option value="1">°F</option></select>';
+		is += ' Screen Off: <input title="Screen Off" type="checkbox" id="cfg_scr_off">';
+		is += ' Smiley: <input type="checkbox" id="cfg_flg_comfort"><br><br>';
+		is += '<b>Comfort parameters:</b><br>';
+		is += 'Temperature Lo:<input size="8" title="-40.00..125.00°C, default 21.00°C" id="cmf_tmp_lo" maxlength="6" value="21.00">, ';
+		is += 'Hi: <input size="8" title="-40.00..125.00°C, default 26.00°C" id="cmf_tmp_hi" maxlength="6" value="26.00"> °C<br>';
+		is += 'Humidity Lo:<input size="8" title="0.0..99.99%, default 30.00" id="cmf_hm_lo" maxlength="5" value="30.00">, ';
+		is += 'Hi:<input size="8" title="0.0..99.99%, default 60.00%" id="cmf_hm_hi" maxlength="5" value="60.00"> %<br><br>';
+		//cmf.enable = true;
+    }
+	if ((cfg.services & 0x80) != 0) { // SERVICE_THS
+		is += 'Temperature offset: <input size="5" title="-327.67..327.67°, default 0" id="cfg_tmp_off" maxlength="6" value="0"> °';
+		is += ', Humidity offset: <input size="5" title="-327.67..327.67%, default 0" id="cfg_hm_off" maxlength="6" value="0"> %<br><br>';
+	}
+	is += 'Measure interval: <input size="5" title="3..250 sec, default: 10 sec" id="cfg_meas_int" maxlength="3" value="4"><br>';
+	is += '<button type="button" onclick="sendCustomSetting(&quot;57&quot;);">Get Config</button>';
+	is += ' <button type="button" onclick="sendCustomSetting(&quot;58&quot;);">Set default</button>';
+	is += ' <button type="button" onclick="SendZbConfig()">Send Config</button><br>';
+
+	$("custcfg").innerHTML = is;
+
+	if((cfg.services & 0x20) != 0) { // SERVICE_SCREEN
+		$("cmf_tmp_lo").value = String((cfg.temp_comfort_min/100.0).toFixed(2));
+		$("cmf_tmp_hi").value = String((cfg.temp_comfort_max/100.0).toFixed(2));
+		$("cmf_hm_lo").value = String((cfg.humi_comfort_min/100.0).toFixed(2));
+		$("cmf_hm_hi").value = String((cfg.humi_comfort_max/100.0).toFixed(2));
+		$("cfg_flg_cf").value = cfg.c_f & 1;
+		$("cfg_flg_comfort").checked = (cfg.showSmiley == 0);
+		$("cfg_scr_off").checked = (cfg.display_off != 0);
+	}
+	if ((cfg.services & 0x80) != 0) { // SERVICE_THS
+		$("cfg_tmp_off").value = String((cfg.temp_offset/100.0).toFixed(2));
+		$("cfg_hm_off").value = String((cfg.humi_offset/100.0).toFixed(2));
+	}
+	$("cfg_meas_int").value = String(cfg.measure_interval);
 }
 function CustomConfig() {
  menuUpgrade();
