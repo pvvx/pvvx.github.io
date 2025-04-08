@@ -57,6 +57,7 @@ var device_new_id = "00626c742e332e31323976" + makeRandomID(6) + "673030"; // 0+
 var $ = function(id) { return document.getElementById(id);}
 function resetVariables() {
 	fwmaxsize = 0x20000;
+	blockCount = 0;
 	busy = false;
 	gattServer = null;
 	Theservice = null;
@@ -1952,6 +1953,7 @@ function doConnect() {
 			if (bluetoothDevice.name.substr(0,10) == "MJWSD05MMC") fwmaxsize = 0x34000;
 			if ((bluetoothDevice.name.substr(0,10) == "LYWSD03MMC") && (devinfo.frstr.substr(0,10) == "2.1.1_0159")) {
 			    $("custcfg").innerHTML = '<hr><b>Warning:</b> Firmware LYWSD03MMC version 2.1.1_0159 requires registration in MI-Home and obtaining IDs. <a href="https://github.com/pvvx/ATC_MiThermometer/issues/602" target="_blank">Help</a><br><button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
+			    fwmaxsize = 0x20000;
 				fsignota = "sign_2.1.1_0159c.bin";
 				miAction();
 			} else {
