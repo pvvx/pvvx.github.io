@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v9.8</title>
+<title>Telink Flasher v9.9</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -1953,8 +1953,15 @@ function doConnect() {
 			if (bluetoothDevice.name.substr(0,10) == "MJWSD05MMC") fwmaxsize = 0x34000;
 			if ((bluetoothDevice.name.substr(0,10) == "LYWSD03MMC") && (devinfo.frstr.substr(0,10) == "2.1.1_0159")) {
 			    $("custcfg").innerHTML = '<hr><b>Warning:</b> Firmware LYWSD03MMC version 2.1.1_0159 requires registration in MI-Home and obtaining IDs. <a href="https://github.com/pvvx/ATC_MiThermometer/issues/602" target="_blank">Help</a><br><button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
-			    fwmaxsize = 0x20000;
+			    fwmaxsize = 0x1f000;
 				fsignota = "sign_2.1.1_0159c.bin";
+				miAction();
+				fsignota = "sign_2.1.1_0159c.bin";
+			} else if ((bluetoothDevice.name.substr(0,10) == "MJWSD06MMC") && (devinfo.frstr.substr(0,4) == "0009")) {
+			    $("custcfg").innerHTML = '<hr><b>Warning:</b> Firmware MJWSD06MMC version 2.1.1_0009 requires registration in MI-Home and obtaining IDs. <a href="https://github.com/pvvx/ATC_MiThermometer/issues/602" target="_blank">Help</a><br><button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
+			    fwmaxsize = 0x34000;
+			    hwver_id = 13;
+				//fsignota = "sign_mj6_2.1.1a.bin";
 				miAction();
 			} else {
 				$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
@@ -2027,7 +2034,7 @@ function startDFU() {
 		addLog("Please do the Activation first!");
 		return;
 	}
-	if (fzigbeeota.used || blockCount*16 > fwmaxsize){
+	if (fzigbeeota.used || blockCount*16 > fwmaxsize) {
 		if(bigOtaEnabled && settingsCharacteristics){
 			let szk = (blockCount*16+1023) >> 10;
 			if(!confirm('All data for MiHome and measurement memory will be erased?')) return;
@@ -2037,12 +2044,22 @@ function startDFU() {
 			settingsCharacteristics.writeValue(new Uint8Array([0x73, 0,0,4,0, szk&0xff, (szk>>8)&0xff, (szk>>16)&0xff, (szk>>24)&0xff]));
 			return;
 		} else {
+			
 			let szk = fwmaxsize >> 10;
 			let s = 'OTA (size over '+szk+'k) is not supported! Use custom firmware version 4.6 or higher.';
 			setStatus(s);
 			addAlog(s);
 			return;
 		}
+	} 
+	if(hwver_id == 13 && customEnabled==true && blockCount*16 > 0x1C000) { // BLE custom -> Original
+		let szk = (blockCount*16+1023) >> 10;
+		if(!confirm('All data for MiHome and measurement memory will be erased?')) return;
+		let s = 'Clear Ext.OTA region ('+szk+'kib)...';
+		addAlog(s);
+		setStatus(s)
+		settingsCharacteristics.writeValue(new Uint8Array([0x73, 0,0,4,0, szk&0xff, (szk>>8)&0xff, (szk>>16)&0xff, (szk>>24)&0xff]));
+		return;
 	}
 	updateBegin();
 }
