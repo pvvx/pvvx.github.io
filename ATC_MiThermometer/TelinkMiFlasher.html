@@ -1958,7 +1958,7 @@ function doConnect() {
 				miAction();
 				fsignota = "sign_2.1.1_0159c.bin";
 			} else if ((bluetoothDevice.name.substr(0,10) == "MJWSD06MMC") && (devinfo.frstr.substr(0,4) == "0009")) {
-			    $("custcfg").innerHTML = '<hr><b>Warning:</b> Firmware MJWSD06MMC version 2.1.1_0009 requires registration in MI-Home and obtaining IDs. <a href="https://github.com/pvvx/ATC_MiThermometer/issues/602" target="_blank">Help</a><br><button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
+			    $("custcfg").innerHTML = '<hr><b>Warning:</b> Firmware MJWSD06MMC version 2.1.1_0009 requires registration in MI-Home and obtaining IDs. <a href="https://github.com/pvvx/ATC_MiThermometer/issues/636" target="_blank">Help</a><br><button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
 			    fwmaxsize = 0x34000;
 			    hwver_id = 13;
 				//fsignota = "sign_mj6_2.1.1a.bin";
