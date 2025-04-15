@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v9.9</title>
+<title>Telink Flasher v10.0</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -54,6 +54,7 @@ var mi_random_key, mi_random_key_recv, mi_device_info_recv, mi_device_info_send,
 //Activation values
 var keypair, is_activated, own_public_key, device_public_key, shared_key, derived_key, mi_write_did;
 var device_new_id = "00626c742e332e31323976" + makeRandomID(6) + "673030"; // 0+"blt.6.129v"+rand[6]+"g00"
+
 var $ = function(id) { return document.getElementById(id);}
 function resetVariables() {
 	fwmaxsize = 0x20000;
@@ -165,47 +166,65 @@ function connect() {
 }
 
 const hw_version_str = [
-"LYWSD03MMC-B1.4",
-"MHO_C401",
-"CGG1",
-"LYWSD03MMC-B1.9",
-"LYWSD03MMC-B1.6",
-"LYWSD03MMC-B2.0",
-"CGDK2",
-"CGG1N",
-"MHO_C401N",
-"MJWSD05MMC(ch)",
-"LYWSD03MMC-B1.5",
-"MHO-C122",
-"MJWSD05MMC(en)",
-"MJWSD06MMC",
-"14",
-"15",
-"TB03F",
-"TS0201",
-"TNKS",
-"THB2",
-"BTH01",
-"TH05",
-"TH03Z",
-"THB1",
-"TH05D",
-"TH05F",
-"THB3",
-"ZTH01",
-"ZTH02",
-"PLM1",
-"ZTH03",
-"LKTMZL02",
-"KEY2",
-"ZTH05",
-"TH04",
-"CB3S",
-"HS09",
-"ZYZTH02",
-"ZYZTH01",
-"ZG_227Z"
-];
+'LYWSD03MMC', // B1.4
+'MHO-C401(old)',
+'CGG1-M(2020,2021)',
+'LYWSD03MMC', // B1.9
+'LYWSD03MMC', // B1.6
+'LYWSD03MMC', // B1.7|B2.0',
+'CGDK2',
+'CGG1-M(2022)',
+'MHO-C401(2022)',
+'MJWSD05MMC(ch)',
+'LYWSD03MMC', // B1.5
+'MHO-C122',
+'MJWSD05MMC(en)',
+'MJWSD06MMC',
+'ID14',
+'ID15',
+'TB03F',
+'TS0201',
+'TNKS',
+'THB2',
+'BTH01',
+'TH05',
+'TH03Z',
+'THB1',
+'TH05D',
+'TH05F',
+'THB3',
+'ZTH01',
+'ZTH02',
+'PLM1',
+'TH03(DIY)',
+'LKTMZL02',
+'KEY2',
+'ZTH05',
+'TH04',
+'CB3S',
+'HS09',
+'ZY-ZTH02',
+'ZY-ZTH02Pro',
+'ZG-227Z'];
+
+const id_sensor_str = [
+"None",
+"SHTV3(C3)",
+"SHT4x",
+"SHT30",
+"CHT8305",
+"ANT20/30",
+"CHT8215",
+"INA226",
+"MY18B20",
+"MY18B20x2",
+"HX71X",
+"PWMRH",
+"NTC",
+"INA3221",
+"SCD41",
+"BME280"
+]
 
 const tabid2name = [
   { id: 0x01AA, name: "LYWSDCGQ"},
@@ -823,44 +842,21 @@ function CustomBlkParse(value) {
 		if(len >= 12) cfg.av_meas_mem = value.getUint8(12); else cfg.av_meas_mem = 0;
 		let s = 'Hardware Version: ';
 		if(cfg.ver < 0x48)
-			hwver_id = cfg.hver & 0x0F;
+			if((hwver_id == 15)&&(len >= 11))  {
+				cfg.ext_hw_id = cfg.lcd_tint & 0x7f;
+				hwver_id = 16 + cfg.ext_hw_id;
+				if((cfg.lcd_tint & 0x80) != 0) bigOtaEnabled = true;
+			} else
+				hwver_id = cfg.hver & 0x0F;
 		else
 			hwver_id = cfg.hver;
-		if((hwver_id == 0)||(hwver_id == 3)||(hwver_id == 4)||(hwver_id == 5)||(hwver_id == 10)) {
-			s +='LYWSD03MMC';
-		} else if(hwver_id == 1) s +='MHO-C401';
-		else if(hwver_id == 2) s +='CGG1';
-		else if(hwver_id == 6) s +='CGDK2';
-		else if(hwver_id == 7) s +='CGG1-M';
-		else if(hwver_id == 8) s +='MHO-C401N';
-		else if(hwver_id == 9) { s +='MJWSD05MMC(ch)'; bigOtaEnabled = true; }
-		else if(hwver_id == 11) { s +='MHO-C122'; bigOtaEnabled = true; }
-		else if(hwver_id == 12) { s +='MJWSD05MMC(en)'; bigOtaEnabled = true; }
-		else if(hwver_id == 13) { s +='MJWSD06MMC'; bigOtaEnabled = true; }
-		else {
-			if(cfg.ver < 0x48) {
-				if((hwver_id == 15)&&(len >= 11))  {
-					cfg.ext_hw_id = cfg.lcd_tint & 0x7f;
-					hwver_id = 16 + cfg.ext_hw_id;
-					if((cfg.lcd_tint & 0x80) != 0) bigOtaEnabled = true;
-				}
-			}
-			if(hwver_id == 17) s +='TS0201';
-			else if(hwver_id == 18) s +='TNKS1';
-			else if(hwver_id == 22) s +='TH03Z';
-			else if(hwver_id == 27) s +='ZTH01';
-			else if(hwver_id == 28) s +='ZTH02';
-			else if(hwver_id == 30) s +='TH03';
-			else if(hwver_id == 31) s +='LKTMZL02';
-			else if(hwver_id == 33) s +='ZTH05';
-			else if(hwver_id == 35) s +='CB3S';
-			else if(hwver_id == 36) s +='HS09';
-			else if(hwver_id == 37) s +='ZY-ZTH02';
-			else if(hwver_id == 38) s +='ZY-ZTH02Pro';
-			else if(hwver_id == 39) s +='ZG-227Z';
-			else s += 'Unknown or DIY ('+hwver_id+')';
+		if(hwver_id < hw_version_str.length) {
+			s += hw_version_str[hwver_id];
+		} else {
+			s += 'Unknown or DIY ('+hwver_id+')';
 		}
 		if(cfg.ver > 0x45) bigOtaEnabled = true;
+		else if(hwver_id == 9 || hwver_id == 11 || hwver_id == 12 || hwver_id == 13) bigOtaEnabled = true; 
 		if(devinfo.hrstr) s += ' ' + devinfo.hrstr;
 		s += ', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
 		setStatus(s);
@@ -893,29 +889,29 @@ function CustomBlkParse(value) {
 		cfg.sw_version  = value.getUint16(4, true);	// software version (BCD)
 		cfg.dev_spec_data  = value.getUint16(6, true); // device-specific data (bit0..3: sensor_type)
 		cfg.services  = value.getUint32(8, true); // supported services by the device
-		if(bthomeEnabled) {
+		let s = " ?";
+		if(cfg.hw_version < hw_version_str.length) {
+			hwver_id = cfg.hw_version;
+			s = " " + hw_version_str[cfg.hw_version];
+			if(devinfo.hrstr) s += ' ' + devinfo.hrstr;
+		}
+		s = "Device"+s+" info # hw: 0x" + hex(cfg.hw_version,4)
+		   + ", sw: 0x" + hex(cfg.sw_version,4)
+		   + ", services: 0x" + hex(cfg.services,8)
+		   + ", sd: 0x" + hex(cfg.dev_spec_data, 4);
+		let sid1 = cfg.dev_spec_data & 0x0ff;
+		let sid2 = (cfg.dev_spec_data & 0x0ff00) >> 8;
+		if(sid1 < id_sensor_str.length && sid2 < id_sensor_str.length)
+			s += " (Sensor1: " + id_sensor_str[sid1] +", Sensor2: " + id_sensor_str[sid2] + ")";
+		addLog(s);
+		if(bthomeEnabled) 
 			cfg.zbdevice = ((cfg.services & 0x01000000) != 0); // SERVICE_ZIGBEE
-			if(cfg.zbdevice) {  
-				let s = " ?";
-				if(cfg.hw_version < hw_version_str.length) {
-					hwver_id = cfg.hw_version;
-					s = " " + hw_version_str[cfg.hw_version];
-					fwmaxsize = 212992;
-				} else {
-
-				}
-				cfg.ver = cfg.sw_version & 0xff;
-				addLog("Device"+s+" info # hw: 0x" + hex(cfg.hw_version,4)
-				   + ", sw: 0x" + hex(cfg.sw_version,4)
-				   + ", services: 0x" + hex(cfg.services,8)
-				   + ", sd: 0x" + hex(cfg.dev_spec_data, 4));
-				s = "ZBdevice: " + hw_version_str[cfg.hw_version]+', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
-				setStatus(s);
-				menuUpgrade();
-			} else {
-				addLog("Unknown device version!");
-				setStatus("Unknown device version!");
-			}
+		if(cfg.zbdevice) {  
+			fwmaxsize = 212992;
+			cfg.ver = cfg.sw_version & 0xff;
+			s = "ZBdevice: " + hw_version_str[cfg.hw_version]+', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
+			setStatus(s);
+			menuUpgrade();
 		}
 	} else if(blkid == 0x33 && len >= 8) {
 		let vbat = value.getUint16(1, true);
@@ -977,38 +973,8 @@ function CustomBlkParse(value) {
 		if(len > 17) { // ver 4.9
 			devSens.id = value.getUint32(13, true);
 				let sentype = value.getUint8(18);
-				if(sentype == 1)
-					st = "SHTV3(C3)";
-				else if(sentype == 2)
-					st = "SHT4x";
-				else if(sentype == 3)
-					st = "SHT30";
-				else if(sentype == 4)
-					st = "CHT8305";
-				else if(sentype == 5)
-					st = "ANT20/30";
-				else if(sentype == 6)
-					st = "CHT8215";
-				else if(sentype == 7)
-					st = "INA226";
-				else if(sentype == 8)
-					st = "MY18B20";
-				else if(sentype == 9)
-					st = "MY18B20x2";
-				else if(sentype == 10)
-					st = "HX71X";
-				else if(sentype == 11)
-					st = "PWMRH";
-				else if(sentype == 12)
-					st = "NTC";
-				else if(sentype == 13)
-					st = "INA3221";
-				else if(sentype == 14)
-					st = "SCD41";
-				else if(sentype == 15)
-					st = "BME280";
-				else if(sentype == 0)
-				    st = "None";
+				if(sentype < id_sensor_str.length) 
+					st = id_sensor_str[sentype];
 				else
 				    st = "N:" + sentype;
 		} else {
