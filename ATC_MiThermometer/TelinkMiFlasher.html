@@ -1223,7 +1223,7 @@ function CustomBlkParse(value) {
 		else if(e == 2) s += ' -> Ext.OTA busy';
 		else if(e == 3) s += ' -> Ext.OTA ready';
 		else if(e == 4) s += ' -> Ext.OTA event';
-		else if(e > 0x80) s += ' -> Ext.OTA error';
+		else if(e > 0x80) s += ' -> Ext.OTA error!';
 		else e += ' ('+e+')';
 		addClog(s);
 		if(bigOtaEnabled) {
@@ -1237,6 +1237,12 @@ function CustomBlkParse(value) {
 				addLog(s);
 				fwmaxsize = (fszk << 10) + 4096;
 				setTimeout(updateBegin(), 1000);
+			} slse if(e == 2) {
+				s = "Waiting Start ext.OTA...";
+				setStatus(s);
+				addLog(s);
+			} else {
+				addLog(s);
 			}
 		} else {
 			s = "Error! Ext.OTA is not supported!";
