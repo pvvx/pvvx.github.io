@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v10.0</title>
+<title>Telink Flasher v10.1</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -12,7 +12,10 @@
 var bluetoothDevice, gattServer, Theservice, writeCharacteristic;
 var ServiceMain, writeCharacteristicSpeed = null, nitifiyCharTemp, time_char, enc_main, enc_10, enc_19;
 //Firmware values
-var fwmaxsize = 0x20000;
+const MAX_BLE_OTA_SIZE = 0x20000; // 128KB
+const MAX_EXT_OTA_SIZE = 0x34000; // 208KB
+var fwmaxsize = MAX_BLE_OTA_SIZE,
+	bigOtaEnabled = false; // -> MAX_EXT_OTA_SIZE
 var otafiles = { loaded: false };
 var otazfiles = { loaded: false };
 var otazbfiles = { loaded: false };
@@ -47,7 +50,6 @@ var miEnabled = false,
 	devInfEnabled = false,
 	miConnected = false,
 	devIdEnabled = false,
-	bigOtaEnabled = false,
 	mode_activation;
 //Login values
 var mi_random_key, mi_random_key_recv, mi_device_info_recv, mi_device_info_send, device_known_id, expected_device_infos, is_logged_in = false;
@@ -57,7 +59,7 @@ var device_new_id = "00626c742e332e31323976" + makeRandomID(6) + "673030"; // 0+
 
 var $ = function(id) { return document.getElementById(id);}
 function resetVariables() {
-	fwmaxsize = 0x20000;
+	fwmaxsize = MAX_BLE_OTA_SIZE;
 	blockCount = 0;
 	busy = false;
 	gattServer = null;
@@ -907,7 +909,7 @@ function CustomBlkParse(value) {
 		if(bthomeEnabled) 
 			cfg.zbdevice = ((cfg.services & 0x01000000) != 0); // SERVICE_ZIGBEE
 		if(cfg.zbdevice) {  
-			fwmaxsize = 212992;
+			fwmaxsize = MAX_EXT_OTA_SIZE;
 			cfg.ver = cfg.sw_version & 0xff;
 			s = "ZBdevice: " + hw_version_str[cfg.hw_version]+', Software Version: '+(cfg.ver>>4)+'.'+(cfg.ver&0x0f);
 			setStatus(s);
@@ -1223,17 +1225,23 @@ function CustomBlkParse(value) {
 		else if(e > 0x80) s += ' -> Ext.OTA error';
 		else e += ' ('+e+')';
 		addClog(s);
-		if(e == 4) {
-			s = 'Erase the Flash sector at: 0x'+hex(faddr,6)+'...';
+		if(bigOtaEnabled) {
+			if(e == 4) {
+				s = 'Erase the Flash sector at: 0x'+hex(faddr,6)+'...';
+				setStatus(s);
+				addClog(s);
+			} else if(e == 3) {
+				s = 'Clean Flash OTA region: 0x'+hex(faddr,6)+', size: '+fszk+' kbytes. Go OTA...';
+				setStatus(s);
+				addLog(s);
+				//fwmaxsize = (fszk << 10) + 4096;
+				setTimeout(updateBegin(), 1000);
+			} else	addClog(s);
+		} else {
+			s = "Error! Ext.OTA is not supported!";
 			setStatus(s);
 			addClog(s);
-		} else if(e == 3) {
-			s = 'Clean Flash OTA region: 0x'+hex(faddr,6)+', size: '+fszk+' kbytes. Go OTA...';
-			setStatus(s);
-			addLog(s);
-			fwmaxsize = (fszk << 10) + 4096;
-			if(bigOtaEnabled) setTimeout(updateBegin(), 1000);
-		} else	addClog(s);
+		}
 	} else if(blkid == 0x01 && len >= 1) {
 		dnm.name = new TextDecoder("utf-8").decode(value.buffer.slice(1));
 		if($("dev_name"))
@@ -1424,8 +1432,8 @@ function customAction() {
 				settingsCharacteristics.readValue()
 				.then(value => {
 					$("ldfile").hidden = false;
-					addClog("Send cmd (3303): Query 3 measurements");
-					settingsCharacteristics.writeValue(new Uint8Array([0x33,0x03]))
+					addClog("Send cmd (3303): Query 200 measurements");
+					settingsCharacteristics.writeValue(new Uint8Array([0x33,0xC8]))
 					.then(_ => {addClog('Send cmd ok');})
 					.catch(error => addClog(error));
 				}).catch(error => { addClog(error);
@@ -1918,16 +1926,17 @@ function doConnect() {
 		if (miEnabled) {
 			addLog("Detected Mi device");
 			setStatus("Detected Mi device");
-			if (bluetoothDevice.name.substr(0,10) == "MJWSD05MMC") fwmaxsize = 0x34000;
+			if (bluetoothDevice.name.substr(0,10) == "MJWSD05MMC") {
+				fwmaxsize = MAX_EXT_OTA_SIZE;
+			}
 			if ((bluetoothDevice.name.substr(0,10) == "LYWSD03MMC") && (devinfo.frstr.substr(0,10) == "2.1.1_0159")) {
 			    $("custcfg").innerHTML = '<hr><b>Warning:</b> Firmware LYWSD03MMC version 2.1.1_0159 requires registration in MI-Home and obtaining IDs. <a href="https://github.com/pvvx/ATC_MiThermometer/issues/602" target="_blank">Help</a><br><button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
-			    fwmaxsize = 0x1f000;
+			    fwmaxsize = MAX_BLE_OTA_SIZE;
 				fsignota = "sign_2.1.1_0159c.bin";
 				miAction();
-				fsignota = "sign_2.1.1_0159c.bin";
 			} else if ((bluetoothDevice.name.substr(0,10) == "MJWSD06MMC") && (devinfo.frstr.substr(0,4) == "0009")) {
 			    $("custcfg").innerHTML = '<hr><b>Warning:</b> Firmware MJWSD06MMC version 2.1.1_0009 requires registration in MI-Home and obtaining IDs. <a href="https://github.com/pvvx/ATC_MiThermometer/issues/636" target="_blank">Help</a><br><button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
-			    fwmaxsize = 0x34000;
+			    fwmaxsize = MAX_EXT_OTA_SIZE;
 			    hwver_id = 13;
 				//fsignota = "sign_mj6_2.1.1a.bin";
 				miAction();
@@ -1998,13 +2007,13 @@ function skipActivation() {
 
 function startDFU() {
 	addLog("Start DFU");
-	if ((miConnected==true) && (is_logged_in==false)){
+	if ((miConnected==true) && (is_logged_in==false)) {
 		addLog("Please do the Activation first!");
 		return;
 	}
-	if (fzigbeeota.used || blockCount*16 > fwmaxsize) {
+	let szk = (blockCount*16 + 1023) >> 10;
+	if (fzigbeeota.used || (blockCount*16) > fwmaxsize) {
 		if(bigOtaEnabled && settingsCharacteristics){
-			let szk = (blockCount*16+1023) >> 10;
 			if(!confirm('All data for MiHome and measurement memory will be erased?')) return;
 			let s = 'Clear Ext.OTA region ('+szk+'kib)...';
 			addAlog(s);
@@ -2012,16 +2021,14 @@ function startDFU() {
 			settingsCharacteristics.writeValue(new Uint8Array([0x73, 0,0,4,0, szk&0xff, (szk>>8)&0xff, (szk>>16)&0xff, (szk>>24)&0xff]));
 			return;
 		} else {
-			
-			let szk = fwmaxsize >> 10;
-			let s = 'OTA (size over '+szk+'k) is not supported! Use custom firmware version 4.6 or higher.';
+			let fzk = fwmaxsize >> 10;
+			let s = 'OTA size '+szk+'kib (over '+fzk+'k) is not supported! Use custom firmware version 4.6 or higher.';
 			setStatus(s);
 			addAlog(s);
 			return;
 		}
 	} 
 	if(hwver_id == 13 && customEnabled==true && blockCount*16 > 0x1C000) { // BLE custom -> Original
-		let szk = (blockCount*16+1023) >> 10;
 		if(!confirm('All data for MiHome and measurement memory will be erased?')) return;
 		let s = 'Clear Ext.OTA region ('+szk+'kib)...';
 		addAlog(s);
@@ -2137,13 +2144,8 @@ var crc32 = (function() {
 function testOTAFirmware(data) {
 	let fsize = data.byteLength;
 	addClog("File size = 0x"+ fsize.toString(16));
-	if (fsize < 2048)
+	if (fsize < 1024)
 		return "Wrong binary Telink OTA firmware size!";
-	if(bigOtaEnabled) {
-		if(fsize > 208*1024) // 208kB for BLE
-			return "Size firmware is more 208 kbytes!";
-	} else if(fsize > fwmaxsize)
-			return "Size firmware is more "+fwmaxsize+" bytes!";
 	let head = new DataView(data, 0, 0x40);
 	if(head.getUint32(0, true) == 0x0beef11e) { // Zigbee OTA
 		if(head.getUint16(4, true) != 0x100	|| head.getUint16(6, true) != 56)
@@ -2163,15 +2165,23 @@ function testOTAFirmware(data) {
 		+ ", Stack Version: " + ((fzigbeeota.fwversion >> 12)&0x0f) + "." + ((fzigbeeota.fwversion >> 8)&0x0f)
 		+ " Release: " + ((fzigbeeota.fwversion >> 4)&0x0f) + "." + (fzigbeeota.fwversion&0x0f));
 		if(!bigOtaEnabled) {
-			if(fzigbeeota.image_type == 0x0203)
-				return "The current firmware version does not support EXT OTA for image type `"+hex(fzigbeeota.image_type, 4)+"`. Update the new custom BLE version (4.6 or higher)!";
+			if(fzigbeeota.image_type >= 0x0203 && fzigbeeota.image_type <= 0x0205)
+				return "The current firmware version does not support OTA for image type `"+hex(fzigbeeota.image_type, 4)+"`.";
 			if(fsize > fwmaxsize)
 				return "The current firmware version does not support EXT OTA. Update the new custom BLE version (4.6 or higher)!";
+		} else {
+			if(bigOtaEnabled && fsize > MAX_EXT_OTA_SIZE) // 208KB
+				return "Size firmware is more 208 kbytes!";
 		}
 		data = data.slice(0x3e);
 	 	head = new DataView(data, 0, 0x20);
-	} else
+	} else {
 		fzigbeeota.used = false;
+		if(bigOtaEnabled && fsize > MAX_EXT_OTA_SIZE) // 208KB
+			return "Size firmware is more 208 kbytes!";
+		else if(fsize > fwmaxsize)
+			return "Size firmware is more "+fwmaxsize+" bytes!";
+	}
 	if(head.getUint32(0x08, true) != 0x544c4e4b){
 		return "Incorrect head in Telink OTA binary firmware";
 	}
@@ -2468,7 +2478,7 @@ function updateBegin() {
 	if (blockCount <= 0) {
 		addLog("No file selected aborting");
 		return;
-	} else if (blockCount*16 > fwmaxsize) {
+	} else if ((blockCount*16) > fwmaxsize) {
 		alert('EXT OTA is not supported! Update the new custom version (4.6 or higher)!');
 		return;
 	}
