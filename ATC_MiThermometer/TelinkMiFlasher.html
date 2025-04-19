@@ -1218,7 +1218,8 @@ function CustomBlkParse(value) {
 		let faddr = value.getUint32(2, true);
 		let fszk = value.getUint32(6, true); // in kbytes
 		let s = 'OTA region: 0x'+hex(faddr,6)+', size: '+fszk+' kbytes';
-		if(e == 1) s += ' -> OTA works';
+		if(e == 0) s = 'Information: Current '+s;
+		else if(e == 1) s += ' -> OTA works';
 		else if(e == 2) s += ' -> Ext.OTA busy';
 		else if(e == 3) s += ' -> Ext.OTA ready';
 		else if(e == 4) s += ' -> Ext.OTA event';
@@ -1234,9 +1235,9 @@ function CustomBlkParse(value) {
 				s = 'Clean Flash OTA region: 0x'+hex(faddr,6)+', size: '+fszk+' kbytes. Go OTA...';
 				setStatus(s);
 				addLog(s);
-				//fwmaxsize = (fszk << 10) + 4096;
+				fwmaxsize = (fszk << 10) + 4096;
 				setTimeout(updateBegin(), 1000);
-			} else	addClog(s);
+			}
 		} else {
 			s = "Error! Ext.OTA is not supported!";
 			setStatus(s);
