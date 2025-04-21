@@ -47,6 +47,7 @@
 | 40 | 0x0228 | [TS0202_PIR1](https://pvvx.github.io/TS0202_TZ3000) TS0202_TZ3000_lf56vpxj | develop |
 | 41 | 0x0229 | TS0202_PIR2 TS0202_TZ3040_bb6xaihh | develop |
 | 42 | 0x022A | [HDP16](https://pvvx.github.io/HDP16) MiLi MiTag HD-P16 | [BLE](https://github.com/pvvx/THB2) |
+|    | =0x022A | [TN-6ATAG3-V01](https://pvvx.github.io/TN-6ATAG3-V01) - Smart finder, "Apple Find My", PCB mark: TN-6ATAG3-V01 | [BLE](https://github.com/pvvx/THB2) |
 
 * [Telegram: New devices & develops](https://t.me/pvvx_new_ble_zigbee_devices).
 
@@ -162,6 +163,8 @@
 [MJWSD06MMC](https://pvvx.github.io/MJWSD06MMC) - Xiaomi Bloetooth Temp & Humidity BLE Sensor
 
 [HDP16](https://pvvx.github.io/HDP16) - "Apple Find My" MiLi MiTag HD-P16
+
+[TN-6ATAG3-V01](https://pvvx.github.io/TN-6ATAG3-V01) - Smart finder, "Apple Find My", PCB mark: TN-6ATAG3-V01
 
 ---
 
