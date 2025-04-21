@@ -44,6 +44,9 @@
 | 37 | 0x0225 | [ZY-ZTH02](https://pvvx.github.io/ZY-ZTH02) TS0201_TZ3000_v1w2k9dd without LCD | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) |
 | 38 | 0x0226 | [ZY-ZTH02Pro](https://pvvx.github.io/ZY-ZTH02Pro) TS0201_TZ3000_v1w2k9dd LCD | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) |
 | 39 | 0x0227 | [ZG-227Z](https://pvvx.github.io/ZG-227Z) TS0601_TZE200_a8sdabtg | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) |
+| 40 | 0x0228 | [TS0202_PIR1](https://pvvx.github.io/TS0202_TZ3000) TS0202_TZ3000_lf56vpxj | develop |
+| 41 | 0x0229 | TS0202_PIR2 TS0202_TZ3040_bb6xaihh | develop |
+| 42 | 0x022A | [HDP16](https://pvvx.github.io/HDP16) MiLi MiTag HD-P16 | [BLE](https://github.com/pvvx/THB2) |
 
 * [Telegram: New devices & develops](https://t.me/pvvx_new_ble_zigbee_devices).
 
@@ -157,6 +160,8 @@
 [SP621E](https://pvvx.github.io/SP621E) - Bluetooth Controller for WS2812/WS2811
 
 [MJWSD06MMC](https://pvvx.github.io/MJWSD06MMC) - Xiaomi Bloetooth Temp & Humidity BLE Sensor
+
+[HDP16](https://pvvx.github.io/HDP16) - "Apple Find My" MiLi MiTag HD-P16
 
 ---
 
