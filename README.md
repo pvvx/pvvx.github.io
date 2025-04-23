@@ -166,6 +166,8 @@
 
 [TN-6ATAG3-V01](https://pvvx.github.io/TN-6ATAG3-V01) - Smart finder, "Apple Find My", PCB mark: TN-6ATAG3-V01
 
+[BDT](https://pvvx.github.io/BDT) - Telink BDT C1T42A20_V29
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
