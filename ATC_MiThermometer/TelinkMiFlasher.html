@@ -1254,6 +1254,17 @@ function CustomBlkParse(value) {
 		if($("dev_name"))
 			$("dev_name").value = dnm.name;
 		addAlog("DevName: ["+dnm.name+"]");
+	} else if((blkid == 0x29 || blkid == 0x2A) && len >= 5) {
+		let err = value.getUint8(1);
+		let rh = value.getUint16(2, true);
+		let ntc = value.getUint16(4, true);
+		if(err == 0)
+			addAlog("Calibration ok");
+		if(err == 1)
+			addAlog("Calibration error!");
+		if(err == 0xff)
+			addAlog("Command error!");
+		addAlog("ADCrh: "+rh+", ADCntc: "+ntc);
 	} else if(blkid == 0x02 && len > 1) {
 		let addr = value.getUint8(1);
 		s = 'Sensor: ';
@@ -1780,12 +1791,12 @@ function miAuthorization() {
 					} else if (bluetoothDevice.name.substr(0,8) == 'MHO-C401') {
 						let swnum = parseInt(devinfo.srstr.substr(0,4));
 						if (devinfo.hrstr.substr(0,4) == 'V_14') swnum = 14;
-						if(swnum > 14) {
-							addLog("Found new version of SW:"+swnum+" MHO-C401N");
-							cfg.hver = 8;
-						} else {
+						if(swnum <= 14) {
 							addLog("Found old version of SW:"+swnum+" MHO-C401");
 							cfg.hver = 1;
+						} else {
+							addLog("Found new version of SW:"+swnum+" MHO-C401N");
+							cfg.hver = 8;
 						}
 					} else if (bluetoothDevice.name.substr(0,4) == 'C121') cfg.hver = 11; // MHO-C122
 					else if (bluetoothDevice.name.substr(0,20) == "Qingping Temp & RH M") cfg.hver = 2;

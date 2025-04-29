@@ -33,7 +33,7 @@
 | 26 | 0x021A | [THB3](https://pvvx.github.io/THB3) | [BLE](https://github.com/pvvx/THB2) |
 | 27 | 0x021B | [ZTH01(TS0601_TZE200)](https://pvvx.github.io/TS0601_TZE200_zth01) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) |
 | 28 | 0x021C | [ZTH02(TS0601_TZE200)](https://pvvx.github.io/TS0601_TZE200_zth02) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) |
-| 29 | 0x021D | PLM1 [PLANT-MON](https://pvvx.github.io/PLANT-MON) | (not yet published at the moment) Tuya BLE Plant monitor ECF-SGS01-A rev1.3 (BT3L Tuya module) | 
+| 29 | 0x021D | PLM1 [PLANT-MON](https://pvvx.github.io/PLANT-MON) | [BLE](https://github.com/pvvx/ATC_MiThermometer) | 
 | 30 | 0x021E | [TH03(TS0201_TZ3000)](https://pvvx.github.io/TS0201_TZ3000_TH03) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) |
 | 31 | 0x021F | [LKTMZL02(TS0201_TZ3210)](https://pvvx.github.io/LKTMZL02) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) |
 | 32 | 0x0220 | [KEY2(iSearching)](https://pvvx.github.io/iSearching) | [BLE](https://github.com/pvvx/THB2) |
