@@ -168,6 +168,8 @@
 
 [BDT](https://pvvx.github.io/BDT) - Telink BDT C1T42A20_V29
 
+[TS000F_TZ3000_xkap8wtb](https://pvvx.github.io/TS000F_TZ3000_xkap8wtb) - Tuya ZigBee "Mini Smart Switch"
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
