@@ -208,7 +208,7 @@ const hw_version_str = [
 'CB3S',
 'HS09',
 'ZY-ZTH02',
-'ZY-ZTH02Pro',
+'ZY-ZTH02Pro', // ZY-ZTH03Pro
 'ZG-227Z'];
 
 const id_sensor_str = [
@@ -846,12 +846,12 @@ function CustomBlkParse(value) {
 		if(len >= 12) cfg.av_meas_mem = value.getUint8(12); else cfg.av_meas_mem = 0;
 		let s = 'Hardware Version: ';
 		if(cfg.ver < 0x48)
-			if((hwver_id == 15)&&(len >= 11))  {
+			hwver_id = cfg.hver & 0x0F;
+			if((len >= 11)&&(hwver_id == 0x0F))  {
 				cfg.ext_hw_id = cfg.lcd_tint & 0x7f;
 				hwver_id = 16 + cfg.ext_hw_id;
 				if((cfg.lcd_tint & 0x80) != 0) bigOtaEnabled = true;
-			} else
-				hwver_id = cfg.hver & 0x0F;
+			}
 		else
 			hwver_id = cfg.hver;
 		if(hwver_id < hw_version_str.length) {
