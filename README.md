@@ -42,7 +42,7 @@
 | 35 | 0x0223 | [CB3S](https://pvvx.github.io/TS0041_TZ3000_fa9mlvja) TS0041_TZ3000_fa9mlvja | [In developing...](https://t.me/pvvx_new_ble_zigbee_devices) |
 | 36 | 0x0224 | [HS09](https://pvvx.github.io/TS0201_TZ3000_1twfmkcc) TS0201_TZ3000_1twfmkcc | [In developing...](https://t.me/pvvx_new_ble_zigbee_devices) |
 | 37 | 0x0225 | [ZY-ZTH02](https://pvvx.github.io/ZY-ZTH02) TS0201_TZ3000_v1w2k9dd without LCD | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) |
-| 38 | 0x0226 | [ZY-ZTH02Pro](https://pvvx.github.io/ZY-ZTH02Pro) TS0201_TZ3000_v1w2k9dd LCD | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) |
+| 38 | 0x0226 | [ZY-ZTH02Pro](https://pvvx.github.io/ZY-ZTH02Pro), [ZY-ZTH03Pro](https://pvvx.github.io/TS0201_TZ3000_v1w2k9dd) TS0201_TZ3000_v1w2k9dd LCD | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) |
 | 39 | 0x0227 | [ZG-227Z](https://pvvx.github.io/ZG-227Z) TS0601_TZE200_a8sdabtg | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) |
 | 40 | 0x0228 | [TS0202_PIR1](https://pvvx.github.io/TS0202_TZ3000) TS0202_TZ3000_lf56vpxj | develop |
 | 41 | 0x0229 | TS0202_PIR2 TS0202_TZ3040_bb6xaihh | develop |
@@ -169,6 +169,8 @@
 [BDT](https://pvvx.github.io/BDT) - Telink BDT C1T42A20_V29
 
 [TS000F_TZ3000_xkap8wtb](https://pvvx.github.io/TS000F_TZ3000_xkap8wtb) - Tuya ZigBee "Mini Smart Switch"
+
+[ZY-ZTH03Pro: TS0201_TZ3000_v1w2k9dd](https://pvvx.github.io/TS0201_TZ3000_v1w2k9dd) - Tuya ZigBee "Temp & Humidity Sensor" 
 
 ---
 
