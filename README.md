@@ -172,6 +172,8 @@
 
 [ZY-ZTH03Pro: TS0201_TZ3000_v1w2k9dd](https://pvvx.github.io/TS0201_TZ3000_v1w2k9dd) - Tuya ZigBee "Temp & Humidity Sensor" 
 
+[DL24](https://pvvx.github.io/DL24/dl24.html) BLE-USB-tester Atorch DL24
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
