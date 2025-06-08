@@ -845,14 +845,14 @@ function CustomBlkParse(value) {
 		} else if(cfg.hver == null) cfg.hver = 0x80;
 		if(len >= 12) cfg.av_meas_mem = value.getUint8(12); else cfg.av_meas_mem = 0;
 		let s = 'Hardware Version: ';
-		if(cfg.ver < 0x48)
+		if(cfg.ver < 0x48) {
 			hwver_id = cfg.hver & 0x0F;
 			if((len >= 11)&&(hwver_id == 0x0F))  {
 				cfg.ext_hw_id = cfg.lcd_tint & 0x7f;
 				hwver_id = 16 + cfg.ext_hw_id;
 				if((cfg.lcd_tint & 0x80) != 0) bigOtaEnabled = true;
 			}
-		else
+		} else
 			hwver_id = cfg.hver;
 		if(hwver_id < hw_version_str.length) {
 			s += hw_version_str[hwver_id];
