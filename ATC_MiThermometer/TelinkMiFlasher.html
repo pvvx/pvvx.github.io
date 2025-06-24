@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v10.2</title>
+<title>Telink Flasher v11</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -2404,7 +2404,6 @@ function getOtaJson(d, name) {
 	}
 }
 
-
 function FirmwareZdevbis() {
 		if(!confirm("Attention: Zigbee firmware converts the thermometer to the Zigbee protocol! All data for MiHome and measurement memory will be erased! The devbis version consumes twice as much as ZigbeeTlc!"))
 		   return;
@@ -2520,6 +2519,28 @@ function updateBegin() {
 	}, 500);
 }
 
+const tab_ota_errors = [
+"Success",
+"Lost one or more packets",
+"CRC error in data",
+"Writing data to flash",
+"Lost last one or more packets",
+"Timeout",
+"Firmware CRC check"]
+
+function showOtaError(e) {
+	let err = "Unknown:"+e;
+	if(e != 0) {
+		if(e < tab_ota_errors.length)
+			err = "error(" + tab_ota_errors[e] +")";
+	} else {
+		err = "done";
+	}
+	s = "Update " + err + " after " + (new Date().getTime() - startTime) / 1000 + " seconds";
+	addLog(s);
+	setStatus(s);
+}
+
 function sendOTAblock(blockNr) {
 	if (blockNr >= blockCount) {
 		sendLastOTA();
@@ -2533,8 +2554,14 @@ function sendOTAblock(blockNr) {
 		setTimeout(function() {
 			if ((blockNr + 1) % 8 == 0) {
 				writeCharacteristic.readValue().then(function(result) {
-					if(result.byteLength > 0)
-						addClog('OTA status after block ' + blockNr + ' is  ' + result.getUint8(0));
+					if(result.byteLength > 0) {
+						let e = result.getUint8(0);
+						addClog('OTA status after block ' + blockNr + ' is  ' + e);
+						if(e != 0) {
+							showOtaError(e);
+							return;
+						}	
+					}
 					sendOTAblock(blockNr + 1);
 				}).catch(function(err) {
 					updateFail(err);
@@ -2561,8 +2588,8 @@ function getHexCRC(data) {
 function sendLastOTA() {
 	var data = "02ff" + getHexBLockCount(blockCount - 1) + getHexBLockCount(~(blockCount - 1) & 0xffff);
 	otaCharSend(data).then(function(character) {
-		addLog("Update done after " + (new Date().getTime() - startTime) / 1000 + " seconds");
-		setStatus("Update done after " + (new Date().getTime() - startTime) / 1000 + " seconds");
+		addClog('OTA send ' + blockCount + ' blocks - ok.');
+		showOtaError(0);
 	}).catch(function(err) {
 		updateFail(err);
 	});
