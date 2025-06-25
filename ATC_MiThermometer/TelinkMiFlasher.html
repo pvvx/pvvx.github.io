@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v11</title>
+<title>Telink Flasher v11.1</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -184,7 +184,7 @@ const hw_version_str = [
 'MHO-C122',
 'MJWSD05MMC(en)',
 'MJWSD06MMC',
-'LYWSD03MMC', // B1.6(2025)
+'LYWSD03MMC', // B1.6/B1.1(2025)
 'ID15',
 'TB03F',
 'TS0201',
@@ -1785,6 +1785,7 @@ function miAuthorization() {
 						else if(shwsr == 'B1.6') cfg.hver = 3;
 						else if(shwsr == 'B1.9') cfg.hver = 4;
 						else if(shwsr == 'B1.7' || shwsr == 'B2.0') cfg.hver = 5;
+						else if(shwsr == 'B1.1') cfg.hver = 14; // B1.6(2025)
 						//else if(shwsr == 'B1.8') cfg.hver = 0; // ??
 						else {
 							cfg.hver = 0;
