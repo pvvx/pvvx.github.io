@@ -19,7 +19,7 @@
 | 11 | 0x020B | [MHO-C122](https://pvvx.github.io/MHO_C122) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) |
 | 12 | 0x020C | [MJWSD05MMC(en)](https://pvvx.github.io/MJWSD05MMC) | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
 | 13 | 0x020D | [MJWSD06MMC](https://pvvx.github.io/MJWSD06MMC) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) |
-| 14 | =0x020A  | LYWSD03MMC-B1.6(2025)    | [BLE](https://github.com/pvvx/ATC_MiThermometer) | 
+| 14 | =0x020A  | LYWSD03MMC-B1.6(2025)    | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 
 | 15 |  |  | reserved for [BLE](https://github.com/pvvx/ATC_MiThermometer) |
 | 16 | 0x0210 | TB03F             | [BLE](https://github.com/pvvx/ATC_MiThermometer) (DIY TB-03F-Kit) |
 | 17 | 0x0211 | TS0201 [TS0201_TZ3000](https://pvvx.github.io/TS0201_TZ3000)  | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) |
