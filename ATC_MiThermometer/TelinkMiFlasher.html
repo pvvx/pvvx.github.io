@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v11.1</title>
+<title>Telink Flasher v11.2</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -2198,9 +2198,10 @@ function testOTAFirmware(data) {
 	 	head = new DataView(data, 0, 0x20);
 	} else {
 		fzigbeeota.used = false;
-		if(bigOtaEnabled && fsize > MAX_EXT_OTA_SIZE) // 208KB
-			return "Size firmware is more 208 kbytes!";
-		else if(fsize > fwmaxsize)
+		if(bigOtaEnabled) {
+			if (fsize > MAX_EXT_OTA_SIZE) // 208KB
+				return "Size firmware is more 208 kbytes!";
+		} else if(fsize > fwmaxsize)
 			return "Size firmware is more "+fwmaxsize+" bytes!";
 	}
 	if(head.getUint32(0x08, true) != 0x544c4e4b){
