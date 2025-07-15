@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v11.2</title>
+<title>Telink Flasher v11.3</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -2039,7 +2039,8 @@ function startDFU() {
 			let s = 'Clear Ext.OTA region ('+szk+'kib)...';
 			addAlog(s);
 			setStatus(s)
-			settingsCharacteristics.writeValue(new Uint8Array([0x73, 0,0,4,0, szk&0xff, (szk>>8)&0xff, (szk>>16)&0xff, (szk>>24)&0xff]));
+			if(cfg.ver <= 0x53 && szk <= 128) szk = 129; // patch
+				settingsCharacteristics.writeValue(new Uint8Array([0x73, 0,0,4,0, szk&0xff, (szk>>8)&0xff, (szk>>16)&0xff, (szk>>24)&0xff]));
 			return;
 		} else {
 			let fzk = fwmaxsize >> 10;
