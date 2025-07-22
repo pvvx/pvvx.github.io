@@ -2039,8 +2039,8 @@ function startDFU() {
 			let s = 'Clear Ext.OTA region ('+szk+'kib)...';
 			addAlog(s);
 			setStatus(s)
-			if(cfg.ver <= 0x53 && szk <= 128) szk = 129; // patch
-				settingsCharacteristics.writeValue(new Uint8Array([0x73, 0,0,4,0, szk&0xff, (szk>>8)&0xff, (szk>>16)&0xff, (szk>>24)&0xff]));
+			if(cfg.ver <= 0x53 && szk <= 128) { szk = 129; } // patch
+			settingsCharacteristics.writeValue(new Uint8Array([0x73, 0,0,4,0, szk&0xff, (szk>>8)&0xff, (szk>>16)&0xff, (szk>>24)&0xff]));
 			return;
 		} else {
 			let fzk = fwmaxsize >> 10;
