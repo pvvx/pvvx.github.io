@@ -3197,7 +3197,7 @@ function CustomConfig() {
 	if((hwver_id == 9) || (hwver_id == 12))  {
 		is += '&nbsp;&nbsp;12-hour clock:<input type="checkbox" id="cfg_flg_am_pm">&nbsp;&nbsp;T&H 2 decimal places<input type="checkbox" id="cfg_flg_x100">';
 	  if(hwver_id == 12)
-		is += '<br><br>Date MM/DD: <input type="checkbox" id="cfg_flg3_mmdd">';
+		is += '<br><br>Date DD/MM: <input type="checkbox" id="cfg_flg3_ddmm">';
 	}
 	is += '<br><br>';
 	if((hwver_id == 2)||(hwver_id == 6)||(hwver_id == 7))
@@ -3395,7 +3395,7 @@ function CustomConfig() {
 	    if(cfg.ver > 0x48) {
 	    	$("cfg_flg3_weekday").checked = ((cfg.temp_offset&128) == 0);
 		    if(hwver_id == 12)
-		    	$("cfg_flg3_mmdd").checked = ((cfg.temp_offset&64) == 0);
+		    	$("cfg_flg3_ddmm").checked = ((cfg.temp_offset&64) == 0);
 		}
 		$("adv_flags").checked = (cfg.flg2&0x10) != 0;
 		$("bt5_flags").checked = (cfg.flg2&0x20) != 0;
@@ -3562,7 +3562,7 @@ function SendCustomConfig() {
 		if(cfg.ver > 0x48) { 
 			cfg.temp_offset = ($("cfg_flg3_weekday").checked) ? 0 : 128;
 	  		if(hwver_id == 12)
-		  		cfg.temp_offset += ($("cfg_flg3_mmdd").checked) ? 0 : 64;
+		  		cfg.temp_offset += ($("cfg_flg3_ddmm").checked) ? 0 : 64;
 		}
 	}
  } else {
