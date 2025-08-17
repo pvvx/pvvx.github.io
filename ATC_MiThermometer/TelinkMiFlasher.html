@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v11.3</title>
+<title>Telink Flasher v11.4</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -1951,12 +1951,12 @@ function doConnect() {
 				fwmaxsize = MAX_EXT_OTA_SIZE;
 			}
 			if ((bluetoothDevice.name.substr(0,10) == "LYWSD03MMC") && (devinfo.frstr.substr(0,10) == "2.1.1_0159")) {
-			    $("custcfg").innerHTML = '<hr><b>Warning:</b> Firmware LYWSD03MMC version 2.1.1_0159 requires registration in MI-Home and obtaining IDs. <a href="https://github.com/pvvx/ATC_MiThermometer/issues/602" target="_blank">Help</a><br><button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
+			    $("custcfg").innerHTML = '<hr><b>Warning:</b> Firmware LYWSD03MMC <a href="https://github.com/pvvx/ATC_MiThermometer/issues/602">version 2.1.1_0159 requires registration in MI-Home</a> and obtaining IDs. <a href="https://github.com/pvvx/ATC_MiThermometer/issues/602" target="_blank">Help</a><br><button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
 			    fwmaxsize = MAX_BLE_OTA_SIZE;
 				fsignota = "sign_2.1.1_0159c.bin";
 				miAction();
 			} else if ((bluetoothDevice.name.substr(0,10) == "MJWSD06MMC") && (devinfo.frstr.substr(0,4) == "0009")) {
-			    $("custcfg").innerHTML = '<hr><b>Warning:</b> Firmware MJWSD06MMC version 2.1.1_0009 requires registration in MI-Home and obtaining IDs. <a href="https://github.com/pvvx/ATC_MiThermometer/issues/636" target="_blank">Help</a><br><button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
+			    $("custcfg").innerHTML = '<hr><b>Warning:</b> Firmware MJWSD06MMC <a href="https://github.com/pvvx/ATC_MiThermometer/issues/602">version 2.1.1_0009 requires registration in MI-Home</a> and obtaining IDs. <a href="https://github.com/pvvx/ATC_MiThermometer/issues/636" target="_blank">Help</a><br><button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
 			    fwmaxsize = MAX_EXT_OTA_SIZE;
 			    hwver_id = 13;
 				//fsignota = "sign_mj6_2.1.1a.bin";
@@ -2405,14 +2405,6 @@ function getOtaJson(d, name) {
 			}
 		}
 	}
-}
-
-function FirmwareZdevbis() {
-		if(!confirm("Attention: Zigbee firmware converts the thermometer to the Zigbee protocol! All data for MiHome and measurement memory will be erased! The devbis version consumes twice as much as ZigbeeTlc!"))
-		   return;
-		let fn = "https://raw.githubusercontent.com/pvvx/ZigbeeTLc/master/bin/devbis/db15-0203-11003001-z03mmc.zigbee";
-		addAlog("Load firmware file '"+fn+"'...");
-		ajax_file(fn, getFirmwareArray, "");
 }
 
 function FirmwareZB() {
@@ -3202,8 +3194,11 @@ function CustomConfig() {
 	if(cfg.ver >= 0x43)
 		is += 'Screen Off: <input title="Screen Off" type="checkbox" id="cfg_scr_off"><br><br>';
 	is += 'Temperature: <select id="cfg_flg_cf"><option value="0">°C</option><option value="1">°F</option></select>';
-	if((hwver_id == 9) || (hwver_id == 12)) 
+	if((hwver_id == 9) || (hwver_id == 12))  {
 		is += '&nbsp;&nbsp;12-hour clock:<input type="checkbox" id="cfg_flg_am_pm">&nbsp;&nbsp;T&H 2 decimal places<input type="checkbox" id="cfg_flg_x100">';
+	  if(hwver_id == 12)
+		is += '<br><br>Date MM/DD: <input type="checkbox" id="cfg_flg3_mmdd">';
+	}
 	is += '<br><br>';
 	if((hwver_id == 2)||(hwver_id == 6)||(hwver_id == 7))
 		is += 'Line: <select id="cfg_smiley"><option value="0" selected>&nbsp;&nbsp;&nbsp;</option><option value="5">&nbsp;---&nbsp;</option></select>';
@@ -3397,7 +3392,11 @@ function CustomConfig() {
 		$("cfg_flg_am_pm").checked = (cfg.flg&32) != 0;
 		$("cfg_flg_x100").checked = (cfg.flg&8) != 0;
 		$("cfg_scr_type").value = cfg.flg2&7;
-	    if(cfg.ver > 0x48)	$("cfg_flg3_weekday").checked = ((cfg.temp_offset&128) == 0);
+	    if(cfg.ver > 0x48) {
+	    	$("cfg_flg3_weekday").checked = ((cfg.temp_offset&128) == 0);
+		    if(hwver_id == 12)
+		    	$("cfg_flg3_mmdd").checked = ((cfg.temp_offset&64) == 0);
+		}
 		$("adv_flags").checked = (cfg.flg2&0x10) != 0;
 		$("bt5_flags").checked = (cfg.flg2&0x20) != 0;
 		$("longrange_flags").checked = (cfg.flg2&0x40) != 0;
@@ -3560,7 +3559,11 @@ function SendCustomConfig() {
 		cfg.flg2 += (($("bt5_flags").checked) ? 0x20 : 0);
 		cfg.flg2 += (($("longrange_flags").checked) ? 0x40 : 0);
 		if(cfg.ver >= 0x43)	cfg.flg2 += (($("cfg_scr_off").checked) ? 0x80 : 0);
-		if(cfg.ver > 0x48) cfg.temp_offset = ($("cfg_flg3_weekday").checked) ? 0 : 128;
+		if(cfg.ver > 0x48) { 
+			cfg.temp_offset = ($("cfg_flg3_weekday").checked) ? 0 : 128;
+	  		if(hwver_id == 12)
+		  		cfg.temp_offset += ($("cfg_flg3_mmdd").checked) ? 0 : 64;
+		}
 	}
  } else {
 		cfg.flg = (cfg.flg & 0xbc) + ($("cfg_flg_adv_type").value & 3)+(($("cfg_flg_tx_meas").checked) ? 64 : 0);
