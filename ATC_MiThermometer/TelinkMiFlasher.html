@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v11.4</title>
+<title>Telink Flasher v11.5</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -3395,7 +3395,7 @@ function CustomConfig() {
 	    if(cfg.ver > 0x48) {
 	    	$("cfg_flg3_weekday").checked = ((cfg.temp_offset&128) == 0);
 		    if(hwver_id == 12)
-		    	$("cfg_flg3_ddmm").checked = ((cfg.temp_offset&64) == 0);
+		    	$("cfg_flg3_ddmm").checked = ((cfg.temp_offset&64) != 0);
 		}
 		$("adv_flags").checked = (cfg.flg2&0x10) != 0;
 		$("bt5_flags").checked = (cfg.flg2&0x20) != 0;
@@ -3562,7 +3562,7 @@ function SendCustomConfig() {
 		if(cfg.ver > 0x48) { 
 			cfg.temp_offset = ($("cfg_flg3_weekday").checked) ? 0 : 128;
 	  		if(hwver_id == 12)
-		  		cfg.temp_offset += ($("cfg_flg3_ddmm").checked) ? 0 : 64;
+		  		cfg.temp_offset += ($("cfg_flg3_ddmm").checked) ? 64 : 0;
 		}
 	}
  } else {
