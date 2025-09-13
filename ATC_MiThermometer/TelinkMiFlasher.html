@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v12.0</title>
+<title>Telink Flasher v12.1</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -27,6 +27,7 @@ var firmwareArray = "",
 var addSignArray = "";
 var flg_memo_act = false;
 var devinfo = { hrstr: null, srstr: null, frstr: null };
+var trsc = {int: null, mac: null, mact: null};
 var devSens = {};
 var fwname = '';
 var hwver_id = null;
@@ -90,6 +91,7 @@ function resetVariables() {
 	devinfo.hrstr = null;
 	devinfo.srstr = null;
 	devinfo.frstr = null;
+	trsc.int = null;
 	hwver_id = null;
 	//fzigbeeota.used = false;
 	//fwname = '';
@@ -1131,6 +1133,16 @@ function CustomBlkParse(value) {
 		}
 		$("tempHumiData").innerHTML = s;
 		addClog(s);
+	} else if(blkid == 0x21 && len >= 10) {
+			trsc.int = value.getUint32(1, true);
+			trsc.mac = new Uint8Array(value.buffer.slice(5,11));
+			trsc.mact = hex(trsc.mac[5],2)+hex(trsc.mac[4],2)+hex(trsc.mac[3],2)+hex(trsc.mac[2],2)+hex(trsc.mac[1],2)+hex(trsc.mac[0],2);
+			s = 'TrSc Config: interval: '+trsc.int+', MAC: '+trsc.mact;
+			addAlog(s);
+			if(cfg.ver >= 0x53 && ((hwver_id == 0)||(hwver_id == 3)||(hwver_id == 4)||(hwver_id == 5)||(hwver_id == 10)||(hwver_id == 14))) {
+				$('trsc_int').value = trsc.int;
+				$('trsc_mac').value = trsc.mact;
+			};
 	} else if(blkid == 0x22 && len >= 7) {
 		if((hwver_id == 9) || (hwver_id == 12)) {
 			ext.big_number = value.getInt32(1, true); // -9950..199950, x0.01
@@ -3172,6 +3184,43 @@ function sendGetMemo(cnt) {
 		addAlog('Send cmd GetMemo ok');
 	});
 }
+function getTrScConfig() {
+		settingsCharacteristics.writeValue(new Uint8Array([0x21])).then(_ => {
+			addAlog('Get TrSc parameters...');
+		});
+}
+function setTrScConfig() {
+	if(settingsCharacteristics != null) {
+		let el = $("trsc_mac").value;
+		let interval = parseInt($("trsc_int").value);
+		let len = el.length;
+		if(len == 12) {
+			let mac = hexToBytes(el);
+			len = mac.length;
+			if(len == 6) {
+				blk = new Uint8Array(11);
+				blk[0] = 0x21; 
+				blk[1] = interval&0xff; 
+				blk[2] = (interval>>8)&0xff; // интервал в сек, =0 - отключено
+				blk[3] = (interval>>16)&0xff; 
+				blk[4] = (interval>>24)&0xff; 
+				blk[5] = mac[5];
+				blk[6] = mac[4];
+				blk[7] = mac[3];
+				blk[8] = mac[2];
+				blk[9] = mac[1];
+				blk[10] = mac[0];
+				addClog("Send TrSc parameters ("+dump(blk, blk.length)+")...");
+				settingsCharacteristics.writeValue(blk).then(_ => {
+					s = "Send TrSc parameters: interval: "+interval+" sec,  MAC: "+dump(mac, 6);
+					addAlog(s+" ok");
+				});
+			}
+		} else
+			addLog("Must be 6 hex MAC digits!");
+		return;
+	}
+}
 function setSensCfg() {
 	if(settingsCharacteristics != null) {
 		devSens.temp_k = Math.round(100.0 * parseFloat($('inpTempK').value));
@@ -3488,9 +3537,16 @@ function CustomConfig() {
 		else
 			is += '<br>';
 	}
-	if((hwver_id == 0)||(hwver_id == 3)||(hwver_id == 4)||(hwver_id == 5)||(hwver_id == 10))
+	if((hwver_id == 0)||(hwver_id == 3)||(hwver_id == 4)||(hwver_id == 5)||(hwver_id == 10)||(hwver_id == 14)) {
+		if(cfg.ver >= 0x53) {
+			is += '<hr><b>Transmit and scan TimeStamp</b>';
+			is += '<br>Interval: <input size="8" title="0 - Off, 1..4294967295 sec, default 0" id="trsc_int" maxlength="10" value="0"> sec, ';
+			is +='ScanDevice MAC: <input size="40" maxlength="16" type="text" id="trsc_mac" title="Must be 6 hex MAC digits!" value="">';
+			is += '<br> <button type="button" title="Get/read TrScIn setings" onclick="getTrScConfig();">Get</button>';
+			is += ' <button type="button" title="Set/save TrScIn setings" onclick="setTrScConfig();">Set</button><br>';
+		}
 		is += '<hr><b>Management GPIO_TRG</b> (mark "reset"):';
-	else
+	} else
 		is += '<hr><b>Management GPIO_TRG:</b>';
 	is += '&nbsp;<button type="button" title="Get/read current setings" onclick="sendCustomSetting(&quot;44&quot;);">Get TRG</button><br>';
 	if(cfg.ver >= 0x26) {
