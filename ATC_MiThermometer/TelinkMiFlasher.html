@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v11.5</title>
+<title>Telink Flasher v12.0</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -316,6 +316,120 @@ const tabHaBle2name = [
   { id: 17, name: "opened", unit: "", factor: 1}
 ];
 
+const tabBTHome = [
+// 0x
+ {id: 0x01, name: "packet id", unit: "", factor: 1},
+ {id: 0x01, name: "battery", unit: "%", factor: 1.0},
+ {id: 0xA2, name: "temperature", unit: "°C", factor: 0.01},
+ {id: 0x22, name: "humidity", unit: "%", factor: 0.01},
+ {id: 0x23, name: "pressure", unit: "hPa", factor: 0.01},
+ {id: 0x23, name: "illuminance", unit: "lux", factor: 0.01},
+ {id: 0x22, name: "mass", unit: "kg", factor: 0.01},
+ {id: 0x22, name: "mass", unit: "lb", factor: 0.01},
+ {id: 0xA2, name: "dewpoint", unit: "°C", factor: 0.01},
+ {id: 0x01, name: "count", unit: "", factor: 1},
+ {id: 0x33, name: "energy", unit: "kWh", factor: 0.001},
+ {id: 0x23, name: "power", unit: "W", factor: 0.01},
+ {id: 0x32, name: "voltage", unit: "V", factor: 0.001},
+ {id: 0x02, name: "pm2.5", unit: "ug/m3", factor: 1.0},
+ {id: 0x02, name: "pm10", unit: "ug/m3", factor: 1.0},
+ {id: 0x41, name: "boolean", unit: "", factor: 1}, // On/Off
+// 1x
+ {id: 0x41, name: "power", unit: "", factor: 1}, // On/Off
+ {id: 0x41, name: "opening", unit: "", factor: 1},
+ {id: 0x02, name: "co2", unit: "ppm", factor: 1.0},
+ {id: 0x02, name: "tvoc", unit: "ug/m3", factor: 1.0},
+ {id: 0x32, name: "moisture", unit: "%", factor: 0.01},
+ {id: 0x41, name: "battery", unit: "", factor: 1}, // Low/Normal
+ {id: 0x41, name: "battery charging", unit: "", factor: 1}, // Charging
+ {id: 0x41, name: "carbon monoxide", unit: "", factor: 1}, // Detected
+ {id: 0x41, name: "cold", unit: "", factor: 1}, // Cold/Normal
+ {id: 0x41, name: "connectivity", unit: "", factor: 1}, //Connected
+ {id: 0x41, name: "door", unit: "", factor: 1}, // Open/Closed
+ {id: 0x41, name: "garage door", unit: "", factor: 1}, // Open/Closed
+ {id: 0x41, name: "gas", unit: "", factor: 1}, // Detected/Clear
+ {id: 0x41, name: "heat", unit: "", factor: 1},  // Hot/Normal
+ {id: 0x41, name: "light", unit: "", factor: 1}, // Light detected/No light
+ {id: 0x41, name: "lock", unit: "", factor: 1}, // Unlocked/Locked
+// 2x
+ {id: 0x41, name: "moisture", unit: "", factor: 1}, // Wet/Dry
+ {id: 0x41, name: "motion", unit: "", factor: 1}, // Detected/Clear
+ {id: 0x41, name: "moving", unit: "", factor: 1}, // Moving/Not moving
+ {id: 0x41, name: "occupancy", unit: "", factor: 1}, // Detected/Clear
+ {id: 0x41, name: "plug", unit: "", factor: 1}, // Plugged in/Unplugged
+ {id: 0x41, name: "presence", unit: "", factor: 1}, // Home/Away
+ {id: 0x41, name: "problem", unit: "", factor: 1}, // Problem/Ok
+ {id: 0x41, name: "running", unit: "", factor: 1}, // Running/Not Running
+ {id: 0x41, name: "safety", unit: "", factor: 1}, // Safe/Unsafe
+ {id: 0x41, name: "smoke", unit: "", factor: 1}, // Detected/Clear
+ {id: 0x41, name: "sound", unit: "", factor: 1}, // Detected/Clear
+ {id: 0x41, name: "tamper", unit: "", factor: 1}, // True/False
+ {id: 0x41, name: "vibration", unit: "", factor: 1}, // Detected/Clear
+ {id: 0x41, name: "window", unit: "", factor: 1}, // Open/Closed 
+ {id: 0x01, name: "humidity", unit: "%", factor: 1.0}, 
+ {id: 0x01, name: "moisture", unit: "%", factor: 1.0},
+// 3x
+ {id: 0x00, name: "", unit: "", factor: 0},
+ {id: 0x00, name: "", unit: "", factor: 0},
+ {id: 0x00, name: "", unit: "", factor: 0},
+ {id: 0x00, name: "", unit: "", factor: 0},
+ {id: 0x00, name: "", unit: "", factor: 0},
+ {id: 0x00, name: "", unit: "", factor: 0},
+ {id: 0x00, name: "", unit: "", factor: 0},
+ {id: 0x00, name: "", unit: "", factor: 0},
+ {id: 0x00, name: "", unit: "", factor: 0},
+ {id: 0x00, name: "", unit: "", factor: 0},
+ {id: 0x01, name: "button", unit: "", factor: 1},
+ {id: 0x00, name: "", unit: "", factor: 0},
+ {id: 0x02, name: "dimmer", unit: "", factor: 1},
+ {id: 0x02, name: "count", unit: "", factor: 1.0},
+ {id: 0x04, name: "count", unit: "", factor: 1.0},
+ {id: 0x12, name: "rotation", unit: "°", factor: 0.1},
+// 4x
+ {id: 0x02, name: "distance ", unit: "mm", factor: 1.0},
+ {id: 0x12, name: "distance ", unit: "m", factor: 1.0},
+ {id: 0x33, name: "duration", unit: "s", factor: 0.001},
+ {id: 0x32, name: "current", unit: "A", factor: 0.001},
+ {id: 0x22, name: "speed", unit: "m/s", factor: 0.01},
+ {id: 0x12, name: "temperature", unit: "°C", factor: 0.1},
+ {id: 0x11, name: "UV index", unit: "", factor: 0.1},
+ {id: 0x12, name: "volume", unit: "L", factor: 0.1},
+ {id: 0x02, name: "volume", unit: "mL", factor: 1.0},
+ {id: 0x32, name: "volume flow rate", unit: "m3/hr", factor: 0.001},
+ {id: 0x12, name: "voltage", unit: "V", factor: 0.1},
+ {id: 0x33, name: "gas", unit: "m3", factor: 0.001},
+ {id: 0x34, name: "gas", unit: "m3", factor: 0.001},
+ {id: 0x34, name: "energy", unit: "kWh", factor: 0.001},
+ {id: 0x34, name: "volume", unit: "L", factor: 0.001},
+ {id: 0x34, name: "water", unit: "L", factor: 0.001},
+// 5x
+ {id: 0x04, name: "timestamp", unit: "", factor: 1},
+ {id: 0x32, name: "acceleration", unit: "m/s²", factor: 0.001},
+ {id: 0x32, name: "gyroscope", unit: "°/s", factor: 0.001},
+ {id: 0x0f, name: "text", unit: "", factor: 0},
+ {id: 0x1f, name: "raw", unit: "", factor: 0},
+ {id: 0x34, name: "volume storage", unit: "L", factor: 0.001},
+ {id: 0x02, name: "conductivity", unit: "uS/cm", factor: 1.0},
+ {id: 0x81, name: "temperature", unit: "°C", factor: 1.0},
+ {id: 0x81, name: "temperature", unit: "°C", factor: 0.35},
+ {id: 0x81, name: "count", unit: "", factor: 1.0},
+ {id: 0x82, name: "count", unit: "", factor: 1.0},
+ {id: 0x84, name: "count", unit: "", factor: 1.0},
+ {id: 0xA4, name: "power", unit: "W", factor: 0.01},
+ {id: 0xB2, name: "current", unit: "A", factor: 0.001},
+ {id: 0x22, name: "direction", unit: "°", factor: 0.01},
+ {id: 0x13, name: "precipitation", unit: "mm", factor: 0.1},
+// 6x
+ {id: 0x01, name: "channel", unit: "", factor: 1.0}
+ 
+/*
+	0xF0 0x02	device type id		uint16 (2 bytes)	F00100		1
+	0xF1 0x04	firmware version	uint32 (4 bytes)	F100010204	4.2.1.0
+	0xF2 0x03	firmware version	uint24 (3 bytes)	F1000106	6.1.0
+*/
+];
+
+
 function catchAdvertisement(device) {
   addAlog("Get Advertising MAC (Web Experimental Features!)");
   const abortController = new AbortController();
@@ -325,6 +439,7 @@ function catchAdvertisement(device) {
 	const buf = new Uint8Array(b.buffer);
 	addClog(buf, device, event);
 	let s = 'MAC: ?';
+    console.log("UUID:"+key);
 	if(key == '0000fe95-0000-1000-8000-00805f9b34fb') { // mi
 		if(b.byteLength >= 2) { // custom mi
 			let ctrl = b.getUint16(0, true);
@@ -499,7 +614,7 @@ function catchAdvertisement(device) {
 			else if (device_id == 0x12) s+=' CGPR1';
 			//if((b.getUint8(0)&0x40)!=0) s+=', Event';
 			let xdata_point = 10;
-				while (xdata_point < msg_length) {
+			while (xdata_point < msg_length) {
 				let xdata_id = b.getUint8(xdata_point-2);
 				let xdata_size = b.getUint8(xdata_point-1);
 				if(xdata_point + xdata_size <= msg_length) {
@@ -556,7 +671,7 @@ function catchAdvertisement(device) {
 		}
 	} else if(key == '0000181c-0000-1000-8000-00805f9b34fb') {	// BTHome
 		if(b.byteLength > 1) {
-			s += " BTHomeV1";
+			s = "BTHomeV1";
 			let len = b.byteLength;
 			let i = 0;
 			while(i < len) {
@@ -601,16 +716,82 @@ function catchAdvertisement(device) {
 			}
 		}
 	} else if(key == '0000181e-0000-1000-8000-00805f9b34fb') {	// BTHome
-		s += " BTHomeV1, Data encrypted";
+		s = "BTHomeV1, Data encrypted";
 	} else if(key == '0000fcd2-0000-1000-8000-00805f9b34fb') {	// BTHome v2
-		if(b.byteLength > 1) {
-			let ver = b.getUint8(8);
-			if(ver & 0xe0 == 0x40) {
-				s += " BTHomeV2";
-				if(ver & 1 != 0)
-					s += ", Data encrypted";
-			}
+	 if(b.byteLength > 1) {
+	  let ver = b.getUint8(0);
+	  if((ver & 0xe0) == 0x40) {
+	   s = "BTHomeV"+ (ver>>5);
+	   if((ver & 1) != 0)
+	   	s += ", Data encrypted";
+	   else {
+		 let xdata_point = 1;
+		 let msg_length = b.byteLength-1;
+		 while (xdata_point < msg_length) {
+			let xdata_id = b.getUint8(xdata_point);
+			let xdata_size = 1;
+			if(xdata_id == 0xf0) {
+			 xdata_size = 1;
+			 s += ", device type id: "+ b.getUint8(xdata_point+1);
+			} else if(xdata_id == 0xf1) {
+			 xdata_size = 4;
+			 if(xdata_point + xdata_size <= msg_length) {
+				 s += ", FW ver: "+b.getUint8(xdata_point+4)+"."+b.getUint8(xdata_point+3)+"."+b.getUint8(xdata_point+2)+"."+b.getUint8(xdata_point+1);
+			 } else break;
+			} else if(xdata_id == 0xf2) {
+			 xdata_size = 3;
+			 if(xdata_point + xdata_size <= msg_length) {
+				 s += ", FW ver: "+b.getUint8(xdata_point+3)+"."+b.getUint8(xdata_point+2)+"."+b.getUint8(xdata_point+1);
+			 } else break;
+			} else if(xdata_id == 0x53) { // text 
+			 xdata_size = b.getUint8(xdata_point + 1);
+			 if(xdata_point + xdata_size <= msg_length) {
+				 let txt = new TextDecoder("utf-8").decode(b.buffer.slice(xdata_point+1, xdata_point+xdata_size+1));
+				 s += ", text: "+ txt;
+			 } else break;
+			} else if(xdata_id == 0x54) {  // raw
+			 xdata_size = b.getUint8(xdata_point + 1);
+			 if(xdata_point + xdata_size <= msg_length) {
+				 s += ", raw: "+ bytesToHex(b.buffer.slice(xdata_point+1, xdata_point+xdata_size+1));
+			 } else break;
+			} else if(xdata_id <= 0x60) {
+				let xdata_flg = tabBTHome[xdata_id].id;
+				xdata_size = xdata_flg & 0x0f;
+				if(xdata_point + xdata_size <= msg_length) {
+					let xdata = 0;
+					if((xdata_flg & 0x80) == 0) { // unsigned
+						if(xdata_size == 1) {
+							xdata = b.getUint8(xdata_point + 1);
+						} else if(xdata_size == 2) {
+							xdata = b.getUint16(xdata_point + 1, true);
+						} else if(xdata_size == 3) {
+							xdata = (b.getUint8(xdata_point + 3) << 16) | b.getUint16(xdata_point + 1, true);
+						} else if(xdata_size == 4) {
+							xdata = b.getUint32(xdata_point + 1, true);
+						} else break;
+					} else { // signed
+						if(xdata_size == 1) {
+							xdata = b.getInt8(xdata_point + 1);
+						} else if(xdata_size == 2) {
+							xdata = b.getInt16(xdata_point + 1, true);
+						} else if(xdata_size == 3) {
+							xdata = (b.getInt8(xdata_point + 3) << 16) | b.getUint16(xdata_point + 1, true);
+						} else if(xdata_size == 4) {
+							xdata = b.getInt32(xdata_point + 1, true);
+						} else break;
+					}
+					if((xdata_flg & 0x40) == 0) {
+						s += ", "+tabBTHome[xdata_id].name+": "+(xdata * tabBTHome[xdata_id].factor).toFixed((xdata_flg & 0x30)>>4);
+					} else {
+						s += ", "+tabBTHome[xdata_id].name+": "+ xdata;
+					}
+				} else break;
+			} else break;
+			xdata_point = xdata_point + xdata_size + 1;
 		}
+	   }
+	  }
+	 }
 	}
 	addAlog(s);
 	abortController.abort();
