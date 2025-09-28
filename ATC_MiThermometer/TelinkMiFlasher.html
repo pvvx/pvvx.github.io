@@ -210,8 +210,13 @@ const hw_version_str = [
 'CB3S',
 'HS09',
 'ZY-ZTH02',
-'ZY-ZTH02Pro', // ZY-ZTH03Pro
-'ZG-227Z'];
+'ZY-ZTH02/03-Pro', // ZY-ZTH03Pro
+'ZG-227Z',
+'TS0202_PIR1',
+'TS0202_PIR2',
+'HDP16',
+'TN_6ATAG3',
+'ZG-303Z'];
 
 const id_sensor_str = [
 "None",
@@ -1126,9 +1131,14 @@ function CustomBlkParse(value) {
 			}
 			let sw = 'Open';
 			if((flg & 1) == 0) sw = 'Close';
-			if(cfg.ver >= 0x37)
-				s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', Switch: '+ sw +', Counter: '+ rds_count+', TRG Out: ' + ((flg & 2) >> 1) + ', flg: 0x'+hex(flg,2);
-			else
+			if(cfg.ver >= 0x37) {
+				s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%';
+				if(hwver_id == 44)
+					s += ', Mois: '+(count/100.0).toFixed(2)+'%';
+				else
+					s += ', ID: '+count;
+				s +=', Switch: '+ sw +', Counter: '+ rds_count+', TRG Out: ' + ((flg & 2) >> 1) + ', flg: 0x'+hex(flg,2);
+			} else
 				s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', Switch ' + sw +', TRG Out: ' + ((flg & 2) >> 1) + ', flg: 0x'+hex(flg,2);
 		}
 		$("tempHumiData").innerHTML = s;
@@ -1459,7 +1469,7 @@ function CustomBlkParse(value) {
 			addAlog("Calibration error!");
 		if(err == 0xff)
 			addAlog("Command error!");
-		addAlog("ADCrh: "+rh+", ADCntc: "+ntc);
+		addAlog("ADCrh: "+rh+" ("+((rh*1175)/4096).toFixed(2)+" mV), ADCn: "+ntc+" ("+((ntc*1175)/4096).toFixed(2)+" mV)");
 	} else if(blkid == 0x02 && len > 1) {
 		let addr = value.getUint8(1);
 		s = 'Sensor: ';
