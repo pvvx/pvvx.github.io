@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v12.1</title>
+<title>Telink Flasher v12.2</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -1459,7 +1459,15 @@ function CustomBlkParse(value) {
 		if($("dev_name"))
 			$("dev_name").value = dnm.name;
 		addAlog("DevName: ["+dnm.name+"]");
-	} else if((blkid == 0x29 || blkid == 0x2A) && len >= 5) {
+	} else if((blkid == 0x29) && len >= 12) {
+	    devSens.rh_k = value.getUint32(1, true);
+	    devSens.rh_z = value.getUint16(5, true);
+	    devSens.rh_d = value.getUint16(7, true);
+		let adc_h = value.getUint16(9, true);
+		let adc_d = value.getUint16(11, true);
+		addAlog("Config Moisture Sensor - K: "+devSens.rh_k+", Z: "+devSens.rh_z+", D: "+ devSens.rh_d);
+		addAlog("ADCh: "+adc_h+" ("+((adc_h*1175)/4096).toFixed(2)+" mV), ADCn: "+adc_d+" ("+((adc_d*1175)/4096).toFixed(2)+" mV)");
+	} else if((blkid == 0x2A) && len >= 5) {
 		let err = value.getUint8(1);
 		let rh = value.getUint16(2, true);
 		let ntc = value.getUint16(4, true);
@@ -1469,7 +1477,7 @@ function CustomBlkParse(value) {
 			addAlog("Calibration error!");
 		if(err == 0xff)
 			addAlog("Command error!");
-		addAlog("ADCrh: "+rh+" ("+((rh*1175)/4096).toFixed(2)+" mV), ADCn: "+ntc+" ("+((ntc*1175)/4096).toFixed(2)+" mV)");
+		addAlog("ADCh: "+rh+" ("+((rh*1175)/4096).toFixed(2)+" mV), ADCn: "+ntc+" ("+((ntc*1175)/4096).toFixed(2)+" mV)");
 	} else if(blkid == 0x02 && len > 1) {
 		let addr = value.getUint8(1);
 		s = 'Sensor: ';
