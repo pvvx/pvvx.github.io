@@ -49,7 +49,7 @@
 | 41 | 0x0229 | TS0202_PIR2 TS0202_TZ3040_bb6xaihh | develop |
 | 42 | 0x022A | [HDP16](https://pvvx.github.io/HDP16) MiLi MiTag HD-P16 | [BLE](https://github.com/pvvx/THB2) |
 | 43 | 0x022B | [TN-6ATAG3-V01](https://pvvx.github.io/TN-6ATAG3-V01) - Smart finder, "Apple Find My", PCB mark: TN-6ATAG3-V01 | [BLE](https://github.com/pvvx/THB2) |
-| 44 | 0x022C | [ZG-303Z](https://pvvx.github.io/ZG-303Z) - HOBEIAN ZG-303Z Tuya ZigBee Soil moisture sensor | [BLE](https://github.com/pvvx/ATC_MiThermometer) |
+| 44 | 0x022C | [ZG-303Z](https://pvvx.github.io/ZG-303Z) - HOBEIAN ZG-303Z Tuya ZigBee Soil moisture sensor | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) |
 
 * [Telegram: New devices & develops](https://t.me/pvvx_new_ble_zigbee_devices).
 
