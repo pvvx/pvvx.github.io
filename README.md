@@ -49,7 +49,7 @@
 | 42 | 0x022A | [HDP16](https://pvvx.github.io/HDP16) MiLi MiTag HD-P16 | [BLE](https://github.com/pvvx/THB2) | - |
 | 43 | 0x022B | [TN-6ATAG3-V01](https://pvvx.github.io/TN-6ATAG3-V01) - Smart finder, "Apple Find My", PCB mark: TN-6ATAG3-V01 | [BLE](https://github.com/pvvx/THB2) | - |
 | 44 | 0x022C | [ZG-303Z](https://pvvx.github.io/ZG-303Z) - HOBEIAN ZG-303Z Tuya ZigBee Soil moisture sensor | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Sonoff', 'ZG-303Z-z' |
-| 45 | 0x022D | [ZBEACON-TH01](https://www.zigbee2mqtt.io/devices/TH01.html) | [BLE](https://github.com/pvvx/ATC_MiThermometer) | - |
+| 45 | 0x022D | [ZBEACON-TH01](https://pvvx.github.io/Zbeacon-TH01) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'ZBeacon', 'TH01-z' |
 
 * [Telegram: New devices & develops](https://t.me/pvvx_new_ble_zigbee_devices).
 
@@ -177,6 +177,8 @@ It is reset to default only by holding down the button (more than 15 seconds).
 [ZY-ZTH03Pro: TS0201_TZ3000_v1w2k9dd](https://pvvx.github.io/TS0201_TZ3000_v1w2k9dd) - Tuya ZigBee "Temp & Humidity Sensor" 
 
 [DL24](https://pvvx.github.io/DL24/dl24.html) BLE-USB-tester Atorch DL24
+
+[ZBEACON-TH01](https://pvvx.github.io/Zbeacon-TH01) - Tuya ZigBee "Temp & Humidity Sensor" 
 
 ---
 
