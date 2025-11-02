@@ -1526,9 +1526,10 @@ function CustomBlkParse(value) {
 		s += ', Switch2: ' + sw +', TRG Out "' + ((flg & 2) >> 1) + '", flg: 0x'+hex(flg,2);
 		$("tempHumiData").innerHTML = s;
 		addClog(s);
+	} else if(blkid == 0x03) {
+		addAlog('Custom (0x1f1f) Notifications id: 0x'+hex(blkid,2)+' ['+bytesToHex(value.buffer.slice(1))+']');
 	} else {
-		let s = 'Custom (0x1f1f) Notifications id: 0x'+hex(blkid,2)+' ['+bytesToHex(value.buffer.slice(1))+']';
-		addClog(s);
+		addClog('Custom (0x1f1f) Notifications id: 0x'+hex(blkid,2)+' ['+bytesToHex(value.buffer.slice(1))+']');
 	}
 }
 
