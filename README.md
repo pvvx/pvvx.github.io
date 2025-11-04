@@ -176,9 +176,12 @@ It is reset to default only by holding down the button (more than 15 seconds).
 
 [ZY-ZTH03Pro: TS0201_TZ3000_v1w2k9dd](https://pvvx.github.io/TS0201_TZ3000_v1w2k9dd) - Tuya ZigBee "Temp & Humidity Sensor" 
 
-[DL24](https://pvvx.github.io/DL24/dl24.html) BLE-USB-tester Atorch DL24
+[DL24](https://pvvx.github.io/DL24/dl24.html) - BLE-USB-tester Atorch DL24
 
 [ZBEACON-TH01](https://pvvx.github.io/Zbeacon-TH01) - Tuya ZigBee "Temp & Humidity Sensor" 
+
+[TS0001_TZ3000_kqvb5akv](https://pvvx.github.io/TS0001_TZ3000_kqvb5akv) - Tuya ZigBee "Mini Zigbee Switch"
+
 
 ---
 
