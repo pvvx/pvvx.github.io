@@ -3,24 +3,74 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZigbeeTLc Index Configurator for Zigbee OTA v0.0</title>
+<title>ZigbeeTLc Index Configurator for Zigbee OTA v0.1</title>
 </head>
 <body>
 <script>
 var $ = function(id) { return document.getElementById(id);}
 var firmwareArray = "";
-var fzigbeeota = { used : false };
+var fzigbeeota = { head_ok : false};
 //var fwname = '';
-const MAX_FW_OTA_SIZE = 0x32000; // 200KB
+const MIN_FW_OTA_SIZE = 1024; 
+const MAX_FW_OTA_SIZE = 0x80000; 
+
+
+const manufacturerNames = {
+    123: 'UHome',
+    4098: 'Tuya',
+    4107: 'Hue',
+    4117: 'Develco',
+    4129: 'Legrand',
+    4151: 'Jennic',
+    4190: 'SchneiderElectric',
+    4364: 'Osram',
+    4405: 'DresdenElektronik',
+    4417: 'Telink',
+    4420: 'Lutron',
+    4444: 'Danalock',
+    4447: 'Lumi',
+    4448: 'Sengled',
+    4454: 'Innr',
+    4474: 'Insta',
+    4476: 'IKEA',
+    4489: 'Ledvance',
+    4617: 'Bosch',
+    4644: 'Namron',
+    4648: 'Terncy',
+    4659: 'ThirdReality',
+    4678: 'Danfoss',
+    4687: 'Gledopto',
+    4714: 'EcoDim',
+    4742: 'Sonoff',
+    4747: 'NodOn',
+    4919: 'Datek',
+    4877: 'thirdreality',
+    4636: 'Aurora',
+    5127: '3R',
+    26214: 'Sprut.device',
+    10132: 'ClimaxTechnology',
+    60000: 'Telink-pvvx',
+};
+
 
 function addLog(logTXT) {
-	var time = new Date().toLocaleTimeString();
-	var logString = time + ": " + logTXT;
-	$("log").innerHTML += logString + "<br>";
+//	var time = new Date().toLocaleTimeString();
+//	var logString = time + ": " + logTXT;
+	$("log").innerHTML += logTXT + "<br>";
 }
 
 function addClog(logTXT) {
 	console.log(logTXT);
+}
+
+function addErr(s) {
+	console.log(s);
+	se = "<font color='red'>" + s + "</font>";
+	addLog(se);
+	$("div_error").innerHTML=se;
+}
+function clrErr() {
+	$("div_error").innerHTML="";
 }
 
 function addAlog(logTXT) {
@@ -126,7 +176,7 @@ function downloadFile(filename, content, type = 'text/plain') {
 
 
 function showZigbeeHeaderValues() {
-	if(fzigbeeota.used) {
+	if(fzigbeeota.head_ok) {
 		$("h_stack_version").value = "0x" + hex(fzigbeeota.stack_version,4);
 		$("h_man_code").value = "0x" + hex(fzigbeeota.man_code,4);
 		$("h_image_type").value = "0x" + hex(fzigbeeota.image_type,4);
@@ -136,24 +186,31 @@ function showZigbeeHeaderValues() {
 }
 
 function ReadZigbeeHeaderValues() {
+	fzigbeeota.head_ok = false;
 	let x = $("h_stack_version").value;
 	if(x != "")	{ fzigbeeota.stack_version = parseInt(x);
-		if(isNaN(fzigbeeota.stack_version) || fzigbeeota.stack_version == 0)
+		if(isNaN(fzigbeeota.stack_version) || fzigbeeota.stack_version == 0) {
 		   fzigbeeota.stack_version = 2;
-	} else fzigbeeota.stack_version = 2;
+		   addAlog("Set default 'Header Stack version' = 2");
+		}
+	} else { 
+		fzigbeeota.stack_version = 2;
+	    addAlog("Set default 'Header Stack version' = 2");
+	}
 	x = $("h_man_code").value;
 	if(x != "")	{ fzigbeeota.man_code = parseInt(x);
-		if(isNaN(fzigbeeota.man_code)) { addAlog("Error Manufacture code!"); return false; };
-	} else { addAlog("Set Manufacture code!"); return false; };
+		if(isNaN(fzigbeeota.man_code) || fzigbeeota.man_code == 0) { addErr("Error Manufacture code!"); return false; };
+	} else { addErr("Set Manufacture code!"); return false; };
 	x = $("h_image_type").value;
 	if(x != "")	{ fzigbeeota.image_type = parseInt(x);
-		if(isNaN(fzigbeeota.image_type)) { addAlog("Error Image Type!"); return false; };
-	} else { addAlog("Set Image Type!"); return false; };
+		if(isNaN(fzigbeeota.image_type)) { addErr("Error Image Type!"); return false; };
+	} else { addErr("Set Image Type!"); return false; };
 	x = $("h_fwversion").value;
 	if(x != "") { fzigbeeota.fwversion = parseInt(x); 
-		if(isNaN(fzigbeeota.fwversion)) { addAlog("Error FW and Stack version!"); return false; };
-	} else { addAlog("Set FW and Stack version!"); return false; };
+		if(isNaN(fzigbeeota.fwversion)) { addErr("Error FW and Stack version!"); return false; };
+	} else { addErr("Set FW and Stack version!"); return false; };
 	fzigbeeota.head_str = $("h_head_str").value;
+	fzigbeeota.head_ok = true;
 	return true;
 }
 
@@ -169,20 +226,20 @@ function createZigbeeHeader() {
 	head.setUint16(0x0c, fzigbeeota.image_type, true);
 	head.setUint32(0x0e, fzigbeeota.fwversion, true);
 	head.setUint16(0x12, fzigbeeota.stack_version, true);
-	fzigbeeota.head = head;
+//	fzigbeeota.head = head;
 	// head_str
 	head.setUint32(0x34, fzigbeeota.fwsize + 62, true);
 	head.setUint32(0x3a, fzigbeeota.fwsize, true);
-	fzigbeeota.used = true;
+//	fzigbeeota.head_ok = true;
+	return head;
 }
 
-function menuUpgrade() {
+function menuUpdate() {
 	showZigbeeHeaderValues();
 }
 
-function savefw() {
-	fzigbeeota.used = ReadZigbeeHeaderValues();
-	if(fzigbeeota.used) {
+function saveNewFw() {
+	if(ReadZigbeeHeaderValues()) {
 		showZigbeeHeaderValues();
 		let fwname = "-new";
 		if(fzigbeeota.head_str_name != "")
@@ -193,24 +250,35 @@ function savefw() {
 			+ fwname
 			+".zigbee";
 		addAlog("Greate header file: "+fname);
-		createZigbeeHeader();
+		fzigbeeota.head = createZigbeeHeader();
 		addAlog("Save file...");
     	const blob = new Blob([new Uint8Array(fzigbeeota.head.buffer), new Uint8Array(fzigbeeota.data)], { type: 'application/octet-stream' });
 		saveBinaryFile(blob, fname);
 	}
 }
+
+function buttonSaveNewFw() {
+	if(fzigbeeota.data)
+		saveNewFw();
+	else
+		addAlog("File Not loaded!");
+}
+
 function testOTAFirmware(data, fname) {
-	fzigbeeota = { used : false };
+	fzigbeeota = { head_ok : false };
+	$("bt_savefw").disabled = true;
 	let fsize = data.byteLength;
 	addClog("File size = 0x"+ fsize.toString(16));
-	if (fsize < 1024)
+	if (fsize < MIN_FW_OTA_SIZE)
 		return "Wrong binary Telink OTA firmware size!";
-	let head = new DataView(data, 0, 0x3e);
+	if (fsize > 1024*1024) // 1M
+		return "The file size exceeds 1 Mbytes!";
+	let	head = new DataView(data);
 	if(head.getUint32(0, true) == 0x0beef11e) { // Zigbee OTA
 		if(head.getUint16(4, true) != 0x100	|| head.getUint16(6, true) != 56)
 			return "Unknown Zigbee OTA header!";
 		fzigbeeota.size = head.getUint32(0x3A, true);
-		if(fzigbeeota.size < 2048 || fzigbeeota.size + 0x3e > fsize)
+		if(fzigbeeota.size < 1024 || fzigbeeota.size + 0x3e > fsize)
 			return "Wrong binary Zigbee OTA firmware size!";
 		fzigbeeota.man_code = head.getUint16(0x0a, true);
 		fzigbeeota.image_type = head.getUint16(0x0c, true);
@@ -222,8 +290,12 @@ function testOTAFirmware(data, fname) {
 			if(fzigbeeota.head_str_name)
 				fzigbeeota.head_str_man = fzigbeeota.head_str.substring(0, fzigbeeota.head_str.indexOf(':'));
 			else { fzigbeeota.head_str_man = ""; fzigbeeota.head_str_name = ""; };
-		} else { fzigbeeota.head_str = ""; fzigbeeota.head_str_man = ""; fzigbeeota.head_str_name = ""; };
-		fsize = fzigbeeota.size;
+		} else { 
+			fzigbeeota.head_str = ""; 
+			fzigbeeota.head_str_man = ""; 
+			fzigbeeota.head_str_name = ""; 
+		};
+
 		addAlog("Zigbee OTA Info: ManCode: 0x"+hex(fzigbeeota.man_code, 4)+ ", ImageType: 0x" + hex(fzigbeeota.image_type,4) + ", FwVer: 0x" + hex(fzigbeeota.fwversion, 8));
 		addAlog("APP Release: " + ((fzigbeeota.fwversion >> 28)&0x0f) + "." + ((fzigbeeota.fwversion >> 24)&0x0f)
 		+ " Build: " + ((fzigbeeota.fwversion >> 20)&0x0f) + "." + ((fzigbeeota.fwversion >> 16)&0x0f)
@@ -232,70 +304,122 @@ function testOTAFirmware(data, fname) {
 		addAlog("Header String: "+ fzigbeeota.head_str);
 		if(fzigbeeota.fsize > MAX_FW_OTA_SIZE) // 200KB
 			return "Size firmware is more "+(MAX_FW_OTA_SIZE/1024)+"kbytes!";
-		fzigbeeota.head = new DataView(data, 0, 0x3e);
-		fzigbeeota.used = true;
-		data = data.slice(0x3e);
-	 	head = new DataView(data, 0, 0x3e);
+
+	 	head = new DataView(data, 0x3e, 0x3e + 28);
+		fsize = fzigbeeota.size;
+
+		fzigbeeota.fwsize = head.getUint32(0x18, true);
+		addAlog("FW size: 0x" + hex(fzigbeeota.fwsize,6)+" ("+fzigbeeota.fwsize+") bytes");
+		if((fzigbeeota.fwsize > fsize) || ((fzigbeeota.fwsize & 0x0f) != 4)) {
+			return "Invalid size pointer in Telink OTA binary firmware!";
+		}
+		data = data.slice(0x3e, fzigbeeota.fwsize + 0x3e);
+
+		let fcrc = new Uint32Array(2);
+		fcrc[0] = crc32(new Uint8Array(data.slice(0, fzigbeeota.fwsize - 4)));
+		fcrc[1] = (new DataView(data, fzigbeeota.fwsize - 4, 4)).getUint32(0, true);
+		let s = "File CRC = 0x" + fcrc[1].toString(16) + ", Check CRC = 0x" + fcrc[0].toString(16);
+		if(fcrc[0] != fcrc[1]) {
+			return "Incorrect CRC in Telink OTA binary firmware! "+s;
+		} else	addClog(s);
+		fzigbeeota.head_ok	= true;
+
 	} else { // .bin file
-		fzigbeeota.used = false;
-		if (fsize > MAX_FW_OTA_SIZE) // 208KB
+		let addr_offset = 0;
+		if(head.getUint32(0x08, true) != 0x544c4e4b) {
+			if(fsize > 0x20400 && head.getUint32(0x20008, true) == 0x544c4e4b) { // BLE OTA
+				addr_offset = 0x20000;
+			} else if(fsize > 0x8400 && head.getUint32(0x8008, true) == 0x544c4e4b) { // Zigbee Boot
+				addr_offset = 0x8000;
+			} else if(fsize > 0x40400 && head.getUint32(0x40008, true) == 0x544c4e4b) { // Zigbee/BLE OTA 
+				addr_offset = 0x40000;
+			} else
+    			return "This file is not for the TLSR825x chip!";
+		} else {
+			if(fsize > 0x8400 && head.getUint32(0x8008, true) == 0x544c4e4b) { // Zigbee Boot
+				addr_offset = 0x8000;
+			}
+		}
+		addAlog("Extracting an OTA binary file from address 0x"+hex(addr_offset,6)+"...");
+   		if(fsize - addr_offset < MIN_FW_OTA_SIZE) {
+			return "The firmware size is less than 1 kbytes!";
+   		}
+		head = new DataView(data.slice(addr_offset, addr_offset+28));
+		                                                          
+		fzigbeeota.fwsize = head.getUint32(0x18, true);
+		addAlog("FW size: 0x" + hex(fzigbeeota.fwsize,6)+" ("+fzigbeeota.fwsize+") bytes");
+
+		if((fzigbeeota.fwsize > fsize - addr_offset) || ((fzigbeeota.fwsize & 0x0f) != 4)) {
+			return "Invalid size pointer in Telink OTA binary firmware!";
+		}
+		if(fzigbeeota.fwsize > MAX_FW_OTA_SIZE)
 			return "Size firmware is more "+(MAX_FW_OTA_SIZE/1024)+" kbytes!";
-		let fn = fname.substring(fname.lastIndexOf('/')+1);
-		fzigbeeota.head_str_man = ""; 
-		fzigbeeota.head_str_name = fn.substring(0, fn.lastIndexOf('.'));
-		if(!fzigbeeota.head_str_name)
-			fzigbeeota.head_str_name = fn.substring(fn.lastIndexOf('.')+1);
-		if(fzigbeeota.head_str_name) {
-			fzigbeeota.head_str = ":" + fzigbeeota.head_str_name;
-		} else  fzigbeeota.head_str_name = "";
-	}
-	console.log("head_str_name:'"+fzigbeeota.head_str_name+"'");
-	console.log("head_str_man:'"+fzigbeeota.head_str_man+"'");
-	if(head.getUint32(0x08, true) != 0x544c4e4b){
-		return "Incorrect head in Telink OTA binary firmware";
-	}
-	fzigbeeota.fwsize = head.getUint32(0x18, true);
-	addAlog("FW size: 0x" + hex(fzigbeeota.fwsize,6)+" ("+fzigbeeota.fwsize+") bytes");
-	if((fzigbeeota.fwsize > fsize) || ((fzigbeeota.fwsize & 0x0f) != 4)) {
-		return "Invalid size pointer in Telink OTA binary firmware!";
-	}
-	let fcrc = new Uint32Array(2);
-	fcrc[0] = crc32(new Uint8Array(data.slice(0, fzigbeeota.fwsize - 4)));
-	fcrc[1] = (new DataView(data, fzigbeeota.fwsize - 4, 4)).getUint32(0, true);
-	let s = "File CRC = 0x" + fcrc[1].toString(16) + ", Check CRC = 0x" + fcrc[0].toString(16);
-	if(fcrc[0] != fcrc[1]) {
-		return "Incorrect CRC in Telink OTA binary firmware! "+s;
-	} else	addClog(s);
-	if(!fzigbeeota.used) {
+
+		data = data.slice(addr_offset, fzigbeeota.fwsize + addr_offset);
+		fsize = fzigbeeota.fwsize; 
+
+		let fcrc = new Uint32Array(2);
+		fcrc[0] = crc32(new Uint8Array(data.slice(0, fzigbeeota.fwsize - 4)));
+		fcrc[1] = (new DataView(data, fzigbeeota.fwsize - 4, 4)).getUint32(0, true);
+		let s = "File CRC = 0x" + fcrc[1].toString(16) + ", Check CRC = 0x" + fcrc[0].toString(16);
+		if(fcrc[0] != fcrc[1]) {
+			return "Incorrect CRC in Telink OTA binary firmware! "+s;
+		} else	addClog(s);
+
 		fzigbeeota.man_code = head.getUint16(18,true);
 		fzigbeeota.image_type = head.getUint16(20,true);
 		fzigbeeota.fwversion = head.getUint32(2,true);
 		fzigbeeota.stack_version = 2;
-		fzigbeeota.used	= true;
-		addAlog("Zigbee OTA Info: ManCode: 0x"+hex(fzigbeeota.man_code, 4)+ ", ImageType: 0x" + hex(fzigbeeota.image_type,4) + ", FwVer: 0x" + hex(fzigbeeota.fwversion, 8));
-		addAlog("APP Release: " + ((fzigbeeota.fwversion >> 28)&0x0f) + "." + ((fzigbeeota.fwversion >> 24)&0x0f)
-		+ " Build: " + ((fzigbeeota.fwversion >> 20)&0x0f) + "." + ((fzigbeeota.fwversion >> 16)&0x0f)
-		+ ", Stack Version: " + ((fzigbeeota.fwversion >> 12)&0x0f) + "." + ((fzigbeeota.fwversion >> 8)&0x0f)
-		+ " Release: " + ((fzigbeeota.fwversion >> 4)&0x0f) + "." + (fzigbeeota.fwversion&0x0f));
-		addAlog("Added String: "+ fzigbeeota.head_str);
+        fzigbeeota.head_str = "";
+        fzigbeeota.head_str_man = "";
+        fzigbeeota.head_str_name = "";
+		if(fzigbeeota.man_code != 0
+		 &&	fzigbeeota.image_type != 0
+		 &&	fzigbeeota.fwversion != 0
+		 &&	fzigbeeota.stack_version != 0) {
+	        if (!manufacturerNames[fzigbeeota.man_code]) {
+		        fzigbeeota.head_str_man = "";
+	        } else {
+	        	fzigbeeota.head_str_man = manufacturerNames[fzigbeeota.man_code];
+	        }
+			let fn = fname.substring(fname.lastIndexOf('/')+1);
+			fzigbeeota.head_str_name = fn.substring(0, fn.lastIndexOf('.'));
+			if(!fzigbeeota.head_str_name)
+				fzigbeeota.head_str_name = fn.substring(fn.lastIndexOf('.')+1);
+			if(fzigbeeota.head_str_name) {
+				fzigbeeota.head_str = fzigbeeota.head_str_man + ":" + fzigbeeota.head_str_name;
+			} else fzigbeeota.head_str_name = "";
+
+			addAlog("Zigbee OTA Info: ManCode: 0x"+hex(fzigbeeota.man_code, 4)+ ", ImageType: 0x" + hex(fzigbeeota.image_type,4) + ", FwVer: 0x" + hex(fzigbeeota.fwversion, 8));
+			addAlog("APP Release: " + ((fzigbeeota.fwversion >> 28)&0x0f) + "." + ((fzigbeeota.fwversion >> 24)&0x0f)
+			+ " Build: " + ((fzigbeeota.fwversion >> 20)&0x0f) + "." + ((fzigbeeota.fwversion >> 16)&0x0f)
+			+ ", Stack Version: " + ((fzigbeeota.fwversion >> 12)&0x0f) + "." + ((fzigbeeota.fwversion >> 8)&0x0f)
+			+ " Release: " + ((fzigbeeota.fwversion >> 4)&0x0f) + "." + (fzigbeeota.fwversion&0x0f));
+			addAlog("Added `Header String`: '"+ fzigbeeota.head_str+"'");
+		  	fzigbeeota.head_ok	= true;
+		}
+		addAlog("Specify the name of the manufacturer and device using the ':' symbol in the head `Header String`.");
+		addAlog("Or describe the type of firmware, without using the ':' symbol.");
 	}
 	fzigbeeota.fname = fname;
 	fzigbeeota.data = data;
+	$("bt_savefw").disabled = false;
 	return "ok";
 }
 
 function getFwArray(data, filename) {
+	clrErr();
 	addAlog("File: " + filename);
+	$("div_status").innerHTML="file: "+ filename;
+	fzigbeeota.filename = filename;
 	let s = testOTAFirmware(data, filename);
 	if(s != "ok") {
-		addAlog(s);
-		$("ldfrmw").innerHTML=s;
-		fzigbeeota = { used : false };
+		addErr(s);
+		fzigbeeota = { head_ok : false};
 		alert(s);
 		return;
 	}
-	$("ldfrmw").innerHTML="file: "+ filename;
-	menuUpgrade();
+	menuUpdate();
 }
 
 function ajax_file(filename, fn, rawurl = "https://raw.githubusercontent.com/pvvx/ZigbeeTLc/master/") {
@@ -382,12 +506,13 @@ window.onload = function() {
 </div>
 <hr>
 <div style="height: auto; width: auto;">
- <div id="ldfile">
+ <div id="div_ldfile">
 	Manual firmware download: <input type="file" accept=".zigbee,.ota,.bin" id="file"/></div>
- <div id="ldfrmw">Insert file name or file link</div>
+ <div id="div_status">Insert the file name or the link to the file containing ZigbeeOTA, or OTA FW, or FullFlash.bin for TLSR825x.</div>
+ <div id="div_error"></div>
  <hr>
  <b>Zigbee OTA Header:</b><br><br>	
- <label for="h_stack_version">Stack version in the header</label>
+ <label for="h_stack_version">Header Stack version</label>
  <input type="text" id="h_stack_version" size="4" maxlength="6" value="" placeholder="0x0002"><br>
  <label for="h_man_code">Manufacture Code</label>
  <input type="text" id="h_man_code" size="4" maxlength="6" value="" placeholder="?"><br>
@@ -395,10 +520,10 @@ window.onload = function() {
  <input type="text" id="h_image_type" size="4" maxlength="6" value="" placeholder="?"><br>
  <label for="h_fwversion">Firmware and Stack version</label>
  <input type="text" id="h_fwversion" size="8" maxlength="10" value="" placeholder="?"><br>
- <label for="h_head_str">String in the Header</label>
+ <label for="h_head_str">Header String</label>
  <input type="text" id="h_head_str" size="32" maxlength="32" value="" placeholder="?"> [man:name]<br>
   
- <button type="button" onclick="savefw();">Save new FW</button>
+ <button type="button" id="bt_savefw" disabled="true" onclick="buttonSaveNewFw();">Save new FW</button>
  <div>
  <hr>
  <button type="button" onclick="clearLog();">Clear Log</button>
