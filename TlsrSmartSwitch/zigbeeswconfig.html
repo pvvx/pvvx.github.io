@@ -3,14 +3,15 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZigbeeTLc Index Configurator for Zigbee OTA v0.1</title>
+<title>TLSR825x Smart Switch FW Configurator v0.1</title>
 </head>
 <body>
 <script>
 var $ = function(id) { return document.getElementById(id);}
 var fzigbeeota = { head_ok : false};
 const MIN_FW_OTA_SIZE = 1024; 
-const MAX_FW_OTA_SIZE = 0x80000; 
+const MAX_FW_OTA_SIZE = 0x32000; 
+
 const manufacturerNames = {
     123: 'UHome',
     4098: 'Tuya',
@@ -47,6 +48,7 @@ const manufacturerNames = {
     10132: 'ClimaxTechnology',
     60000: 'Telink-pvvx',
 };
+
 
 function addLog(logTXT) {
 //	var time = new Date().toLocaleTimeString();
@@ -228,7 +230,211 @@ function createZigbeeHeader() {
 
 function menuUpdate() {
 	showZigbeeHeaderValues();
+	showTableGPIO();
 }
+//---------------------------------
+function findInUint8Array(buffer, searchBytes) {
+    const searchLength = searchBytes.length;
+    const dataLength = buffer.length;
+    for (let i = 0; i <= dataLength - searchLength; i++) {
+        let found = true;
+        for (let j = 0; j < searchLength; j++) {
+            if (buffer[i + j] !== searchBytes[j]) {
+                found = false;
+                break;
+            }
+        }
+        if (found) {
+            return i;
+        }
+    }
+    return null;
+}
+const ttab_gpio_bl0937 = {
+	size: 9,
+	name: [ 
+	"GPIO Relay",
+	"GPIO Led1",
+	"GPIO Led2",
+	"GPIO Key",
+	"GPIO Switch",
+	"GPIO Onewire",
+	"GPIO BL0937 SEL",
+	"GPIO BL0937 CF",
+	"GPIO BL0937 CF1"],
+	none: 0x004,
+	ns:   0x030,
+	all: 9,
+	def_data: [0x0304, 0x0102, 0x0000, 0x0380, 0x0002, 0x0002, 0x0308, 0x0110, 0x0120]
+};
+const ttab_gpio_bl0942 = {
+	size: 8,
+	name: [ 
+	"GPIO Relay",
+	"GPIO Led1",
+	"GPIO Led2",
+	"GPIO Key",
+	"GPIO Switch",
+	"GPIO Onewire",
+	"GPIO BL0942 TX",
+	"GPIO BL0942 RX"],
+	none: 0x004,
+	ns:   0x030,
+	all: 6,
+	rx: [0x0001,0x0101,0x0180,0x0208,0x0220,0x0340],
+	rxidx: 6,
+	tx: [0x0004,0x0102,0x0204,0x0301,0x0308,0x0380], 
+	txidx: 7,
+	def_data: [0x0208, 0x0110, 0x0000, 0x0120, 0x0304, 0x0304, 0x0180, 0x0102]
+};
+
+function getTableGPIO() {
+	let ttab = null;
+	if (fzigbeeota.data[18] != 0x60 ||  fzigbeeota.data[19] != 0xEA) { // man name: 60000=0xEA60
+		$("tab_gpios").innerHTML = "<br>GPIO table not found!";
+		addAlog("Unknown FW type!");
+		return null;
+	}
+	let type = (fzigbeeota.data[21] << 8) | fzigbeeota.data[20]; // image_type
+	console.log("GPIOs type: 0x" + hex(type,4));
+	if((type & 0xf000) == 0x8000) {
+		ttab = ttab_gpio_bl0937;
+	} else if((type & 0xf000) == 0x1000) {
+		ttab = ttab_gpio_bl0942;
+	} else {
+		$("tab_gpios").innerHTML = "<br>GPIO table not found!";
+		addAlog("Unknown FW type!");
+		return null;
+	}
+	let pos = findInUint8Array(fzigbeeota.data, (new TextEncoder()).encode("TAB_GPIO"));
+	if(pos) {
+		pos += 8;
+		fzigbeeota.gpio = {};
+		fzigbeeota.gpio.pos = pos;
+		fzigbeeota.gpio.type = type;
+		fzigbeeota.gpio.ttab = ttab;
+		fzigbeeota.gpio.data = new DataView(fzigbeeota.data.buffer.slice(pos, pos + ttab.size * 2));
+		let s = "";
+		for(i = 0; i < ttab.size; i++) {
+			s += "0x"+hex(fzigbeeota.gpio.data.getUint16(i*2, true),4)
+			if(i != ttab.size - 1) s += ", ";
+		}
+		addAlog("GPIO table found at 0x" + hex(pos-8, 6) + ", data: " + s);
+	} else {
+		$("tab_gpios").innerHTML = "<br>GPIO table not found!";
+		addAlog("GPIO table not found!");
+		return null;
+	}
+	return true;
+}
+
+function setTableGPIO() {
+   	if(!fzigbeeota.gpio) return;
+   	let not_use = fzigbeeota.gpio.ttab.ns;
+	if((fzigbeeota.gpio.type & 0x0011) != 0) not_use = not_use & 0xdf;
+	if((fzigbeeota.gpio.type & 0x0100) != 0) not_use = not_use & 0xef;
+	for(i = 0; i < fzigbeeota.gpio.ttab.size ; i++) {
+		if((not_use & (1<<i)) == 0) {
+			let x = $("t_gpio"+i).value;
+			if(x == "") x = fzigbeeota.gpio.ttab.def_data[i];
+			fzigbeeota.gpio.data.setUint16(i*2, x, true);
+//			console.log("t_gpio"+i+":"+hex(fzigbeeota.gpio.data.getUint16(i*2, true),4));
+			$("t_gpio"+i).value = "0x" + hex(fzigbeeota.gpio.data.getUint16(i*2, true),4);
+		} else {
+			fzigbeeota.gpio.data.setUint16(i*2, fzigbeeota.gpio.ttab.def_data[i], true);
+		}
+		console.log("t_gpio"+i +":"+ hex(x,4));
+	}
+}
+
+function intToGpioName(x) {
+	if(x  == 0)	return "None";
+	if(x < 0 || x > 0x0408)	return "Error";
+	let n = -1;
+	for(let i = 0; i < 8; i++) {
+		if((x & (1 << i)) != 0) {
+			if(n == -1)	n = i;
+			else return "Error"; 
+		}
+	}
+	if(n == -1) return "Error";
+	return "P" + hex(0xA0 + ((x & 0xf00) >> 4) + n, 2);
+}
+
+function showTableGPIO() {
+   	if(!fzigbeeota.gpio) return;
+   	let not_use = fzigbeeota.gpio.ttab.ns;
+	if((fzigbeeota.gpio.type & 0x0011) != 0) not_use = not_use & 0xdf;
+	if((fzigbeeota.gpio.type & 0x0100) != 0) not_use = not_use & 0xef;
+	console.log("GPIOs not use: 0x" + hex(not_use,2));
+   	// select: GPIOs PA0..PE3
+	let s = "";
+	let options = ""; 
+	for(i = 0; i < 4; i++) {
+		for(x = 0; x < 8; x++) {
+			let pbin = (i << 8) + (1 << x);	
+			options += "<option value='0x"+hex(pbin, 4)+"'> "+intToGpioName(pbin)+" </option>";
+		}
+	}
+	for(x = 0; x < 4; x++) {
+		let pbin = 0x0400 + (1 << x);	
+		options += "<option value='0x"+hex(pbin, 4)+"'> "+intToGpioName(pbin)+" </option>";
+	}
+	let select = "";
+	for(i = 0; i < fzigbeeota.gpio.ttab.all; i++) {
+		if((not_use & (1<<i)) == 0) {
+			s += "<tr><td> " + fzigbeeota.gpio.ttab.name[i] + " </td><td><select id='t_gpio"+i+"'>";
+			if((fzigbeeota.gpio.ttab.none & (1<<i)) != 0) s+= "<option value='0x0000'> None </option>";
+			s += options+"</select></td><td> "+intToGpioName(fzigbeeota.gpio.ttab.def_data[i])+" </td></tr>";
+		}
+	}
+	if(fzigbeeota.gpio.ttab.rx) {
+		let idx = fzigbeeota.gpio.ttab.rxidx;
+		options = "";
+		for(i = 0; i < fzigbeeota.gpio.ttab.rx.length; i++) {
+		  options += "<option value='0x"+hex(fzigbeeota.gpio.ttab.rx[i], 4)+"'> "+intToGpioName(fzigbeeota.gpio.ttab.rx[i])+" </option>";
+		}
+		s += "<tr><td> " + fzigbeeota.gpio.ttab.name[idx] + " </td><td><select id='t_gpio"+idx+"'>"+options+"</select></td><td> "+intToGpioName(fzigbeeota.gpio.ttab.def_data[idx])+" </td></tr>";
+	}
+	if(fzigbeeota.gpio.ttab.tx) {
+		let idx = fzigbeeota.gpio.ttab.txidx;
+		options = "";
+		for(i = 0; i < fzigbeeota.gpio.ttab.rx.length; i++) {
+		  options += "<option value='0x"+hex(fzigbeeota.gpio.ttab.tx[i], 4)+"'> "+intToGpioName(fzigbeeota.gpio.ttab.tx[i])+" </option>";
+		}
+		s += "<tr><td> " + fzigbeeota.gpio.ttab.name[idx] + " </td><td><select id='t_gpio"+idx+"'>"+options+"</select></td><td> "+intToGpioName(fzigbeeota.gpio.ttab.def_data[idx])+" </td></tr>";
+	}
+
+	$("tab_gpios").innerHTML= "<br><b>GPIOS Table:</b><br><br><table id='tgpio' class='gpio_table'><tr><th>Name</th><th>GPIO</th><th>default</th></tr>"+s+"</table>";
+	for(i = 0; i < fzigbeeota.gpio.ttab.size ; i++) {
+		if((not_use & (1<<i)) == 0) {
+			// console.log("set t_gpio"+i +": 0x"+ hex(fzigbeeota.gpio.data.getUint16(i*2, true),4));
+			$("t_gpio"+i).value = "0x" + hex(fzigbeeota.gpio.data.getUint16(i*2, true),4);
+		}
+	}
+}
+
+function updateCRC(data) {
+		const dcrc = new DataView(new ArrayBuffer(4));
+		dcrc.setUint32(0, crc32(fzigbeeota.data.slice(0, fzigbeeota.fwsize - 4)), true);
+		data.set(new Uint8Array(dcrc.buffer), fzigbeeota.fwsize - 4);
+		addAlog("Update FW CRC = 0x" + hex(dcrc.getUint32(0, true),8));
+}
+
+function patchTableGPIO() {
+   	if(!fzigbeeota.gpio) return;
+   	setTableGPIO();
+	let s = "";
+   	fzigbeeota.data.set(new Uint8Array(fzigbeeota.gpio.data.buffer), fzigbeeota.gpio.pos); //, fzigbeeota.gpio.pos + fzigbeeota.gpio.ttab.size * 2);
+	for(i = 0; i < fzigbeeota.gpio.ttab.size; i++) {
+		s += "0x"+hex(fzigbeeota.gpio.data.getUint16(i*2, true),4)
+		if(i != fzigbeeota.gpio.ttab.size - 1) s += ", ";
+	}
+	addAlog("Patch the GPIO table at 0x" + hex(fzigbeeota.gpio.pos-8, 6) + ", data: " + s);
+	updateCRC(fzigbeeota.data);
+}
+
+//----------------------------------
 
 function saveNewFw() {
 	if(ReadZigbeeHeaderValues()) {
@@ -236,16 +442,16 @@ function saveNewFw() {
 		let fwname = "-new";
 		if(fzigbeeota.head_str_name != "")
 			fwname = "-" + fzigbeeota.head_str_name + "-new";
-		let fname = hex(fzigbeeota.man_code,4)
-			+"-"+hex(fzigbeeota.image_type,4)
-			+"-"+hex(fzigbeeota.fwversion,8)
+		let fname = hex(fzigbeeota.man_code, 4)
+			+"-"+hex(fzigbeeota.image_type, 4)
+			+"-"+hex(fzigbeeota.fwversion, 8)
 			+ fwname
 			+".zigbee";
 		addAlog("Greate header file: "+fname);
 		fzigbeeota.head = createZigbeeHeader();
+		patchTableGPIO();
 		addAlog("Save file...");
-    	const blob = new Blob([new Uint8Array(fzigbeeota.head.buffer), new Uint8Array(fzigbeeota.data)], { type: 'application/octet-stream' });
-		saveBinaryFile(blob, fname);
+		saveBinaryFile(new Blob([new Uint8Array(fzigbeeota.head.buffer), fzigbeeota.data], { type: 'application/octet-stream' }), fname);
 	}
 }
 
@@ -310,10 +516,9 @@ function testOTAFirmware(data, fname) {
 		let fcrc = new Uint32Array(2);
 		fcrc[0] = crc32(new Uint8Array(data.slice(0, fzigbeeota.fwsize - 4)));
 		fcrc[1] = (new DataView(data, fzigbeeota.fwsize - 4, 4)).getUint32(0, true);
-		let s = "File CRC = 0x" + fcrc[1].toString(16) + ", Check CRC = 0x" + fcrc[0].toString(16);
-		if(fcrc[0] != fcrc[1]) {
-			return "Incorrect CRC in Telink OTA binary firmware! "+s;
-		} else	addClog(s);
+		addAlog("FW CRC = 0x" + hex(fcrc[1],8) + ", Check CRC = 0x" + hex(fcrc[0],8))
+		if(fcrc[0] != fcrc[1]) 
+			return "Incorrect CRC in Telink OTA binary firmware! ";
 		fzigbeeota.head_ok	= true;
 
 	} else { // .bin file
@@ -353,11 +558,9 @@ function testOTAFirmware(data, fname) {
 		let fcrc = new Uint32Array(2);
 		fcrc[0] = crc32(new Uint8Array(data.slice(0, fzigbeeota.fwsize - 4)));
 		fcrc[1] = (new DataView(data, fzigbeeota.fwsize - 4, 4)).getUint32(0, true);
-		let s = "File CRC = 0x" + fcrc[1].toString(16) + ", Check CRC = 0x" + fcrc[0].toString(16);
-		if(fcrc[0] != fcrc[1]) {
-			return "Incorrect CRC in Telink OTA binary firmware! "+s;
-		} else	addClog(s);
-
+		addAlog("FW CRC = 0x" + hex(fcrc[1],8) + ", Check CRC = 0x" + hex(fcrc[0],8))
+		if(fcrc[0] != fcrc[1]) 
+			return "Incorrect CRC in Telink OTA binary firmware! ";
 		fzigbeeota.man_code = head.getUint16(18,true);
 		fzigbeeota.image_type = head.getUint16(20,true);
 		fzigbeeota.fwversion = head.getUint32(2,true);
@@ -394,15 +597,16 @@ function testOTAFirmware(data, fname) {
 		addAlog("Or describe the type of firmware, without using the ':' symbol.");
 	}
 	fzigbeeota.fname = fname;
-	fzigbeeota.data = data;
+	fzigbeeota.data = new Uint8Array(data);
+	getTableGPIO();
 	$("bt_savefw").disabled = false;
 	return "ok";
 }
 
 function getFwArray(data, filename) {
 	clrErr();
-	addAlog("File: " + filename);
-	$("div_status").innerHTML="file: "+ filename;
+	addAlog("File: <b>" + filename + "</b>");
+	$("div_status").innerHTML="File: <b>"+ filename + "</b>";
 	fzigbeeota.filename = filename;
 	let s = testOTAFirmware(data, filename);
 	if(s != "ok") {
@@ -414,7 +618,7 @@ function getFwArray(data, filename) {
 	menuUpdate();
 }
 
-function ajax_file(filename, fn, rawurl = "https://raw.githubusercontent.com/pvvx/ZigbeeTLc/master/") {
+function ajax_file(filename, fn, rawurl = "https://raw.githubusercontent.com/pvvx/TlsrSmartSwitch/master/") {
 	let xhr;
 	if(window.XMLHttpRequest) xhr = new XMLHttpRequest();
 	else if(window.ActiveXObject) xhr = new ActiveXObject("Microsoft.XMLHTTP")
@@ -464,8 +668,8 @@ function getFirmwareArray(data, filename) {
 }
 
 window.onload = function() {
-	//addAlog("Load index file 'firmware.json'...");
-	//ajax_file('firmware.json', getOtaJson);
+//	addAlog("Load index file 'firmware.json'...");
+//	ajax_file('firmware.json', getOtaJson);
 	document.querySelector("#file").addEventListener("change", function() {
 		let reader = new FileReader();
 		reader.fname = "";
@@ -477,7 +681,7 @@ window.onload = function() {
 }
 
 </script>
-<h1>ZigbeeTLc Index Configurator for Zigbee OTA</h1>
+<h1>TLSR825x Smart Switch FW Configurator</h1>
 <div class="navbar">
 	<div class="container nav-container">
 		<input class="checkbox" type="checkbox" name="" id="">
@@ -488,7 +692,7 @@ window.onload = function() {
 		</div>
 	  <div class="menu-items">
 		<li> GitHub </li>
-		<li><a href="https://github.com/pvvx/ZigbeeTLc">© pvvx</a></li>
+		<li><a href="https://github.com/pvvx/TlsrSmartSwitch">© pvvx</a></li>
 		<li> BLE Flasher </li>
 		<li><a href="TelinkMiFlasher.html">TelinkMiFlasher</a></li>
 		<li> USB Flasher </li>
@@ -500,7 +704,8 @@ window.onload = function() {
 <div style="height: auto; width: auto;">
  <div id="div_ldfile">
 	Manual firmware download: <input type="file" accept=".zigbee,.ota,.bin" id="file"/></div>
- <div id="div_status">Insert the file name or the link to the file containing ZigbeeOTA, or OTA FW, or FullFlash.bin for TLSR825x.</div>
+ <div id="div_status"><i>Info:</i><br>1. In the file upload menu, paste the file name or link to the file containing ZigbeeOTA, or OTA FW, or FullFlash.bin for TlsrSmartSwitch.<br>
+ 2. To clear the file cache, cancel the file download, then select the file again.</div>
  <div id="div_error"></div>
  <hr>
  <b>Zigbee OTA Header:</b><br><br>	
@@ -514,10 +719,9 @@ window.onload = function() {
  <input type="text" id="h_fwversion" size="8" maxlength="10" value="" placeholder="?"><br>
  <label for="h_head_str">Header String</label>
  <input type="text" id="h_head_str" size="32" maxlength="32" value="" placeholder="?"> [man:name]<br>
-  
+ <div id="tab_gpios"></div><br>
  <button type="button" id="bt_savefw" disabled="true" onclick="buttonSaveNewFw();">Save new FW</button>
- <div>
- <hr>
+ <div><hr>
  <button type="button" onclick="clearLog();">Clear Log</button>
  <div id="log"></div></div>
 </body></html>
