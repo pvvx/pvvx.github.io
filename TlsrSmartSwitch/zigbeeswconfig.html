@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TLSR825x Smart Switch FW Configurator v0.1</title>
+<title>TLSR825x Smart Switch FW Configurator v0.2</title>
 </head>
 <body>
 <script>
@@ -13,40 +13,41 @@ const MIN_FW_OTA_SIZE = 1024;
 const MAX_FW_OTA_SIZE = 0x32000; 
 
 const manufacturerNames = {
-    123: 'UHome',
-    4098: 'Tuya',
-    4107: 'Hue',
-    4117: 'Develco',
-    4129: 'Legrand',
-    4151: 'Jennic',
-    4190: 'SchneiderElectric',
-    4364: 'Osram',
-    4405: 'DresdenElektronik',
-    4417: 'Telink',
-    4420: 'Lutron',
-    4444: 'Danalock',
-    4447: 'Lumi',
-    4448: 'Sengled',
-    4454: 'Innr',
-    4474: 'Insta',
-    4476: 'IKEA',
-    4489: 'Ledvance',
-    4617: 'Bosch',
-    4644: 'Namron',
-    4648: 'Terncy',
-    4659: 'ThirdReality',
-    4678: 'Danfoss',
-    4687: 'Gledopto',
-    4714: 'EcoDim',
-    4742: 'Sonoff',
-    4747: 'NodOn',
-    4919: 'Datek',
-    4877: 'thirdreality',
-    4636: 'Aurora',
-    5127: '3R',
-    26214: 'Sprut.device',
-    10132: 'ClimaxTechnology',
-    60000: 'Telink-pvvx',
+    0x7B: 'UHome',
+    0x1002: 'Tuya',
+    0x100B: 'Hue',
+    0x1015: 'Develco',
+    0x1021: 'Legrand',
+    0x1037: 'Jennic',
+    0x105E: 'SchneiderElectric',
+    0x110C: 'Osram',
+    0x1135: 'DresdenElektronik',
+    0x1141: 'Telink',
+    0x1144: 'Lutron',
+    0x115C: 'Danalock',
+    0x115F: 'Lumi',
+    0x1160: 'Sengled',
+    0x1166: 'Innr',
+    0x117A: 'Insta',
+    0x117C: 'IKEA',
+    0x1189: 'Ledvance',
+    0x1209: 'Bosch',
+    0x1224: 'Namron',
+    0x1228: 'Terncy',
+    0x1233: 'ThirdReality',
+    0x1246: 'Danfoss',
+    0x124F: 'Gledopto',
+    0x126A: 'EcoDim',
+    0x1286: 'Sonoff',
+    0x128B: 'NodOn',
+    0x1337: 'Datek',
+    0x130D: 'thirdreality',
+    0x121C: 'Aurora',
+    0x1407: '3R',
+    0x2794: 'ClimaxTechnology',
+    0x6565: 'Slacky-DIY',
+    0x6666: 'Sprut.device',
+    0xEA60: 'Telink-pvvx',
 };
 
 
@@ -251,8 +252,10 @@ function findInUint8Array(buffer, searchBytes) {
     return null;
 }
 const ttab_gpio_bl0937 = {
-	size: 9,
+	ver: 0x0006,
+	size: 10,
 	name: [ 
+	"GPIO flags",
 	"GPIO Relay",
 	"GPIO Led1",
 	"GPIO Led2",
@@ -262,14 +265,16 @@ const ttab_gpio_bl0937 = {
 	"GPIO BL0937 SEL",
 	"GPIO BL0937 CF",
 	"GPIO BL0937 CF1"],
-	none: 0x004,
-	ns:   0x030,
-	all: 9,
-	def_data: [0x0304, 0x0102, 0x0000, 0x0380, 0x0002, 0x0002, 0x0308, 0x0110, 0x0120]
+	none: 0x008,
+	ns:   0x060,
+	all: 10,
+	def_data: [0, 0x0304, 0x0102, 0x0000, 0x0380, 0x0002, 0x0002, 0x0308, 0x0110, 0x0120]
 };
 const ttab_gpio_bl0942 = {
-	size: 8,
+	ver: 0x0006,
+	size: 9,
 	name: [ 
+	"GPIO flags",
 	"GPIO Relay",
 	"GPIO Led1",
 	"GPIO Led2",
@@ -278,14 +283,14 @@ const ttab_gpio_bl0942 = {
 	"GPIO Onewire",
 	"GPIO BL0942 TX",
 	"GPIO BL0942 RX"],
-	none: 0x004,
-	ns:   0x030,
-	all: 6,
+	none: 0x008,
+	ns:   0x060,
+	all: 7,
 	rx: [0x0001,0x0101,0x0180,0x0208,0x0220,0x0340],
-	rxidx: 6,
+	rxidx: 7,
 	tx: [0x0004,0x0102,0x0204,0x0301,0x0308,0x0380], 
-	txidx: 7,
-	def_data: [0x0208, 0x0110, 0x0000, 0x0120, 0x0304, 0x0304, 0x0180, 0x0102]
+	txidx: 8,
+	def_data: [0, 0x0208, 0x0110, 0x0000, 0x0120, 0x0304, 0x0304, 0x0180, 0x0102]
 };
 
 function getTableGPIO() {
@@ -295,7 +300,8 @@ function getTableGPIO() {
 		addAlog("Unknown FW type!");
 		return null;
 	}
-	let type = (fzigbeeota.data[21] << 8) | fzigbeeota.data[20]; // image_type
+	let fwver = fzigbeeota.data[2] | (fzigbeeota.data[3]<<8);
+	let type = (fzigbeeota.data[21] << 8) | fzigbeeota.data[20]; // image_type = gpio type
 	console.log("GPIOs type: 0x" + hex(type,4));
 	if((type & 0xf000) == 0x8000) {
 		ttab = ttab_gpio_bl0937;
@@ -306,12 +312,18 @@ function getTableGPIO() {
 		addAlog("Unknown FW type!");
 		return null;
 	}
+	if (fwver < ttab.ver) {
+		$("tab_gpios").innerHTML = "<br>Unsupported firmware version!";
+		addAlog("Unsupported firmware version!");
+		return null;
+	}
 	let pos = findInUint8Array(fzigbeeota.data, (new TextEncoder()).encode("TAB_GPIO"));
 	if(pos) {
 		pos += 8;
 		fzigbeeota.gpio = {};
 		fzigbeeota.gpio.pos = pos;
 		fzigbeeota.gpio.type = type;
+		fzigbeeota.gpio.fwver = fwver;
 		fzigbeeota.gpio.ttab = ttab;
 		fzigbeeota.gpio.data = new DataView(fzigbeeota.data.buffer.slice(pos, pos + ttab.size * 2));
 		let s = "";
@@ -331,9 +343,9 @@ function getTableGPIO() {
 function setTableGPIO() {
    	if(!fzigbeeota.gpio) return;
    	let not_use = fzigbeeota.gpio.ttab.ns;
-	if((fzigbeeota.gpio.type & 0x0011) != 0) not_use = not_use & 0xdf;
-	if((fzigbeeota.gpio.type & 0x0100) != 0) not_use = not_use & 0xef;
-	for(i = 0; i < fzigbeeota.gpio.ttab.size ; i++) {
+	if((fzigbeeota.gpio.type & 0x0011) != 0) not_use = not_use & 0xbf;
+	if((fzigbeeota.gpio.type & 0x0100) != 0) not_use = not_use & 0xdf;
+	for(i = 1; i < fzigbeeota.gpio.ttab.size; i++) {
 		if((not_use & (1<<i)) == 0) {
 			let x = $("t_gpio"+i).value;
 			if(x == "") x = fzigbeeota.gpio.ttab.def_data[i];
@@ -345,6 +357,9 @@ function setTableGPIO() {
 		}
 		console.log("t_gpio"+i +":"+ hex(x,4));
 	}
+	let flg = ($("c_bit_led1").checked)? 1 : 0;
+	flg += ($("c_bit_led2").checked)? 2 : 0;
+	fzigbeeota.gpio.data.setUint16(0, flg, true);
 }
 
 function intToGpioName(x) {
@@ -364,8 +379,8 @@ function intToGpioName(x) {
 function showTableGPIO() {
    	if(!fzigbeeota.gpio) return;
    	let not_use = fzigbeeota.gpio.ttab.ns;
-	if((fzigbeeota.gpio.type & 0x0011) != 0) not_use = not_use & 0xdf;
-	if((fzigbeeota.gpio.type & 0x0100) != 0) not_use = not_use & 0xef;
+	if((fzigbeeota.gpio.type & 0x0011) != 0) not_use = not_use & 0xbf;
+	if((fzigbeeota.gpio.type & 0x0100) != 0) not_use = not_use & 0xdf;
 	console.log("GPIOs not use: 0x" + hex(not_use,2));
    	// select: GPIOs PA0..PE3
 	let s = "";
@@ -381,7 +396,7 @@ function showTableGPIO() {
 		options += "<option value='0x"+hex(pbin, 4)+"'> "+intToGpioName(pbin)+" </option>";
 	}
 	let select = "";
-	for(i = 0; i < fzigbeeota.gpio.ttab.all; i++) {
+	for(i = 1; i < fzigbeeota.gpio.ttab.all; i++) {
 		if((not_use & (1<<i)) == 0) {
 			s += "<tr><td> " + fzigbeeota.gpio.ttab.name[i] + " </td><td><select id='t_gpio"+i+"'>";
 			if((fzigbeeota.gpio.ttab.none & (1<<i)) != 0) s+= "<option value='0x0000'> None </option>";
@@ -404,14 +419,19 @@ function showTableGPIO() {
 		}
 		s += "<tr><td> " + fzigbeeota.gpio.ttab.name[idx] + " </td><td><select id='t_gpio"+idx+"'>"+options+"</select></td><td> "+intToGpioName(fzigbeeota.gpio.ttab.def_data[idx])+" </td></tr>";
 	}
-
-	$("tab_gpios").innerHTML= "<br><b>GPIOS Table:</b><br><br><table id='tgpio' class='gpio_table'><tr><th>Name</th><th>GPIO</th><th>default</th></tr>"+s+"</table>";
-	for(i = 0; i < fzigbeeota.gpio.ttab.size ; i++) {
+	s = "<br><b>GPIOS Table:</b><br><br><table id='tgpio' class='gpio_table'><tr><th>Name</th><th>GPIO</th><th>default</th></tr>"+s+"</table><br>";
+	s += "<input type='checkbox' title='Inversion of LED1' id='c_bit_led1'><label>Inversion of LED1</label><br>";
+	s += "<input type='checkbox' title='Inversion of LED2' id='c_bit_led2'><label>Inversion of LED2</label>";
+	$("tab_gpios").innerHTML= s;
+	for(i = 1; i < fzigbeeota.gpio.ttab.size; i++) {
 		if((not_use & (1<<i)) == 0) {
-			// console.log("set t_gpio"+i +": 0x"+ hex(fzigbeeota.gpio.data.getUint16(i*2, true),4));
+			console.log("set t_gpio"+i +": 0x"+ hex(fzigbeeota.gpio.data.getUint16(i*2, true),4));
 			$("t_gpio"+i).value = "0x" + hex(fzigbeeota.gpio.data.getUint16(i*2, true),4);
 		}
 	}
+	let flg = fzigbeeota.gpio.data.getUint16(0, true);
+	$("c_bit_led1").checked = ((flg & 0x01) !=0 ? 1 : 0);
+	$("c_bit_led2").checked = ((flg & 0x02) !=0 ? 1 : 0);
 }
 
 function updateCRC(data) {
@@ -436,7 +456,7 @@ function patchTableGPIO() {
 
 //----------------------------------
 
-function saveNewFw() {
+function saveNewFw(zbota) {
 	if(ReadZigbeeHeaderValues()) {
 		showZigbeeHeaderValues();
 		let fwname = "-new";
@@ -445,26 +465,35 @@ function saveNewFw() {
 		let fname = hex(fzigbeeota.man_code, 4)
 			+"-"+hex(fzigbeeota.image_type, 4)
 			+"-"+hex(fzigbeeota.fwversion, 8)
-			+ fwname
-			+".zigbee";
-		addAlog("Greate header file: "+fname);
-		fzigbeeota.head = createZigbeeHeader();
-		patchTableGPIO();
-		addAlog("Save file...");
-		saveBinaryFile(new Blob([new Uint8Array(fzigbeeota.head.buffer), fzigbeeota.data], { type: 'application/octet-stream' }), fname);
+			+ fwname;
+		if(zbota == 0) {
+			fname += ".bin";
+			patchTableGPIO();
+			addAlog("Save bin file...");
+			saveBinaryFile(new Blob([fzigbeeota.data], { type: 'application/octet-stream' }), fname);
+		} else {
+			fname += ".zigbee";
+			addAlog("Greate header file: "+fname);
+			fzigbeeota.head = createZigbeeHeader();
+			patchTableGPIO();
+			addAlog("Save Zigbee OTA file...");
+			saveBinaryFile(new Blob([new Uint8Array(fzigbeeota.head.buffer), fzigbeeota.data], { type: 'application/octet-stream' }), fname);
+		}
 	}
 }
 
-function buttonSaveNewFw() {
+function buttonSaveNewFw(flg) {
 	if(fzigbeeota.data)
-		saveNewFw();
+		saveNewFw(flg);
 	else
 		addAlog("File Not loaded!");
 }
 
+
 function testOTAFirmware(data, fname) {
 	fzigbeeota = { head_ok : false };
 	$("bt_savefw").disabled = true;
+	$("bt_savezota").disabled = true;
 	let fsize = data.byteLength;
 	addClog("File size = 0x"+ fsize.toString(16));
 	if (fsize < MIN_FW_OTA_SIZE)
@@ -600,6 +629,7 @@ function testOTAFirmware(data, fname) {
 	fzigbeeota.data = new Uint8Array(data);
 	getTableGPIO();
 	$("bt_savefw").disabled = false;
+	$("bt_savezota").disabled = false;
 	return "ok";
 }
 
@@ -720,7 +750,8 @@ window.onload = function() {
  <label for="h_head_str">Header String</label>
  <input type="text" id="h_head_str" size="32" maxlength="32" value="" placeholder="?"> [man:name]<br>
  <div id="tab_gpios"></div><br>
- <button type="button" id="bt_savefw" disabled="true" onclick="buttonSaveNewFw();">Save new FW</button>
+ <button type="button" id="bt_savefw" disabled="true" onclick="buttonSaveNewFw(0);">Save FW bin</button>
+ <button type="button" id="bt_savezota" disabled="true" onclick="buttonSaveNewFw(1);">Save Zigbee OTA</button>
  <div><hr>
  <button type="button" onclick="clearLog();">Clear Log</button>
  <div id="log"></div></div>
