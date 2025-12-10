@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZigbeeTLc Index Configurator for Zigbee OTA v0.1</title>
+<title>ZigbeeTLc Index Configurator for Zigbee OTA v0.2</title>
 </head>
 <body>
 <script>
@@ -12,40 +12,41 @@ var fzigbeeota = { head_ok : false};
 const MIN_FW_OTA_SIZE = 1024; 
 const MAX_FW_OTA_SIZE = 0x80000; 
 const manufacturerNames = {
-    123: 'UHome',
-    4098: 'Tuya',
-    4107: 'Hue',
-    4117: 'Develco',
-    4129: 'Legrand',
-    4151: 'Jennic',
-    4190: 'SchneiderElectric',
-    4364: 'Osram',
-    4405: 'DresdenElektronik',
-    4417: 'Telink',
-    4420: 'Lutron',
-    4444: 'Danalock',
-    4447: 'Lumi',
-    4448: 'Sengled',
-    4454: 'Innr',
-    4474: 'Insta',
-    4476: 'IKEA',
-    4489: 'Ledvance',
-    4617: 'Bosch',
-    4644: 'Namron',
-    4648: 'Terncy',
-    4659: 'ThirdReality',
-    4678: 'Danfoss',
-    4687: 'Gledopto',
-    4714: 'EcoDim',
-    4742: 'Sonoff',
-    4747: 'NodOn',
-    4919: 'Datek',
-    4877: 'thirdreality',
-    4636: 'Aurora',
-    5127: '3R',
-    26214: 'Sprut.device',
-    10132: 'ClimaxTechnology',
-    60000: 'Telink-pvvx',
+    0x7B: 'UHome',
+    0x1002: 'Tuya',
+    0x100B: 'Hue',
+    0x1015: 'Develco',
+    0x1021: 'Legrand',
+    0x1037: 'Jennic',
+    0x105E: 'SchneiderElectric',
+    0x110C: 'Osram',
+    0x1135: 'DresdenElektronik',
+    0x1141: 'Telink',
+    0x1144: 'Lutron',
+    0x115C: 'Danalock',
+    0x115F: 'Lumi',
+    0x1160: 'Sengled',
+    0x1166: 'Innr',
+    0x117A: 'Insta',
+    0x117C: 'IKEA',
+    0x1189: 'Ledvance',
+    0x1209: 'Bosch',
+    0x1224: 'Namron',
+    0x1228: 'Terncy',
+    0x1233: 'ThirdReality',
+    0x1246: 'Danfoss',
+    0x124F: 'Gledopto',
+    0x126A: 'EcoDim',
+    0x1286: 'Sonoff',
+    0x128B: 'NodOn',
+    0x1337: 'Datek',
+    0x130D: 'thirdreality',
+    0x121C: 'Aurora',
+    0x1407: '3R',
+    0x2794: 'ClimaxTechnology',
+    0x6565: 'Slacky-DIY',
+    0x6666: 'Sprut.device',
+    0xEA60: 'Telink-pvvx',
 };
 
 function addLog(logTXT) {
@@ -230,28 +231,44 @@ function menuUpdate() {
 	showZigbeeHeaderValues();
 }
 
-function saveNewFw() {
+function updateCRC(data) {
+		const dcrc = new DataView(new ArrayBuffer(4));
+		dcrc.setUint32(0, crc32(fzigbeeota.data.slice(0, fzigbeeota.fwsize - 4)), true);
+		data.set(new Uint8Array(dcrc.buffer), fzigbeeota.fwsize - 4);
+		addAlog("Update FW CRC = 0x" + hex(dcrc.getUint32(0, true),8));
+}
+
+//----------------------------------
+
+function saveNewFw(zbota) {
 	if(ReadZigbeeHeaderValues()) {
 		showZigbeeHeaderValues();
 		let fwname = "-new";
 		if(fzigbeeota.head_str_name != "")
 			fwname = "-" + fzigbeeota.head_str_name + "-new";
-		let fname = hex(fzigbeeota.man_code,4)
-			+"-"+hex(fzigbeeota.image_type,4)
-			+"-"+hex(fzigbeeota.fwversion,8)
-			+ fwname
-			+".zigbee";
-		addAlog("Greate header file: "+fname);
-		fzigbeeota.head = createZigbeeHeader();
-		addAlog("Save file...");
-    	const blob = new Blob([new Uint8Array(fzigbeeota.head.buffer), new Uint8Array(fzigbeeota.data)], { type: 'application/octet-stream' });
-		saveBinaryFile(blob, fname);
+		let fname = hex(fzigbeeota.man_code, 4)
+			+"-"+hex(fzigbeeota.image_type, 4)
+			+"-"+hex(fzigbeeota.fwversion, 8)
+			+ fwname;
+		if(zbota == 0) {
+			fname += ".bin";
+			//patch();
+			addAlog("Save bin file...");
+			saveBinaryFile(new Blob([fzigbeeota.data], { type: 'application/octet-stream' }), fname);
+		} else {
+			fname += ".zigbee";
+			addAlog("Greate header file: "+fname);
+			fzigbeeota.head = createZigbeeHeader();
+			//patch();
+			addAlog("Save Zigbee OTA file...");
+			saveBinaryFile(new Blob([new Uint8Array(fzigbeeota.head.buffer), fzigbeeota.data], { type: 'application/octet-stream' }), fname);
+		}
 	}
 }
 
-function buttonSaveNewFw() {
+function buttonSaveNewFw(flg) {
 	if(fzigbeeota.data)
-		saveNewFw();
+		saveNewFw(flg);
 	else
 		addAlog("File Not loaded!");
 }
@@ -259,6 +276,7 @@ function buttonSaveNewFw() {
 function testOTAFirmware(data, fname) {
 	fzigbeeota = { head_ok : false };
 	$("bt_savefw").disabled = true;
+	$("bt_savezota").disabled = true;
 	let fsize = data.byteLength;
 	addClog("File size = 0x"+ fsize.toString(16));
 	if (fsize < MIN_FW_OTA_SIZE)
@@ -310,10 +328,9 @@ function testOTAFirmware(data, fname) {
 		let fcrc = new Uint32Array(2);
 		fcrc[0] = crc32(new Uint8Array(data.slice(0, fzigbeeota.fwsize - 4)));
 		fcrc[1] = (new DataView(data, fzigbeeota.fwsize - 4, 4)).getUint32(0, true);
-		let s = "File CRC = 0x" + fcrc[1].toString(16) + ", Check CRC = 0x" + fcrc[0].toString(16);
-		if(fcrc[0] != fcrc[1]) {
-			return "Incorrect CRC in Telink OTA binary firmware! "+s;
-		} else	addClog(s);
+		addAlog("FW CRC = 0x" + hex(fcrc[1],8) + ", Check CRC = 0x" + hex(fcrc[0],8))
+		if(fcrc[0] != fcrc[1]) 
+			return "Incorrect CRC in Telink OTA binary firmware! ";
 		fzigbeeota.head_ok	= true;
 
 	} else { // .bin file
@@ -353,11 +370,9 @@ function testOTAFirmware(data, fname) {
 		let fcrc = new Uint32Array(2);
 		fcrc[0] = crc32(new Uint8Array(data.slice(0, fzigbeeota.fwsize - 4)));
 		fcrc[1] = (new DataView(data, fzigbeeota.fwsize - 4, 4)).getUint32(0, true);
-		let s = "File CRC = 0x" + fcrc[1].toString(16) + ", Check CRC = 0x" + fcrc[0].toString(16);
-		if(fcrc[0] != fcrc[1]) {
-			return "Incorrect CRC in Telink OTA binary firmware! "+s;
-		} else	addClog(s);
-
+		addAlog("FW CRC = 0x" + hex(fcrc[1],8) + ", Check CRC = 0x" + hex(fcrc[0],8))
+		if(fcrc[0] != fcrc[1]) 
+			return "Incorrect CRC in Telink OTA binary firmware! ";
 		fzigbeeota.man_code = head.getUint16(18,true);
 		fzigbeeota.image_type = head.getUint16(20,true);
 		fzigbeeota.fwversion = head.getUint32(2,true);
@@ -394,17 +409,18 @@ function testOTAFirmware(data, fname) {
 		addAlog("Or describe the type of firmware, without using the ':' symbol.");
 	}
 	fzigbeeota.fname = fname;
-	fzigbeeota.data = data;
+	fzigbeeota.data = new Uint8Array(data);
 	$("bt_savefw").disabled = false;
+	$("bt_savezota").disabled = false;
 	return "ok";
 }
 
 function getFwArray(data, filename) {
 	clrErr();
-	addAlog("File: " + filename);
-	$("div_status").innerHTML="file: "+ filename;
-	fzigbeeota.filename = filename;
-	let s = testOTAFirmware(data, filename);
+	fzigbeeota.filename = filename.substring(filename.lastIndexOf('/')+1)
+	addAlog("File: <b>" + fzigbeeota.filename + "</b>");
+	$("div_status").innerHTML="File: <b>"+ fzigbeeota.filename + "</b>";
+	let s = testOTAFirmware(data, fzigbeeota.filename);
 	if(s != "ok") {
 		addErr(s);
 		fzigbeeota = { head_ok : false};
@@ -412,6 +428,39 @@ function getFwArray(data, filename) {
 		return;
 	}
 	menuUpdate();
+}
+
+function loadFirmware(id) {
+	let fn = otafiles.TlsrfwFiles[id];
+	addAlog("Downloading firmware file '"+fn+"'...");
+	if(fn.slice(0,6) == "https:")
+		ajax_file(fn, getFirmwareArray, "");
+	else
+		ajax_file(fn, getFirmwareArray);
+}
+
+function chowOtaFiles() {
+	if(!otafiles.loaded || !otafiles.TlsrfwFiles)
+		return;
+	if(otafiles.TlsrfwFiles.length > 0) {
+		let is = "<b>Basic firmwares:</b><br>";
+		for(let i = 0; i < otafiles.TlsrfwFiles.length; i++) {
+			let fn = otafiles.TlsrfwFiles[i];
+			if(fn != null && fn != "" && fn != "?" && fn != "/") {
+				try {
+					if(fn.slice(0,6) == "https:")
+						fn = (new URL(fn)).pathname.split("/").pop();
+				} catch (error) {
+					console.log(error);
+				}
+				fn = fn.substring(fn.lastIndexOf('/')+1);
+				is += "<button type='button' id='but_fn"+i+"' onclick='loadFirmware("+i+");'>" + fn + "</button>";
+				if(i&1) is += "<br>";
+			}
+		}
+		$("ldfile").innerHTML = is;
+		$("ldfile").hidden = false;
+	}
 }
 
 function ajax_file(filename, fn, rawurl = "https://raw.githubusercontent.com/pvvx/ZigbeeTLc/master/") {
@@ -445,16 +494,11 @@ function getOtaJson(d, name) {
 		else
 			str = new TextDecoder("utf-8").decode(d);
 		let x = JSON.parse(str);
-		if(x.version) {
+		if(x.TlsrfwFiles) {
 			otafiles = x;
 			otafiles.loaded = true;
-			addClog(otafiles);
-			if(otafiles.zbjson != null && otafiles.zbjson.slice(0,6) == "https:") {
-				ajax_file(otafiles.zbjson, getZOtaJson, "" );
-			}
-			if(otafiles.zbdjson != null && otafiles.zbdjson.slice(0,6) == "https:") {
-				ajax_file(otafiles.zbdjson, getZBOtaJson, "" );
-			}
+			console.log(otafiles);
+			chowOtaFiles();
 		}
 	}
 }
@@ -464,7 +508,7 @@ function getFirmwareArray(data, filename) {
 }
 
 window.onload = function() {
-	//addAlog("Load index file 'firmware.json'...");
+	//addAlog("Downloading index file 'firmware.json' from GitHub...");
 	//ajax_file('firmware.json', getOtaJson);
 	document.querySelector("#file").addEventListener("change", function() {
 		let reader = new FileReader();
@@ -498,6 +542,7 @@ window.onload = function() {
 </div>
 <hr>
 <div style="height: auto; width: auto;">
+ <div id="ldfile" hidden="true"></div>
  <div id="div_ldfile">
 	Manual firmware download: <input type="file" accept=".zigbee,.ota,.bin" id="file"/></div>
  <div id="div_status">Insert the file name or the link to the file containing ZigbeeOTA, or OTA FW, or FullFlash.bin for TLSR825x.</div>
@@ -514,10 +559,9 @@ window.onload = function() {
  <input type="text" id="h_fwversion" size="8" maxlength="10" value="" placeholder="?"><br>
  <label for="h_head_str">Header String</label>
  <input type="text" id="h_head_str" size="32" maxlength="32" value="" placeholder="?"> [man:name]<br>
-  
- <button type="button" id="bt_savefw" disabled="true" onclick="buttonSaveNewFw();">Save new FW</button>
- <div>
- <hr>
+ <button type="button" id="bt_savefw" disabled="true" onclick="buttonSaveNewFw(0);">Save FW bin</button>
+ <button type="button" id="bt_savezota" disabled="true" onclick="buttonSaveNewFw(1);">Save Zigbee OTA</button>
+ <div><hr>
  <button type="button" onclick="clearLog();">Clear Log</button>
  <div id="log"></div></div>
 </body></html>
