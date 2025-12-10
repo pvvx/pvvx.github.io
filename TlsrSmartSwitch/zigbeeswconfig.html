@@ -3,12 +3,13 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TLSR825x Smart Switch FW Configurator v0.2</title>
+<title>TLSR825x Smart Switch FW Configurator v0.3</title>
 </head>
 <body>
 <script>
 var $ = function(id) { return document.getElementById(id);}
 var fzigbeeota = { head_ok : false};
+var otafiles;
 const MIN_FW_OTA_SIZE = 1024; 
 const MAX_FW_OTA_SIZE = 0x32000; 
 
@@ -635,10 +636,10 @@ function testOTAFirmware(data, fname) {
 
 function getFwArray(data, filename) {
 	clrErr();
-	addAlog("File: <b>" + filename + "</b>");
-	$("div_status").innerHTML="File: <b>"+ filename + "</b>";
-	fzigbeeota.filename = filename;
-	let s = testOTAFirmware(data, filename);
+	fzigbeeota.filename = filename.substring(filename.lastIndexOf('/')+1)
+	addAlog("File: <b>" + fzigbeeota.filename + "</b>");
+	$("div_status").innerHTML="File: <b>"+ fzigbeeota.filename + "</b>";
+	let s = testOTAFirmware(data, fzigbeeota.filename);
 	if(s != "ok") {
 		addErr(s);
 		fzigbeeota = { head_ok : false};
@@ -646,6 +647,39 @@ function getFwArray(data, filename) {
 		return;
 	}
 	menuUpdate();
+}
+
+function loadFirmware(id) {
+	let fn = otafiles.TlsrSmartSwitch[id];
+	addAlog("Downloading firmware file '"+fn+"'...");
+	if(fn.slice(0,6) == "https:")
+		ajax_file(fn, getFirmwareArray, "");
+	else
+		ajax_file(fn, getFirmwareArray);
+}
+
+function chowOtaFiles() {
+	if(!otafiles.loaded || !otafiles.TlsrSmartSwitch)
+		return;
+	if(otafiles.TlsrSmartSwitch.length > 0) {
+		let is = "<b>Basic firmwares:</b><br>";
+		for(let i = 0; i < otafiles.TlsrSmartSwitch.length; i++) {
+			let fn = otafiles.TlsrSmartSwitch[i];
+			if(fn != null && fn != "" && fn != "?" && fn != "/") {
+				try {
+					if(fn.slice(0,6) == "https:")
+						fn = (new URL(fn)).pathname.split("/").pop();
+				} catch (error) {
+					console.log(error);
+				}
+				fn = fn.substring(fn.lastIndexOf('/')+1);
+				is += "<button type='button' id='but_fn"+i+"' onclick='loadFirmware("+i+");'>" + fn + "</button>";
+				if(i&1) is += "<br>";
+			}
+		}
+		$("ldfile").innerHTML = is;
+		$("ldfile").hidden = false;
+	}
 }
 
 function ajax_file(filename, fn, rawurl = "https://raw.githubusercontent.com/pvvx/TlsrSmartSwitch/master/") {
@@ -679,16 +713,11 @@ function getOtaJson(d, name) {
 		else
 			str = new TextDecoder("utf-8").decode(d);
 		let x = JSON.parse(str);
-		if(x.version) {
+		if(x.TlsrSmartSwitch) {
 			otafiles = x;
 			otafiles.loaded = true;
-			addClog(otafiles);
-			if(otafiles.zbjson != null && otafiles.zbjson.slice(0,6) == "https:") {
-				ajax_file(otafiles.zbjson, getZOtaJson, "" );
-			}
-			if(otafiles.zbdjson != null && otafiles.zbdjson.slice(0,6) == "https:") {
-				ajax_file(otafiles.zbdjson, getZBOtaJson, "" );
-			}
+			console.log(otafiles);
+			chowOtaFiles();
 		}
 	}
 }
@@ -698,8 +727,8 @@ function getFirmwareArray(data, filename) {
 }
 
 window.onload = function() {
-//	addAlog("Load index file 'firmware.json'...");
-//	ajax_file('firmware.json', getOtaJson);
+	addAlog("Downloading index file 'firmware.json' from GitHub...");
+	ajax_file('firmware.json', getOtaJson);
 	document.querySelector("#file").addEventListener("change", function() {
 		let reader = new FileReader();
 		reader.fname = "";
@@ -732,6 +761,7 @@ window.onload = function() {
 </div>
 <hr>
 <div style="height: auto; width: auto;">
+ <div id="ldfile" hidden="true"></div>
  <div id="div_ldfile">
 	Manual firmware download: <input type="file" accept=".zigbee,.ota,.bin" id="file"/></div>
  <div id="div_status"><i>Info:</i><br>1. In the file upload menu, paste the file name or link to the file containing ZigbeeOTA, or OTA FW, or FullFlash.bin for TlsrSmartSwitch.<br>
