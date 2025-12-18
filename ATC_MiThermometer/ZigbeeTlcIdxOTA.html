@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZigbeeTLc Index Configurator for Zigbee OTA v0.2</title>
+<title>ZigbeeTLc Index Configurator for Zigbee OTA v0.3</title>
 </head>
 <body>
 <script>
@@ -143,7 +143,7 @@ var crc32 = (function() {
 
 
 //-------------------------------------------------------------------------------------
-function saveBinaryFile(blob, filename) {
+function saveFile(blob, filename) {
     //const blob = new Blob([data], { type: 'application/octet-stream' });
     const url = URL.createObjectURL(blob);
 
@@ -240,28 +240,57 @@ function updateCRC(data) {
 
 //----------------------------------
 
+function createFName() {
+	let fname = hex(fzigbeeota.man_code, 4)
+		+"-"+hex(fzigbeeota.image_type, 4)
+		+"-"+hex(fzigbeeota.fwversion, 8)
+	if(fzigbeeota.head_str_name != "")
+		fname += "-" + fzigbeeota.head_str_name;
+	return fname;
+}
+
+
+function createJson(fname) {
+	const fileJson = {};
+	fileJson.fileVersion = fzigbeeota.fwversion;
+	fileJson.fileSize = fzigbeeota.fwsize + 0x3e;
+	fileJson.manufacturerCode = fzigbeeota.man_code;
+	fileJson.imageType = fzigbeeota.image_type;
+	//fileJson.sha512 = "";
+	fileJson.otaHeaderString = fzigbeeota.head_str;
+	if(fzigbeeota.head_str_name != "")
+		fileJson.modelId = fzigbeeota.head_str_name;
+	if(fzigbeeota.head_str_man != "")
+		fileJson.manufacturerName = [fzigbeeota.head_str_man];
+	fileJson.url = "./" + fname + ".zigbee";
+	return fileJson;
+}
+
 function saveNewFw(zbota) {
 	if(ReadZigbeeHeaderValues()) {
 		showZigbeeHeaderValues();
-		let fwname = "-new";
-		if(fzigbeeota.head_str_name != "")
-			fwname = "-" + fzigbeeota.head_str_name + "-new";
-		let fname = hex(fzigbeeota.man_code, 4)
-			+"-"+hex(fzigbeeota.image_type, 4)
-			+"-"+hex(fzigbeeota.fwversion, 8)
-			+ fwname;
+		let fname = createFName();
 		if(zbota == 0) {
-			fname += ".bin";
-			//patch();
-			addAlog("Save bin file...");
-			saveBinaryFile(new Blob([fzigbeeota.data], { type: 'application/octet-stream' }), fname);
-		} else {
-			fname += ".zigbee";
+			fname += "-new.bin";
+			patchTableGPIO();
+			addAlog("Save bin file: " + fname);
+			saveFile(new Blob([fzigbeeota.data], { type: 'application/octet-stream' }), fname);
+		} else if(zbota == 1) {
+			fname += "-new.zigbee";
 			addAlog("Greate header file: "+fname);
 			fzigbeeota.head = createZigbeeHeader();
-			//patch();
-			addAlog("Save Zigbee OTA file...");
-			saveBinaryFile(new Blob([new Uint8Array(fzigbeeota.head.buffer), fzigbeeota.data], { type: 'application/octet-stream' }), fname);
+			patchTableGPIO();
+			addAlog("Save Zigbee OTA file: "+ fname);
+			saveFile(new Blob([new Uint8Array(fzigbeeota.head.buffer), fzigbeeota.data], { type: 'application/octet-stream' }), fname);
+		} else {
+			let jfname = fname;
+			//let jfname = "index";
+			//if(fzigbeeota.head_str_name != "")
+			//	jfname = fzigbeeota.head_str_name;
+			jfname += ".json";
+			addAlog("Greate Json file: " + jfname);
+			saveFile(new Blob([JSON.stringify([createJson(fname+"-new")], null, '    ')], {type: 'application/json;charset=utf-8'}), jfname);
+			addAlog("(!) Edit the resulting .json file to match the device names and paths to the Zigbee OTA update file (!)");
 		}
 	}
 }
@@ -277,6 +306,7 @@ function testOTAFirmware(data, fname) {
 	fzigbeeota = { head_ok : false };
 	$("bt_savefw").disabled = true;
 	$("bt_savezota").disabled = true;
+	$("bt_savejson").disabled = true;
 	let fsize = data.byteLength;
 	addClog("File size = 0x"+ fsize.toString(16));
 	if (fsize < MIN_FW_OTA_SIZE)
@@ -412,6 +442,7 @@ function testOTAFirmware(data, fname) {
 	fzigbeeota.data = new Uint8Array(data);
 	$("bt_savefw").disabled = false;
 	$("bt_savezota").disabled = false;
+	$("bt_savejson").disabled = false;
 	return "ok";
 }
 
@@ -561,6 +592,7 @@ window.onload = function() {
  <input type="text" id="h_head_str" size="32" maxlength="32" value="" placeholder="?"> [man:name]<br>
  <button type="button" id="bt_savefw" disabled="true" onclick="buttonSaveNewFw(0);">Save FW bin</button>
  <button type="button" id="bt_savezota" disabled="true" onclick="buttonSaveNewFw(1);">Save Zigbee OTA</button>
+ <button type="button" id="bt_savejson" disabled="true" onclick="buttonSaveNewFw(2);">Save Json</button>
  <div><hr>
  <button type="button" onclick="clearLog();">Clear Log</button>
  <div id="log"></div></div>

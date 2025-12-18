@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<link rel="stylesheet" href="styles.css">
+	<title>PP-INA226 v0.0</title>
+	<script type="text/javascript" src="dygraph.js"></script>
+	<script type="text/javascript" src="serial.js"></script>
+	<script type="text/javascript" src="pp.js"></script>
+	<script type="text/javascript" src="synchronizer.js"></script>
+  </head>
+  <body>
+	<div style="height: auto; width: auto; background-color: #101015; color: white;border-style: none;">
+	<input type="button" id="butConnect" value="Open">
+	 Average: <input type="radio" value="100" name="radiobx" onclick="SetAverage(1000);"/>100
+	 <input type="radio" value="50" name="radiobx" onclick="SetAverage(100);"/>50
+	 <input type="radio" value="20" name="radiobx" onclick="SetAverage(200);"/>20
+	 <input type="radio" value="10" name="radiobx" onclick="SetAverage(100);"/>10
+	 <input type="radio" value="5" name="radiobx" onclick="SetAverage(50);"/>5
+	 <input type="radio" value="2" name="radiobx" checked  onclick="SetAverage(20);"/>2
+	 <input type="radio" value="1" name="radiobx" onclick="SetAverage(10);"/>1 sec	<span id="info">Select 'Open'</span><br>
+	<table id="tsens" style="text-align: center; ">
+  	<tr>
+	<td style="color: SpringGreen;">Current</td> 
+	<td style="color: Yellow;">Voltage</td>
+	<td style="color: LightSkyBlue;">Power</td>
+	<td style="color: LightPink;">Resistance</td>
+	</tr>
+	<tr style="font-weight: bold; font-family: Arial, Helvetica, sans-serif;">
+	<td id="ts1" style="color: SpringGreen;">? mA</td> 
+	<td id="ts2" style="color: Yellow;">? mV</td>
+	<td id="ts3" style="color: LightSkyBlue;">? W</td>
+	<td id="ts4" style="color: LightPink;">? Ohm</td>
+	</tr>
+	</table>
+	<div id="div_g1"></div>
+	<div id="labdiv1" style="text-align: center;"></div>
+	<div id="div_g2"></div>
+	<div id="labdiv2" style="text-align: center;"></div>
+	<input type="button" id="butOnOff" value="Stop">
+	<input type="button" id="butClr" value="Clear">
+	<input type="button" id="butSave" value="Save dat to .csv file">
+	 Window: <span id="wdsize">?</span> sec 
+	<input type="radio" checked name="rm1"  id="FixEnd"/>
+	<label for="FixEnd">Fixed</label>
+	<input type="radio" name="rm1" id="FixNone"/>
+	<label for="FixNone">Float</label><br>
+	</div>
+  </body>
+<script type="text/javascript">
+"use strict";
+
+// Буфер входящих данных
+var datau = new Array();
+var datai = new Array();
+//
+const samples = 1000;
+var average = 20; // average * RENDER_FPS (ms)
+const RENDER_FPS = 10; // frames per sec	
+//
+var cur_idx = -1;
+var rend = 1;
+var rollpu = 1;
+var rollpi = 1;
+var guu = null;
+var gui = null;
+var rend_timer;
+
+var $ = function(id) { return document.getElementById(id); }
+
+function infoline(s) { $('info').innerHTML = s; console.log(s); }
+function errline(s) { $('info').innerHTML = s; console.error(s); }
+
+const spinfo = $(info);
+const butstop = $('butOnOff');
+const butconnect = $('butConnect');
+const butclear = $("butClr");
+
+var	pp = new PPdev();
+pp.open_cb = function () { 
+	butconnect.value = 'Close';
+	console.log("pp.open_cb");
+}
+pp.close_cb = function () { 
+	butconnect.value = 'Open'; 
+	console.log("pp.close_cb");
+}
+pp.start_cb = function () { 
+	console.log("pp.start_cb");
+}
+pp.stop_cb = function () { 
+	cur_idx = -1;
+	UpdateIntervalGRF(false);
+	console.log("pp.stop_cb");
+}
+pp.new_adc_cb = AddData2Grf;
+
+function SetAverage(x) {
+	average = x;
+}
+
+async function CmdDecode(value) {
+	await pp.CmdDecode(value);
+}
+
+butstop.addEventListener('pointerdown', () => {
+	UpdateIntervalGRF(butstop.value == 'Start');
+});
+
+
+butconnect.addEventListener('pointerdown', () => {
+	if(butconnect.value == 'Close') {
+		pp.Close();
+		//butconnect.value = 'Open';
+	} else {
+		pp.Open(CmdDecode);
+	}
+});
+
+butclear.addEventListener('pointerdown', () => {
+	ClearData();
+});
+
+function ClearData() {
+	cur_idx = -1;
+	adc_cnt = 0;
+	datau = new Array();
+	datai = new Array();
+	datau.push([0, [0,0,0]]);
+	datau.push([1, [0,195.3125,195.3125]]);
+	datau.push([2, [0,28333.333,28333.333]]);
+	datau.push([3, [0,56666.666,56666.666]]);
+	datau.push([4, [0,85000,85000]]);
+	datai.push([0, [-16.384,-16.384,0]]);
+	datai.push([1, [-0.00003125,-0.00003125,0]]);
+	datai.push([2, [0,0,0]]);
+	datai.push([3, [0,0.00003125,0.00003125]]);
+	datai.push([4, [0,16.384,16.384]]);
+	UpdateIntervalGRF(false);
+}
+
+function UpdateIntervalGRF(on = true) {
+	if(rend_timer != null)
+		clearInterval(rend_timer);
+	if(on == true && gui != null && pp.dev.adc_wrk == true && cur_idx > 1) {
+		let tt = 1000/RENDER_FPS; // ms
+		if(pp.cfg.sps != null) {
+			tt = 1000*RENDER_FPS/pp.cfg.sps;
+			if(tt < 1000/RENDER_FPS)
+			 tt = 1000/RENDER_FPS;
+		}
+		rend_timer = setInterval(function(){RendChart()}, tt);
+		butstop.value = 'Stop';
+	} else {
+		rend_timer = null;
+		if(gui != null)
+			RendChart();
+		butstop.value = 'Start';
+	}
+}
+
+var sumu, sumi;
+var smaxu, smaxi;
+var sminu, smini;
+var adc_cnt;
+function AddData2Grf(du, di) {
+	if(cur_idx < 0) {
+		datau = new Array();
+		datai = new Array();
+		cur_idx = 0;
+		adc_cnt = 0;
+		sumu = 0;
+		smaxu = -0xffffffff;
+		sminu = 0xffffffff;
+		sumi = 0;
+		smaxi = -0xffffffff;
+		smini = 0xffffffff;
+		return;
+	}
+	if(du > 2550) // INA226/231 3190mV/1.25mV=2552
+		di -= 1.2;
+	else
+		di -= du/5000;
+	if(adc_cnt > pp.cfg.sps/10) {
+		datau.push([adc_cnt*cur_idx/pp.cfg.sps, [sminu*pp.cfg.kBus+pp.cfg.zBus, sumu*pp.cfg.kBus/adc_cnt+pp.cfg.zBus, smaxu*pp.cfg.kBus+pp.cfg.zBus]]);
+		datai.push([adc_cnt*cur_idx/pp.cfg.sps, [smini*pp.cfg.kShunt+pp.cfg.zShunt, sumi*pp.cfg.kShunt/adc_cnt+pp.cfg.zShunt, smaxi*pp.cfg.kShunt+pp.cfg.zShunt]]);
+		cur_idx++;
+		if(cur_idx == 2) {
+			UpdateIntervalGRF();
+		} else 	if(cur_idx >= samples) {
+			datau.shift();
+			datai.shift();
+		}
+		sumu = du;
+		smaxu = du;
+		sminu = du;
+		sumi = di;
+		smaxi = di;
+		smini = di;
+		adc_cnt = 1;
+	} else {
+		sumu += du;
+		if(smaxu < du) smaxu = du;
+		if(sminu > du) sminu = du;
+		sumi += di;
+		if(smaxi < di) smaxi = di;
+		if(smini > di) smini = di;
+		adc_cnt++;
+	}
+}
+
+function formatU_mV(xu) {
+	var s;
+	var mx = Math.abs(xu);
+	if(mx < 1000.0)
+		s = xu.toFixed(1)+" mV";
+	else
+		s = (xu/1000.0).toFixed(4)+" V";
+	return s;
+}	
+function formatI_mA(xi) {
+	var s;
+	var mx = Math.abs(xi);
+	if(mx < 1.0)
+		s = (xi*1000.0).toFixed(1)+" uA";
+	else
+		s = xi.toFixed(3)+" mA";
+	return s;
+}
+function formatW_uW(xw) {
+	var s;
+	var mx = Math.abs(xw)
+	if(mx < 1000000.0)
+		s = (xw/1000.0).toFixed(3)+" mW";
+	else
+		s = (xw/1000000.0).toFixed(6)+" W";
+	return s;
+}
+function formatR(xu, xi) {
+	var s = ">200 kOhm";
+	if (xi != 0) {
+		var xr = xu/xi;
+		var mx = Math.abs(xr);
+		if(mx < 1000.0)
+			s = xr.toFixed(3)+" Ohm";
+		else if(mx < 200000.0)
+			s = (xr/1000.0).toFixed(3)+" kOhm";
+	} 
+	return s;
+}
+
+function ShowGrf() {
+	if(guu == null) {
+		ClearData();
+		guu = new Dygraph(
+			$("div_g1"),
+		    datau,
+			{
+				customBars: true,
+				showRangeSelector: false,
+				showRoller: true,
+				rollPeriod: rollpu,
+//				xlabel: 'T(sec)',
+//				ylabel: 'U(mV)',
+				colors: ['Yellow' , 'LightSkyBlue' ],
+				axes: { x: {valueFormatter: function(x){return this.getLabels()[0] + ': '+ x.toPrecision(6);}},
+						y: {valueFormatter: function(y){return formatU_mV(y);}}},
+				labels: ['T', 'U'],
+				labelsDiv: $('labdiv1'),
+				legend: 'always',  // "follow"
+				digitsAfterDecimal: 6,
+//                strokeWidth: 2,
+//				errorBars: true,
+			});
+		gui = new Dygraph(
+			$("div_g2"),
+		    datai,
+			{
+				showRoller: true,
+				rollPeriod: rollpi,
+				xlabel: 'T(sec)',
+//				ylabel: 'I(mA)',
+				colors: ['SpringGreen', 'LightPink'],
+				axes: { x: {valueFormatter: function(x){return this.getLabels()[0] + ': '+ x.toPrecision(6);}},
+						y: {valueFormatter: function(y){return formatI_mA(y);}}},
+				labels: ['T', 'I'],
+				labelsDiv: $('labdiv2'),
+				legend: 'always',  // "follow"
+				digitsAfterDecimal: 6,
+				drawCallback: function(g) {
+		    		var opts = {dateWindow: this.xAxisRange(), 'file': datau};
+					guu.updateOptions(opts);},
+				showRangeSelector: true,
+              	rangeSelectorPlotFillColor: 'MediumSlateBlue',
+              	rangeSelectorPlotFillGradientColor: 'rgba(123, 104, 238, 0)',
+                colorValue: 0.9,
+                fillAlpha: 0.4,
+//                strokeWidth: 2,
+//                visibility: [true, false],
+				customBars: true,
+//				errorBars: true
+			});
+			var sync = Dygraph.synchronize(guu, gui, { zoom: false, selection: true});
+//      $('#chk-zoom, #chk-selection').change(update);
+
+	}
+}
+
+function RendChart(){
+	if(datai.length < 2)
+		return;
+	var x = gui.xAxisRange();
+	if (gui.dateWindow_) { 
+		if ($("FixEnd").checked) {
+			var ls = datai.length - 1;
+			gui.dateWindow_[0] = datai[ls][0] - (x[1] - x[0]);
+			gui.dateWindow_[1] = datai[ls][0];
+		}
+		if(x[0] < datai[0][0]) 
+			gui.dateWindow_[0] = datai[0][0];
+		if(x[1] < datai[1][0]) 
+			gui.dateWindow_[1] = datai[1][0];
+	}
+	$('wdsize').innerHTML=((x[1]-x[0])).toFixed(3);
+
+	var len = datai.length - average;
+	if(len < 0)	len = 0;
+	// mA  data = guu.rawData_.slice(len);
+	var data = datai.slice(len);
+	var sum = data.map(function(e){return e[1][1]})
+             .reduce(function(a,b){return a+b});
+	var xi = sum/data.length;
+	$("ts1").innerHTML = formatI_mA(xi);
+	// mV
+	data = datau.slice(len);
+	sum = data.map(function(e){return e[1][1]})
+             .reduce(function(a,b){return a+b});
+	var xu = sum/data.length;
+	$("ts2").innerHTML = formatU_mV(xu);
+	// uW
+	$("ts3").innerHTML = formatW_uW(xu*xi); // mA * mV -> uW
+	// R
+	$("ts4").innerHTML = formatR(xu, xi); // Ohm
+
+	if(datai.length != 0) gui.updateOptions({'file': datai});
+}
+
+function convertArrayOfObjectsToCSV(value){
+	var result, ctr, keysu, keysi, columnDelimiter, lineDelimiter, datau, datai;
+	datau = value.datau || null;
+	datai = value.datai || null;
+	if (datau == null || !datau.length) {return null;}
+	if (datai == null || !datai.length) {return null;}
+	columnDelimiter = value.columnDelimiter || ';';
+	lineDelimiter = value.lineDelimiter || '\n';
+	result = '';
+	keysu = Object.keys(datau[1]);
+	keysi = Object.keys(datai[1]);
+	result += keysu.join(columnDelimiter);
+	result += keysi.join(columnDelimiter);
+	result += lineDelimiter;
+	datau.forEach(function(item, idx){
+		ctr = 0;
+		keysu.forEach(function(key){
+			if (ctr > 0)
+				result += columnDelimiter;
+			result += item[key];
+			ctr++;
+		});
+		keysi.forEach(function(k){
+			result += columnDelimiter;
+			result += datai[idx][k];
+		});
+		result += lineDelimiter;
+	});
+	return result;
+}
+$("butSave").onclick =  function() {
+	var csv = convertArrayOfObjectsToCSV({datau: datau, datai: datai});
+	if (!csv.match(/^data:text\/csv/i)) {csv = 'data:text/csv;charset=utf-8,' + csv;}
+	var encodedUri = encodeURI(csv);
+	var link = document.createElement('a');
+	link.setAttribute('href', encodedUri);
+	link.setAttribute('download',"data.csv");
+	link.click();
+}
+function resizeApp() {
+	if(window.innerHeight > 320) {
+    	let x = (window.innerHeight-220)/5;
+		$("div_g1").style.height = (x*2) + "px";
+		$("div_g2").style.height = (x*3) + "px";
+	//$("div_v").style.width = (window.innerWidth-50) + "px";
+	}
+}
+resizeApp();
+window.onresize = function(){resizeApp();};
+ShowGrf();
+</script>
+</html>
