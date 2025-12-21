@@ -272,14 +272,12 @@ function saveNewFw(zbota) {
 		let fname = createFName();
 		if(zbota == 0) {
 			fname += "-new.bin";
-			patchTableGPIO();
 			addAlog("Save bin file: " + fname);
 			saveFile(new Blob([fzigbeeota.data], { type: 'application/octet-stream' }), fname);
 		} else if(zbota == 1) {
 			fname += "-new.zigbee";
 			addAlog("Greate header file: "+fname);
 			fzigbeeota.head = createZigbeeHeader();
-			patchTableGPIO();
 			addAlog("Save Zigbee OTA file: "+ fname);
 			saveFile(new Blob([new Uint8Array(fzigbeeota.head.buffer), fzigbeeota.data], { type: 'application/octet-stream' }), fname);
 		} else {
