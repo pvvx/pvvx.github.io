@@ -2264,7 +2264,7 @@ function startDFU() {
 			return;
 		}
 	} 
-	if(hwver_id == 13 && customEnabled==true && blockCount*16 > 0x1C000) { // BLE custom -> Original
+	if((hwver_id == 12 || hwver_id == 13) && customEnabled==true && blockCount*16 > 0x1C000) { // BLE custom -> Original
 		if(!confirm('All data for MiHome and measurement memory will be erased?')) return;
 		let s = 'Clear Ext.OTA region ('+szk+'kib)...';
 		addAlog(s);
