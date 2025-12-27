@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZigbeeTLc Index Configurator for Zigbee OTA v0.3</title>
+<title>ZigbeeTLc Index Configurator for Zigbee OTA v0.4</title>
 </head>
 <body>
 <script>
@@ -368,6 +368,8 @@ function testOTAFirmware(data, fname) {
 				addr_offset = 0x20000;
 			} else if(fsize > 0x8400 && head.getUint32(0x8008, true) == 0x544c4e4b) { // Zigbee Boot
 				addr_offset = 0x8000;
+			} else if(fsize > 0x9400 && head.getUint32(0x9008, true) == 0x544c4e4b) { // Zigbee Boot
+				addr_offset = 0x9000;
 			} else if(fsize > 0x40400 && head.getUint32(0x40008, true) == 0x544c4e4b) { // Zigbee/BLE OTA 
 				addr_offset = 0x40000;
 			} else
@@ -375,6 +377,8 @@ function testOTAFirmware(data, fname) {
 		} else {
 			if(fsize > 0x8400 && head.getUint32(0x8008, true) == 0x544c4e4b) { // Zigbee Boot
 				addr_offset = 0x8000;
+			} else if(fsize > 0x9400 && head.getUint32(0x9008, true) == 0x544c4e4b) { // Zigbee Boot
+				addr_offset = 0x9000;
 			}
 		}
 		addAlog("Extracting an OTA binary file from address 0x"+hex(addr_offset,6)+"...");
