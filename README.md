@@ -183,6 +183,8 @@ It is reset to default only by holding down the button (more than 15 seconds).
 
 [TS0001_TZ3000_kqvb5akv](https://pvvx.github.io/TS0001_TZ3000_kqvb5akv) - Tuya ZigBee "Mini Zigbee Switch"
 
+[TS011F_TZ3000_gjnozsaz](https://pvvx.github.io/TS011F_TZ3000_gjnozsaz) - Tuya ZigBee Switch with Power Monitor (Chip: TLSR8656, Sensor: BL0942)
+
 
 ---
 
