@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v12.3</title>
+<title>Telink Flasher v12.4</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -2006,6 +2006,10 @@ function miAuthorization() {
 							// $("ldfile").hidden = false;
 						}
 					} else if (bluetoothDevice.name.substr(0,8) == 'MHO-C401') {
+						cfg.hver = 8;
+						if(!confirm('MHO-C401 with a new hardware version?'))
+							cfg.hver = 1;
+/*
 						let swnum = parseInt(devinfo.srstr.substr(0,4));
 						if (devinfo.hrstr.substr(0,4) == 'V_14') swnum = 14;
 						if(swnum <= 14) {
@@ -2015,6 +2019,7 @@ function miAuthorization() {
 							addLog("Found new version of SW:"+swnum+" MHO-C401N");
 							cfg.hver = 8;
 						}
+*/
 					} else if (bluetoothDevice.name.substr(0,4) == 'C121') cfg.hver = 11; // MHO-C122
 					else if (bluetoothDevice.name.substr(0,20) == "Qingping Temp & RH M") cfg.hver = 2;
 					else if (bluetoothDevice.name.substr(0,18) == "Qingping Temp RH M") cfg.hver = 7;
