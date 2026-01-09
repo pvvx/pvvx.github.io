@@ -186,6 +186,7 @@ It is reset to default only by holding down the button (more than 15 seconds).
 
 [TS011F_TZ3000_gjnozsaz](https://pvvx.github.io/TS011F_TZ3000_gjnozsaz) - Tuya ZigBee Switch with Power Monitor (Chip: TLSR8656, Sensor: BL0942)
 
+[HOBEIAN ZG-204ZL](https://pvvx.github.io/ZG-204ZL-3.0) - Tuya ZigBee "Mini PIR Sensor" + LUX sensor
 
 ---
 
