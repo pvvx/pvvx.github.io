@@ -188,6 +188,8 @@ It is reset to default only by holding down the button (more than 15 seconds).
 
 [HOBEIAN ZG-204ZL](https://pvvx.github.io/ZG-204ZL-3.0) - Tuya ZigBee "Mini PIR Sensor" + LUX sensor
 
+[Zbeacon-TS0001](https://pvvx.github.io/Zbeacon-TS0001) - Tuya "Zigbee Smart Switch" + RF433
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
