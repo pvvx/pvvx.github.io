@@ -2,14 +2,27 @@
 <html>
   <head><meta charset="utf-8">
   <title>Zbeacon-TS0001</title>
+  <style>
+	body {text-align: center;}
+	table {margin: 0 auto; width: 20vh;}
+    table, th, td {border-collapse: collapse;}
+  </style>
   </head>
   <body>
 	<div style="height: auto; width: auto; text-align: center;">
 	<h2>Zbeacon-TS0001: Tuya "Zigbee Smart Switch" + RF433</h2>
-	SoC: TLSR825x, RF 433MHz receiver: <a href="WL500B_v1.4.pdf">WL500B</a>, MCU: PIC12xxx?<br><br>
-	<img src="img/switch.jpg"><br>
-	<img src="img/box.jpg"><br><br>
-	<img src="img/pcb.jpg"><br><br>
+	SoC: TLSR825x, RF 433MHz receiver: <a href="WL500B_v1.4.pdf">WL500B</a>, MCU: PIC12xxx?<br>
+	<img src="img/switch.jpg" style="max-width:100%;"><br>
+	<img src="img/box.jpg" style="max-width:100%;"><br><br>
+	<img src="img/pcb.jpg" style="max-width:100%;"><img src="img/pcb1.jpg" style="max-width:100%;"><br><br>
+	<table align="center" border="1">
+	<tr><td> PB1 </td><td> R+,C -> MCU pin 1 </td></tr>
+	<tr><td> PB4 </td><td> LED -> R+ </td></tr>
+	<tr><td> PD2 </td><td> D -> S2/S1 (switch) </td></tr>
+	<tr><td> PD3 </td><td> R -> Q1 -> Relay </td></tr>
+ 	</table><br>
+ 	MCU<br>
+	<img src="img/mcu.gif" style="max-width:100%;"><br>
 	<a href="bin/Zbeacon-TS0001_ff.zip">Original FullFlash bin</a><br><br>
 	</div>
   </body>
