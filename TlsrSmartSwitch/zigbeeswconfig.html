@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TLSR825x Smart Switch FW Configurator v0.6</title>
+<title>TLSR825x Smart Switch FW Configurator v1.0</title>
 </head>
 <body>
 <script>
@@ -252,8 +252,24 @@ function findInUint8Array(buffer, searchBytes) {
     }
     return null;
 }
+const ttab_gpio_nm = {
+	ver: 0x0010,
+	size: 7,
+	name: [ 
+	"GPIO flags",
+	"GPIO Relay",
+	"GPIO Led1",
+	"GPIO Led2",
+	"GPIO Key",
+	"GPIO Switch",
+	"GPIO Onewire"],
+	none: 0x008,
+	ns:   0x060,
+	all: 7,
+	def_data: [0, 0x0304, 0x0102, 0x0000, 0x0380, 0x0002, 0x0002]
+};
 const ttab_gpio_bl0937 = {
-	ver: 0x0006,
+	ver: 0x0010,
 	size: 10,
 	name: [ 
 	"GPIO flags",
@@ -272,7 +288,7 @@ const ttab_gpio_bl0937 = {
 	def_data: [0, 0x0304, 0x0102, 0x0000, 0x0380, 0x0002, 0x0002, 0x0308, 0x0110, 0x0120]
 };
 const ttab_gpio_bl0942 = {
-	ver: 0x0006,
+	ver: 0x0010,
 	size: 9,
 	name: [ 
 	"GPIO flags",
@@ -304,10 +320,12 @@ function getTableGPIO() {
 	let fwver = fzigbeeota.data[2] | (fzigbeeota.data[3]<<8);
 	let type = (fzigbeeota.data[21] << 8) | fzigbeeota.data[20]; // image_type = gpio type
 	console.log("GPIOs type: 0x" + hex(type,4));
-	if((type & 0xf000) == 0x8000) {
-		ttab = ttab_gpio_bl0937;
-	} else if((type & 0xf000) == 0x1000) {
+	if((type & 0xff18) == 0x0100) {
+		ttab = ttab_gpio_nm;
+	} else if((type & 0xff18) == 0x0108) {
 		ttab = ttab_gpio_bl0942;
+	} else if((type & 0xff18) == 0x0110) {
+		ttab = ttab_gpio_bl0937;
 	} else {
 		$("tab_gpios").innerHTML = "<br>GPIO table not found!";
 		addAlog("Unknown FW type!");
@@ -344,8 +362,8 @@ function getTableGPIO() {
 function setTableGPIO() {
    	if(!fzigbeeota.gpio) return;
    	let not_use = fzigbeeota.gpio.ttab.ns;
-	if((fzigbeeota.gpio.type & 0x0011) != 0) not_use = not_use & 0xbf;
-	if((fzigbeeota.gpio.type & 0x0100) != 0) not_use = not_use & 0xdf;
+	if((fzigbeeota.gpio.type & 0x0001) != 0) not_use = not_use & 0xbf;
+	if((fzigbeeota.gpio.type & 0x0002) != 0) not_use = not_use & 0xdf;
 	for(i = 1; i < fzigbeeota.gpio.ttab.size; i++) {
 		if((not_use & (1<<i)) == 0) {
 			let x = $("t_gpio"+i).value;
@@ -353,9 +371,8 @@ function setTableGPIO() {
 			fzigbeeota.gpio.data.setUint16(i*2, x, true);
 //			console.log("t_gpio"+i+":"+hex(fzigbeeota.gpio.data.getUint16(i*2, true),4));
 			$("t_gpio"+i).value = "0x" + hex(fzigbeeota.gpio.data.getUint16(i*2, true),4);
-		} else {
-			fzigbeeota.gpio.data.setUint16(i*2, fzigbeeota.gpio.ttab.def_data[i], true);
-		}
+		} 
+		// else { fzigbeeota.gpio.data.setUint16(i*2, fzigbeeota.gpio.ttab.def_data[i], true); }
 		console.log("t_gpio"+i +":"+ hex(x,4));
 	}
 	let flg = ($("c_bit_led1").checked)? 1 : 0;
