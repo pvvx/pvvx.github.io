@@ -54,8 +54,6 @@
 | 46 | 0x022E | [ZBEACON-MC](https://pvvx.github.io/Zbeacon-MC) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'ZBeacon', 'MC-z' |
 | 47 | 0x022F | [ZBEACON-TH01-v2.0](https://pvvx.github.io/Zbeacon-TH01-v2.0) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'ZBeacon', 'TH01-2-z' |
 
-* [Telegram: New devices & develops](https://t.me/pvvx_new_ble_zigbee_devices).
-
 ### All [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc):
 
 | Manufacturer Code | Image Type | File Version | Stack Version |
@@ -66,6 +64,39 @@
 When changing the name, it is saved in Flash.
 It is reset to default only by holding down the button (more than 15 seconds).
 
+
+## TlsrSmartSwitch
+
+Alternative firmwares for Smart Switch on the TLSR825x/TLSR8656 chipset.
+
+[TlsrSmartSwitch](https://github.com/pvvx/TlsrSmartSwitch)
+
+ManufacturerCode: 60000
+
+ManufacturerName: "Telink-pvvx"
+
+|  Zigbee Image Type | Name | U/I Sensor | T Sensor | Ext.Switch |
+|--|--|--|--|--|
+| 0x0100 | EM0SW1   |        |         | None |
+| 0x0101 | EM0SW2   |        |         | Yes  |
+| 0x0102 | EM0SW1T  |        | MT18B20 | None |
+| 0x0103 | EM0SW2T  |        | MT18B20 | Yes  |
+| 0x0106 | EM0SW1TS |        | MT18B20 | None |
+| 0x0107 | EM0SW2TS |        | MT18B20 | Yes  |
+| 0x0108 | EM1SW1   | BL0942 |         | None |
+| 0x0109 | EM1SW2   | BL0942 |         | Yes  |
+| 0x010a | EM1SW1T  | BL0942 | MT18B20 | None |
+| 0x010b | EM1SW2T  | BL0942 | MT18B20 | Yes  |
+| 0x010e | EM1SW1TS | BL0942 | MT18B20 | None |
+| 0x010f | EM1SW2TS | BL0942 | MT18B20 | Yes  |
+| 0x0110 | EM8SW1   | BL0937 |         | None |
+| 0x0111 | EM8SW2   | BL0937 |         | Yes  |
+| 0x0112 | EM8SW1T  | BL0937 | MT18B20 | None |
+| 0x0113 | EM8SW2T  | BL0937 | MT18B20 | Yes  |
+| 0x0116 | EM8SW1TS | BL0937 | MT18B20 | None |
+| 0x0117 | EM8SW2TS | BL0937 | MT18B20 | Yes  |
+
+--
 
 ## Web files for projects:
 
@@ -199,3 +230,5 @@ It is reset to default only by holding down the button (more than 15 seconds).
 
 [ADV-repeater, ATC Temperatyre/Humidity Trigger](https://github.com/pvvx/AdScanerTrg)
 
+
+* [Telegram: New devices & develops](https://t.me/pvvx_new_ble_zigbee_devices).
