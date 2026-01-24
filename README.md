@@ -52,7 +52,7 @@
 | 44 | 0x022C | [ZG-303Z](https://pvvx.github.io/ZG-303Z) - HOBEIAN ZG-303Z Tuya ZigBee Soil moisture sensor | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Sonoff', 'ZG-303Z-z' |
 | 45 | 0x022D | [ZBEACON-TH01](https://pvvx.github.io/Zbeacon-TH01) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'ZBeacon', 'TH01-z' |
 | 46 | 0x022E | [ZBEACON-MC](https://pvvx.github.io/Zbeacon-MC) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'ZBeacon', 'MC-z' |
-| 47 | 0x022F | [ZBEACON2-TH01](https://github.com/pvvx/ZigbeeTLc/issues/243) | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Zbeacon', 'TH01-2-z' |
+| 47 | 0x022F | [ZBEACON-TH01-v2.0](https://pvvx.github.io/Zbeacon-TH01-v2.0) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'ZBeacon', 'TH01-2-z' |
 
 * [Telegram: New devices & develops](https://t.me/pvvx_new_ble_zigbee_devices).
 
@@ -190,6 +190,8 @@ It is reset to default only by holding down the button (more than 15 seconds).
 [HOBEIAN ZG-204ZL](https://pvvx.github.io/ZG-204ZL-3.0) - Tuya ZigBee "Mini PIR Sensor" + LUX sensor
 
 [Zbeacon-TS0001](https://pvvx.github.io/Zbeacon-TS0001) - Tuya "Zigbee Smart Switch" + RF433
+
+[ZBEACON-TH01-v2.0](https://pvvx.github.io/Zbeacon-TH01-v2.0) - Tuya ZigBee "Temp & Humidity Sensor" 
 
 ---
 
