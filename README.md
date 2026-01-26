@@ -224,6 +224,8 @@ ManufacturerName: "Telink-pvvx"
 
 [ZBEACON-TH01-v2.0](https://pvvx.github.io/Zbeacon-TH01-v2.0) - Tuya ZigBee "Temp & Humidity Sensor" 
 
+[HOBEIAN CK-BL702-ROUTER-01(7018)](https://pvvx.github.io/ZG-807Z) - Zigbee Repeater
+
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
