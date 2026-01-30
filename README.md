@@ -53,6 +53,7 @@
 | 45 | 0x022D | [ZBEACON-TH01](https://pvvx.github.io/Zbeacon-TH01) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'ZBeacon', 'TH01-z' |
 | 46 | 0x022E | [ZBEACON-MC](https://pvvx.github.io/Zbeacon-MC) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'ZBeacon', 'MC-z' |
 | 47 | 0x022F | [ZBEACON-TH01-v2.0](https://pvvx.github.io/Zbeacon-TH01-v2.0) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'ZBeacon', 'TH01-2-z' |
+| 48 | 0x0230 | [TY0201](https://pvvx.github.io/TY0201_TZ3000_bjawzodf) | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Tuya', 'TY0201-z' |
 
 ### All [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc):
 
@@ -225,6 +226,8 @@ ManufacturerName: "Telink-pvvx"
 [ZBEACON-TH01-v2.0](https://pvvx.github.io/Zbeacon-TH01-v2.0) - Tuya ZigBee "Temp & Humidity Sensor" 
 
 [HOBEIAN CK-BL702-ROUTER-01(7018)](https://pvvx.github.io/ZG-807Z) - Zigbee Repeater
+
+[TY0201_TZ3000_bjawzodf](https://pvvx.github.io/TY0201_TZ3000_bjawzodf) - Tuya ZigBee "Temp & Humidity Sensor"
 
 ---
 
