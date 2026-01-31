@@ -141,23 +141,23 @@ ManufacturerName: "Telink-pvvx"
 
 [RemoteShutter](https://pvvx.github.io/RemoteShutter) - BLE, OTP
 
-[TS0001_TZ3000](https://pvvx.github.io/TS0001_TZ3000) - Tuya ZigBee "DIY Smart Switch"
+[TS0001_TZ3000_TZ3000_gjrubzje](https://pvvx.github.io/TS0001_TZ3000) - Tuya ZigBee "DIY Smart Switch"
 
 [TS0001_TZ3000_fdxihpp7](https://pvvx.github.io/TS0001_TZ3000_fdxihpp7) - Tuya ZigBee "Mini Smart Switch"
 
-[DS01 zbeacon](https://pvvx.github.io/DS01_zbeacon) TS0003 _TZ3000_gohcgzj7 - Tuya ZigBee Door Window Sensor
+[DS01 zbeacon: TS0003_TZ3000_gohcgzj7](https://pvvx.github.io/DS01_zbeacon) - Tuya ZigBee Door Window Sensor
 
-[TS0201_TZ3000](https://pvvx.github.io/TS0201_TZ3000) - Tuya ZigBee Thermo-Hygrometer
+[TS0201_TZ3000_xr3htd96, _TZ3000_qsefbina](https://pvvx.github.io/TS0201_TZ3000) - Tuya ZigBee Thermo-Hygrometer
 
-[TS0201_TZ3000_TH03](https://pvvx.github.io/TS0201_TZ3000_TH03) - Tuya ZigBee TH03 LCD Thermo-Hygrometer
+[TH03: TS0201_TZ3000_gohcgzj7, _TZ3000_bguser20](https://pvvx.github.io/TS0201_TZ3000_TH03) - Tuya ZigBee TH03 LCD Thermo-Hygrometer
 
-[TS0202_TZ3000](https://pvvx.github.io/TS0202_TZ3000) - Tuya ZigBee ZP01 IR-Motion sensor
+[TS0202_TZ3000_lf56vpxj](https://pvvx.github.io/TS0202_TZ3000) - Tuya ZigBee ZP01 IR-Motion sensor
 
-[TS0207_TZ3000](https://pvvx.github.io/TS0207_TZ3000) - Tuya ZigBee "Wireless Water Detector"
+[TS0207_TZ3000_kstbkt6a](https://pvvx.github.io/TS0207_TZ3000) - Tuya ZigBee "Wireless Water Detector"
 
-[TS0601_TZE200 ZTH01](https://pvvx.github.io/TS0601_TZE200_zth01) - Tuya ZigBee ZTH01 Thermo-Hygrometer 
+[ZTH01: TS0601_TZE200](https://pvvx.github.io/TS0601_TZE200_zth01) - Tuya ZigBee ZTH01 Thermo-Hygrometer 
 
-[TS0601_TZE200 ZTH02](https://pvvx.github.io/TS0601_TZE200_zth02) - Tuya ZigBee ZTH02 Thermo-Hygrometer 
+[ZTH02: TS0601_TZE200_9yapgbuv](https://pvvx.github.io/TS0601_TZE200_zth02) - Tuya ZigBee ZTH02 Thermo-Hygrometer 
 
 [TS0601_TZE204](https://pvvx.github.io/TS0601_TZE204) - Tuya ZigBee ZTH05 Thermo-Hygrometer
 
@@ -167,7 +167,7 @@ ManufacturerName: "Telink-pvvx"
 
 [THB2](https://pvvx.github.io/THB2) - Tuya BLE Temperature & Humidity Sensor
 
-[TH03Z](https://pvvx.github.io/TH03Z) - Tuya BLE Temperature & Humidity Sensor
+[TH03Z: TS0201_TZ3000_dowj6gyi, _TZ3000_qsefbina](https://pvvx.github.io/TH03Z) - Tuya Zigbee Temperature & Humidity Sensor
 
 [TH05 v1.4](https://pvvx.github.io/TH-05) - Tuya BLE Temperature & Humidity Sensor
 
@@ -179,13 +179,13 @@ ManufacturerName: "Telink-pvvx"
 
 [RSH-GW018_DM](https://pvvx.github.io/RSH-GW018_DM) - Tuya Smart Gateway WiFi-BLE-Zigbee
 
-[PLANT-MON](https://pvvx.github.io/PLANT-MON) - Tuya BLE "Plant monitor"
+[PLANT-MON: ECF-SGS01-A](https://pvvx.github.io/PLANT-MON) - Tuya BLE "Plant monitor"
 
-[LKTMZL02](https://pvvx.github.io/LKTMZL02) - Tuya BLE Temperature & Humidity Sensor (LCD)
+[LKTMZL02: TS0201_TZ3210_ncw88jfq](https://pvvx.github.io/LKTMZL02) - Tuya Zigbee Temperature & Humidity Sensor (LCD)
 
 [ZSS-ZK-THL](https://pvvx.github.io/ZSS-ZK-THL) - E-ink Moes ZigBee "Smart Brightness Thermometer"
 
-[CB3S](https://pvvx.github.io/TS0041_TZ3000_fa9mlvja) - Tuya ZigBee "Smart Button"
+[CB3S: TS0041_TZ3000_fa9mlvja](https://pvvx.github.io/TS0041_TZ3000_fa9mlvja) - Tuya ZigBee "Smart Button"
 
 [HS09: TS0201_TZ3000_1twfmkcc](https://pvvx.github.io/TS0201_TZ3000_1twfmkcc) - Tuya Zigbee "Smart Humidity Sensor"
 
