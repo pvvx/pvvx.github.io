@@ -2,13 +2,17 @@
 <html>
   <head><meta charset="utf-8">
   <title>TS011F_TZ3000_gjnozsaz</title>
+  <style>
+	body {text-align: center;}
+	table {margin: 0 auto; width: 20vh;}
+    table, th, td {border-collapse: collapse;}
+  </style>
   </head>
   <body>
 	<div style="height: auto; width: auto; text-align: center;">
 	<h2>TS011F_TZ3000_gjnozsaz: Tuya ZigBee Switch with Power Monitor</h2><hr>
-	Chip: TLSR8656, Sensor: BL0942<br>
-	Do not use ZigbeeOTA!<br>
-	The original firmware uses a non-standard Zigbee OTA!<br>
+	Chip: TLSR8656 or Z2 (TLSR8258), Sensor: BL0942<br>
+	Don't use ZigbeeOTA if the chip is TLSR8656!<br>
 	The lid of the case is glued, but it can be easily opened by lifting the lid around the circumference with a sharp object.<br><br>
 	<a href="https://github.com/pvvx/TlsrSmartSwitch">Custom FirmWare</a><br>
 	<img src="img/box1.jpg" style="max-width:10%;"><img src="img/box2.jpg" style="max-width:10%;"><br>
@@ -16,7 +20,16 @@
 	<img src="img/ins.jpg" style="max-width:25%;"><img src="img/TLSR8656.jpg" style="max-width:18%;"><br><br>
 	<img src="img/sws.jpg" style="max-width:100%;"><br><br>
 
-	<a href="bin/TS011F_TZ3000_gjnozsaz_ff.zip">Original FullFlash bin</a><br><br>
+ 	<table align="center" border="1">
+	<tr><td> Relay </td><td> PC2 ("1" On) </td></tr>
+	<tr><td> Led </td><td> PB4 ("0" On) </td></tr>
+	<tr><td> Button </td><td> PB5 ("0" On) </td></tr>
+	<tr><td> BL0942 TX </td><td> PB7 </td></tr>
+	<tr><td> BL0942 RX </td><td> PB1 </td></tr>
+ 	</table><br>
+
+	<a href="bin/TS011F_TZ3000_gjnozsaz_ff.zip">Original FullFlash TLSR8656 512KB </a><br><br>
+	<a href="bin/TS011F_TZ3000_gjnozsaz_ff_z2.zip">Original FullFlash Z2 (TLSR8258 1MB)</a><br><br>
 	<hr>
 	</div>
   </body>

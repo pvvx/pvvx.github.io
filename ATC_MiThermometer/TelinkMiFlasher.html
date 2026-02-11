@@ -2213,6 +2213,8 @@ function doConnect() {
 				CGG1_Action("2020-2021");
 			else if(bluetoothDevice.name.substr(0,18) == "Qingping Temp RH M")
 				CGG1_Action("2022");
+			else if(bluetoothDevice.name.substr(0,20) == "Qingping Alarm Clock")
+			    CGDK2_Action();
 		    else
 				addLog("Unknown Qingping Firmware");
 				setStatus("Unknown Qingping Firmware");
@@ -2895,13 +2897,19 @@ function do_login_generate() {
 function keyMiLogin() {
 	let tk = $("mi_token").value;
 	let bk = $("mi_bind_key").value;
-	if(tk.length == 24) {
-		if(bk.length == 32)
-			sendLogin();
-		else
-			addLog("Bind Key must be 16 hex digits!")
-	} else
-		addLog("Mi Token must be 12 hex digits!")
+    if(tk.length == 32 && bk.length == 24) {
+        addLog("Error: It looks like you swapped the Token and Bind Key!");
+		return;
+    }
+    if(tk.length !== 24) {
+        addLog("Mi Token must be 24 hex characters (12 bytes)!");
+		return;
+    }
+    if(bk.length !== 32) {
+        addLog("Mi Bind Key must be 32 hex characters (16 bytes)!");
+		return;
+    }
+    sendLogin();
 }
 
 const lcd_digcode = [0xf5,0x05,0xd3,0x97,0x27,0xb6,0xf6,0x15,0xf7,0xb7];
@@ -3146,11 +3154,11 @@ function setNewTBKey() {
 					return;
 				}
 			}
-			addLog("Mi Token must be 12 hex digits!")
+			addLog("Mi Token must be 24 hex characters (12 bytes)!")
 			return;
 		}
 	}
-	addLog("Bind Key must be 16 hex digits!")
+	addLog("Bind Key must be 32 hex characters (16 bytes)!")
 }
 function sendTrg() {
 	if(trg.enable) {
@@ -3319,7 +3327,7 @@ function setBKey() {
 			return;
 		}
 	}
-	addLog("BindKey must be 16 hex digits!")
+	addLog("BindKey must be 32 hex characters (16 bytes)!")
 }
 function InfoIntervals() {
 		let advn = parseFloat($("cfg_adv_int").value);
@@ -3643,7 +3651,7 @@ function CustomConfig() {
 		is += '<br>';
 	}
 	if(cfg.ver >= 0x28) {
-		is +='BindKey:<br><input size="40" maxlength="32" title="Bind Key must be 16 hex digits" type="text" id="cbind_key" value="?">';
+		is +='BindKey:<br><input size="40" maxlength="32" title="Bind Key must be 32 hex characters (16 bytes)" type="text" id="cbind_key" value="?">';
 		is +=' <button type="button" title="Get BindKey" onclick="getBKey();">Get BindKey</button>';
 		is +=' <button type="button" title="Set new BindKey" onclick="setBKey();">Set BindKey</button><br>';
 	}
@@ -3741,7 +3749,7 @@ function CustomConfig() {
 		trg.enable = true;
 
    	}
-	is +='<hr><b>Keys and Codes:</b><br><br>EEP BindKey:<br><input size="40" maxlength="32" title="Bind Key must be 16 hex digits" type="text" id="cbind_key" value="?">';
+	is +='<hr><b>Keys and Codes:</b><br><br>EEP BindKey:<br><input size="40" maxlength="32" title="Bind Key must be 32 hex characters (16 bytes)" type="text" id="cbind_key" value="?">';
 	is +=' <button type="button" title="Get EEP BindKey" onclick="getBKey();">Get EEP BindKey</button>';
 	is +=' <button type="button" title="Set new EEP BindKey" onclick="setBKey();">Set EEP BindKey</button><br>';
 	is += '<input size="6" maxlength="6" type="text" title="000000..999999, 6 decimal digits, 000000 - PinCode Disable. Warning: If the PinCode is forgotten - only a hardware flasher!" id="pincode" value="000000"> <button title="Warning: If the PinCode is forgotten - only a hardware flasher!" type="button" onclick="sendPinCode();">!Set PinCode!</button><br>';
