@@ -97,6 +97,39 @@ ManufacturerName: "Telink-pvvx"
 | 0x0116 | EM8SW1TS | BL0937 | MY18B20 |      |
 | 0x0117 | EM8SW2TS | BL0937 | MY18B20 | Yes  |
 
+
+## TlsrRepeater 
+
+Zigbee repeater (router) based on TLSR825x chipsets
+
+[TlsrRepeater](https://github.com/pvvx/TlsrRepeater)
+
+ManufacturerCode: 60000
+
+ManufacturerName: "Telink-pvvx"
+
+|  Zigbee Image Type | Name | Device |
+|--|--|--|
+| 0x0201 | ZG807Z | [HOBEIAN:CK-BL702-ROUTER-01](https://pvvx.github.io/ZG-807Z/) |
+
+
+## TLB2Z 
+
+BLE Advertisements 3 Repeater into Zigbee on TLRS825x
+The device supports of up to three BLE hygrometers with relaying in the Zigbee protocol. 
+
+[TLB2Z](https://github.com/pvvx/TLB2Z)
+
+ManufacturerCode: 0x1141
+
+ManufacturerName: "B2Z"
+
+|  Zigbee Image Type | Name | Device |
+|--|--|--|
+| 0x2210 | TB03F-bz | TB-03F-kit |
+| 0x222b | REL-BZ01 | [TS0001_TZ3000](https://pvvx.github.io/TS0001_TZ3000/) |
+
+
 --
 
 ## Web files for projects:
