@@ -1,6 +1,6 @@
 <html class="b2zClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BLE2Zigbee v0.1</title>
+<title>BLE2Zigbee v0.2</title>
 <!--<link rel="stylesheet" type="text/css" href="styles.css" />
 <link rel="stylesheet" type="text/css" href="chart.css" />
 <script type="text/javascript" src="dygraph.min.js" /></script> /-->
@@ -692,12 +692,21 @@ function parseBlkCustom(value) {
 	} else if(blkId == 0x33 && len > 7) { // Measure
 		let nn = value.getUint8(1);
 		if(nn >= 0 && nn < 3) {
-	    	let temp = value.getInt16(2, true) / 100.0;
-	    	let humi = value.getUint16(4, true) / 100.0;
-	    	let lbat = value.getUint8(6) / 2.0;
-	    	let vbat = value.getUint8(7) / 10.0;
-	    	let s = "T: "+temp.toFixed(2)+"°C, H: "+humi.toFixed(2)+"%, B: "+lbat.toFixed(1)+"%, V: "+vbat.toFixed(1)+"V";
+	    	let temp = value.getInt16(2, true);
+	    	let humi = value.getUint16(4, true);
+	    	let lbat = value.getUint8(6);
+	    	let vbat = value.getUint8(7);
+	    	let s = "T: ";
+	    	if(temp == -32768) s +="? °C";
+	    	else { temp /= 100.0; s +=temp.toFixed(2)+"°C"; }
+	    	if(humi == 65535) s +=", RH: ? %";
+	    	else { humi /= 100.0; s +=", RH: "+humi.toFixed(2)+"%"; }
+	    	if(lbat == 255) s +=", B: ? %";
+	    	else { lbat /= 2.0; s +=", B: "+lbat.toFixed(1)+"%"; }
+	    	if(vbat == 255) s +=", V: ? %";
+	    	else { vbat /= 10.0; s +=", V: "+vbat.toFixed(1)+"V"; }
 			$("lblMeasure"+nn).innerHTML = s;
+			console.log("Dev"+(nn+1)+" "+s);
 		}
 	} else if(blkId == 0x18 && len > 1) { // Get/set bindkeys
 		let nn = value.getUint8(1);
@@ -790,7 +799,7 @@ function setDevMAC(nn) {
 				return;
 			}
 		}
-		addLog("Строка MAC должна содержать 6 байт в HEX виде!")
+		addLog("Строка MAC должна быть 6 байт в HEX виде!")
 		return;
 	}
 }

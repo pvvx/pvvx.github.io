@@ -115,7 +115,8 @@ ManufacturerName: "Telink-pvvx"
 
 ## TLB2Z 
 
-BLE Advertisements 3 Repeater into Zigbee on TLRS825x
+BLE Advertisements 3 Repeater into Zigbee on TLRS825x.
+
 The device supports of up to three BLE hygrometers with relaying in the Zigbee protocol. 
 
 [TLB2Z](https://github.com/pvvx/TLB2Z)
