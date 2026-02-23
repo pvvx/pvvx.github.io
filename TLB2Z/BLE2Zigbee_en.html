@@ -1,6 +1,6 @@
 <html class="b2zClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BLE2Zigbee v0.3</title>
+<title>BLE2Zigbee v0.4</title>
 <!--<link rel="stylesheet" type="text/css" href="styles.css" />
 <link rel="stylesheet" type="text/css" href="chart.css" />
 <script type="text/javascript" src="dygraph.min.js" /></script> /-->
@@ -346,7 +346,7 @@ var $ = function(id) { return document.getElementById(id);}
 const isEmpty = str => !str.trim().length;
 
 function resetVariables() {
-	start_read = false
+	start_read = false;
 	gattServer = null;
 	mainService = null;
 	cmdCharacteristic = null;
@@ -742,9 +742,9 @@ function parseBlkCustom(value) {
 				mac[3] = value.getUint8(4);
 				mac[4] = value.getUint8(3);
 				mac[5] = value.getUint8(2);
-				let mac_txt = bytesToHex(mac);
 				devMacs[nn] = mac;
-				$("inpDevMAC"+nn).value = mac_txt;
+				let mac_txt = bytesToHex(mac).match(/.{2}/g).join(':').toUpperCase();
+	            $("inpDevMAC"+nn).value = mac_txt;
 				addLog("MAC"+(nn+1)+" # "+ mac_txt);
 			} else if(len == 3) {
 				addLog("MAC"+ (nn+1) + " # not recorded");
@@ -763,6 +763,7 @@ function parseBlkCustom(value) {
 		addLog('Response to command (' + hex(blkId,2) + '): ' + bytesToHex(value.buffer.slice(1)));
 	}
 }
+
 function getDevMAC(nn) {
 	if(cmdCharacteristic != null) {
 		cmdCharacteristic.writeValue(new Uint8Array([0x10,nn])).catch(error => { addLog("getMAC("+nn+") Error: " + error); });
@@ -778,28 +779,31 @@ function getBindKey(nn) {
 function setDevMAC(nn) {
 	if(cmdCharacteristic != null) {
 		let el = $("inpDevMAC"+nn).value;
-		let len = el.length;
-		if(len == 12) {
-			let mac = hexToBytes(el);
-			len = mac.length;
-			if(len == 6) {
-				let blk = new Uint8Array(8);
-				blk[0] = 0x10;
-				blk[1] = nn;
-				blk[2] = mac[5];
-				blk[3] = mac[4];
-				blk[4] = mac[3];
-				blk[5] = mac[2];
-				blk[6] = mac[1];
-				blk[7] = mac[0];
-				console.log("Send cmd New MAC N"+nn+" ("+dump(blk, blk.length)+")...");
-				cmdCharacteristic.writeValue(blk).then(_ => {
-					s = "Transfer new MAC"+(nn+1)+": "+dump(mac, 6);
-					if(len == 8)
-						s += " RAND:" +dump(mac.slice(6), 2);
-					addLog(s+" ok");
-				});
-				return;
+        let macRegex = /^[0-9A-Fa-f]{12}$/;
+		let mac_clean = el.replace(/[:\-.\s]/g, '');
+	    if (macRegex.test(mac_clean)) {
+			let len = mac_clean.length;
+			if(len == 12) {
+				let mac = hexToBytes(mac_clean);
+				len = mac.length;
+				if(len == 6) {
+					let mac_txt = mac_clean.match(/.{2}/g).join(':').toUpperCase();
+		            $("inpDevMAC"+nn).value = mac_txt;
+					let blk = new Uint8Array(8);
+					blk[0] = 0x10;
+					blk[1] = nn;
+					blk[2] = mac[5];
+					blk[3] = mac[4];
+					blk[4] = mac[3];
+					blk[5] = mac[2];
+					blk[6] = mac[1];
+					blk[7] = mac[0];
+					console.log("Send cmd New MAC N"+nn+" ("+dump(blk, blk.length)+")...");
+					cmdCharacteristic.writeValue(blk).then(_ => {
+						addLog("Transfer new MAC"+(nn+1)+": "+mac_txt+" ok");
+					});
+					return;
+				}
 			}
 		}
 		addLog("The MAC string must contain 6 bytes in HEX format!")
@@ -823,7 +827,7 @@ function setBindKey(nn) {
 				return;
 			}
 		}
-		addLog("BindKey must contain 16 bytes in HEX format (32 characters)!")
+		addLog("BindKey must contain 16 bytes in HEX format (32 characters)!");
 	}
 }
 

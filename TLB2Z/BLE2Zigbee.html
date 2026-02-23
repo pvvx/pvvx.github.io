@@ -1,11 +1,6 @@
 <html class="b2zClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BLE2Zigbee v0.3</title>
-<!--<link rel="stylesheet" type="text/css" href="styles.css" />
-<link rel="stylesheet" type="text/css" href="chart.css" />
-<script type="text/javascript" src="dygraph.min.js" /></script> /-->
-<!--link rel="stylesheet" type="text/css" href="https://dygraphs.com/dist/dygraph.min.css /-->
-<!--script type="text/javascript" src="https://dygraphs.com/dist/dygraph.min.js" /></script-->
+<title>BLE2Zigbee v0.4</title>
 <style type="text/css">
 /* basic sytles */
 
@@ -346,7 +341,7 @@ var $ = function(id) { return document.getElementById(id);}
 const isEmpty = str => !str.trim().length;
 
 function resetVariables() {
-	start_read = false
+	start_read = false;
 	gattServer = null;
 	mainService = null;
 	cmdCharacteristic = null;
@@ -399,7 +394,7 @@ function connect() {
 	    }).catch(handleError);
 	} else {
 		showError("Browser doesn't support BLE API");
-	}	
+	}
 }
 
 function disconnect() {
@@ -672,9 +667,6 @@ function sendCommand() {
 	    console.log('Должно быть от 1 до 20 hex байт!');
 }
 
-function showConfig() {
-}
-
 function parseBlkCustom(value) {
 	let len = value.byteLength;
 	if(len == 0) return;
@@ -742,9 +734,9 @@ function parseBlkCustom(value) {
 				mac[3] = value.getUint8(4);
 				mac[4] = value.getUint8(3);
 				mac[5] = value.getUint8(2);
-				let mac_txt = bytesToHex(mac);
 				devMacs[nn] = mac;
-				$("inpDevMAC"+nn).value = mac_txt;
+				let mac_txt = bytesToHex(mac).match(/.{2}/g).join(':').toUpperCase();
+	            $("inpDevMAC"+nn).value = mac_txt;
 				addLog("MAC"+(nn+1)+" # "+ mac_txt);
 			} else if(len == 3) {
 				addLog("MAC"+ (nn+1) + " # не записан");
@@ -763,6 +755,7 @@ function parseBlkCustom(value) {
 		addLog('Ответ на команду (' + hex(blkId,2) + '): ' + bytesToHex(value.buffer.slice(1)));
 	}
 }
+
 function getDevMAC(nn) {
 	if(cmdCharacteristic != null) {
 		cmdCharacteristic.writeValue(new Uint8Array([0x10,nn])).catch(error => { addLog("getMAC("+nn+") Error: " + error); });
@@ -778,31 +771,32 @@ function getBindKey(nn) {
 function setDevMAC(nn) {
 	if(cmdCharacteristic != null) {
 		let el = $("inpDevMAC"+nn).value;
-		let len = el.length;
-		if(len == 12) {
-			let mac = hexToBytes(el);
-			len = mac.length;
-			if(len == 6) {
-				let blk = new Uint8Array(8);
-				blk[0] = 0x10;
-				blk[1] = nn;
-				blk[2] = mac[5];
-				blk[3] = mac[4];
-				blk[4] = mac[3];
-				blk[5] = mac[2];
-				blk[6] = mac[1];
-				blk[7] = mac[0];
-				console.log("Send cmd New MAC N"+nn+" ("+dump(blk, blk.length)+")...");
-				cmdCharacteristic.writeValue(blk).then(_ => {
-					s = "Передача нового MAC"+(nn+1)+": "+dump(mac, 6);
-					if(len == 8)
-						s += " RAND:" +dump(mac.slice(6), 2);
-					addLog(s+" ok");
-				});
-				return;
+        let macRegex = /^[0-9A-Fa-f]{12}$/;
+		let mac_clean = el.replace(/[:\-.\s]/g, '');
+	    if (macRegex.test(mac_clean)) {
+			if(mac_clean.length == 12) {
+				let mac = hexToBytes(mac_clean);
+				if(mac.length == 6) {
+					let mac_txt = bytesToHex(mac).match(/.{2}/g).join(':').toUpperCase();
+		            $("inpDevMAC"+nn).value = mac_txt;
+					let blk = new Uint8Array(8);
+					blk[0] = 0x10;
+					blk[1] = nn;
+					blk[2] = mac[5];
+					blk[3] = mac[4];
+					blk[4] = mac[3];
+					blk[5] = mac[2];
+					blk[6] = mac[1];
+					blk[7] = mac[0];
+					console.log("Send cmd New MAC N"+nn+" ("+dump(blk, blk.length)+")...");
+					cmdCharacteristic.writeValue(blk).then(_ => {
+						addLog("Передача нового MAC"+(nn+1)+": "+mac_txt+" ok");
+					});
+					return;
+				}
 			}
 		}
-		addLog("Строка MAC должна быть 6 байт в HEX виде!")
+		addLog("Строка MAC должна быть 6 байт в HEX виде!");
 		return;
 	}
 }
@@ -823,18 +817,17 @@ function setBindKey(nn) {
 				return;
 			}
 		}
-		addLog("BindKey должен содержать 16 байт в HEX виде (32 символа)!")
+		addLog("BindKey должен содержать 16 байт в HEX виде (32 символа)!");
 	}
 }
 
-
 window.onload = function() {
-
 	showState("Не подключено");
-
 	disableControls(true);
 };
+
 </script>
+
 <h2>BLE2Zigbee <a href="https://github.com/pvvx/TLB2Z"><small>&#9432;</small></a></h2>
 <label for="inpNamePrefix">Префикс имени устройств(а)</label>
 <input type="text" id="inpNamePrefix" value="" placeholder="B2Z">
@@ -855,21 +848,21 @@ window.onload = function() {
   <tr>
 	<td style="width:100px;">MAC1:</td>
 	<td><button type="button" id="btnGetMAC0" onclick="getDevMAC(0)">Прочитать</button></td>
-	<td><input type="text" id="inpDevMAC0" value="?" maxlength="16"></td>
+	<td><input type="text" id="inpDevMAC0" value="?" maxlength="18"></td>
 	<td><button type="button" id="btnSetMAC0" onclick="setDevMAC(0)">Записать</button></td>
 	<td><label id="lblMeasure0"></label></td>
   </tr>
   <tr>
 	<td style="width:100px;">MAC2:</td>
 	<td><button type="button" id="btnGetMAC1" onclick="getDevMAC(1)">Прочитать</button></td>
-	<td><input type="text" id="inpDevMAC1" value="?" maxlength="16"></td>
+	<td><input type="text" id="inpDevMAC1" value="?" maxlength="18"></td>
 	<td><button type="button" id="btnSetMAC1" onclick="setDevMAC(1)">Записать</button></td>
 	<td><label id="lblMeasure1"></label></td>
   </tr>
   <tr>
 	<td style="width:100px;">MAC3:</td>
 	<td><button type="button" id="btnGetMAC2" onclick="getDevMAC(2)">Прочитать</button></td>
-	<td><input type="text" id="inpDevMAC2" value="?" maxlength="16"></td>
+	<td><input type="text" id="inpDevMAC2" value="?" maxlength="18"></td>
 	<td><button type="button" id="btnSetMAC2" onclick="setDevMAC(2)">Записать</button></td>
 	<td><label id="lblMeasure2"></label></td>
   </tr>
