@@ -1,11 +1,6 @@
 <html class="b2zClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BLE2Zigbee v0.5</title>
-<!--<link rel="stylesheet" type="text/css" href="styles.css" />
-<link rel="stylesheet" type="text/css" href="chart.css" />
-<script type="text/javascript" src="dygraph.min.js" /></script> /-->
-<!--link rel="stylesheet" type="text/css" href="https://dygraphs.com/dist/dygraph.min.css /-->
-<!--script type="text/javascript" src="https://dygraphs.com/dist/dygraph.min.js" /></script-->
+<title>BLE2Zigbee v0.6</title>
 <style type="text/css">
 /* basic sytles */
 
@@ -33,7 +28,7 @@ span#info {
 }
 
 .button, [type='button'] {
-  background-color: #1a73e8; 
+  background-color: #1a73e8;
   border: none;
   border-radius: 4px;
   color: white;
@@ -294,13 +289,13 @@ select {
 /* Change background color of buttons on hover */
 .tab button:hover {
   /* background-color: #ddd; */
-  background-color: #1a73e8; 
+  background-color: #1a73e8;
 }
 
 /* Create an active/current tablink class */
 .tab button.active {
   /* background-color: #ccc; */
-  background-color: #4aa3ff; 
+  background-color: #4aa3ff;
 }
 
 /* Style the tab content */
@@ -363,7 +358,7 @@ function handleError(text) {
 		connectRetries++;
 		doConnect();
 	} else {
-		addLog("Подключиться не удалось!");
+		addLog("Connection failed!");
 		connectRetries = 0;
 		// disconnect();
 		$('btnConnect').disabled = false;
@@ -399,7 +394,7 @@ function connect() {
 	    }).catch(handleError);
 	} else {
 		showError("Browser doesn't support BLE API");
-	}	
+	}
 }
 
 function disconnect() {
@@ -541,7 +536,10 @@ function disableControls(state) {
 	$('btnGetBindKey2').disabled = state;
 	$('btnSetBindKey2').disabled = state;
 	$('btnSendCommand').disabled = state;
-	
+	$('btnGetOnOffCmd').disabled = state;
+	$('btnSetOnOffCmd').disabled = state;
+	$('btnGetIllumi').disabled = state;
+	$('btnSetIllumi').disabled = state;
 }
 
 function onDisconnected() {
@@ -672,9 +670,6 @@ function sendCommand() {
 	    console.log('Must be from 1 to 20 hex bytes!');
 }
 
-function showConfig() {
-}
-
 function parseBlkCustom(value) {
 	let len = value.byteLength;
 	if(len == 0) return;
@@ -682,6 +677,7 @@ function parseBlkCustom(value) {
 	let blkId = value.getUint8(0);
 	if((blkId == 0x00) && (len > 3)) {	// CMD_ID_DEVID Get dev id, version, services
 		devSrv.board = value.getUint8(1);
+		devSrv.version = value.getUint16(2, true);
 		devSrv.app_build = value.getUint8(2);
 		devSrv.app_release = value.getUint8(3);
 		addLog("Device info # hw: " + hex(devSrv.board,2)
@@ -724,7 +720,10 @@ function parseBlkCustom(value) {
 			}
 			if(start_read == true) {
 			  if(nn < 2) writeCmd([0x18, nn+1]);
-			  else start_read = false;
+			  else {
+			    if(nn == 2 && devSrv.version >= 0x0111) writeCmd([0x19]);
+				else  start_read = false;
+			  }
 			}
 		} else {
 			addLog("Error reading BindKeys!");
@@ -758,9 +757,44 @@ function parseBlkCustom(value) {
 			console.log('blk: ' + dump8(value, value.byteLength));
 			$("inpDevMAC"+nn).value = '?';
 		}
+	} else if(blkId == 0x19 && len > 6) { // Get/set illuminance min (minLevelLx)
+			console.log('blk: ' + dump8(value, value.byteLength));
+			let il = [];
+	    	il[0]  = value.getUint16(1, true);
+	    	il[1]  = value.getUint16(3, true);
+	    	il[2]  = value.getUint16(5, true);
+			addLog("Motion Illuminance: " + il[0] + ", " + il[1] + ", " + il[2] + " lx");
+            $("inpIllumi0").value = String(il[0]);
+            $("inpIllumi1").value = String(il[1]);
+            $("inpIllumi2").value = String(il[2]);
+		    if(start_read && devSrv.version >= 0x0111) writeCmd([0x1A]);
+			else start_read = false;
+	} else if(blkId == 0x1A && len > 3) { // Get/set illuminance min (minLevelLx)
+			console.log('blk: ' + dump8(value, value.byteLength));
+			let onc = [];
+	    	onc[0]  = value.getUint8(1);
+	    	onc[1]  = value.getUint8(2);
+	    	onc[2]  = value.getUint8(3);
+			addLog("On/Off command: 0x" + hex(onc[0],2) + ", 0x" + hex(onc[1],2) + ", 0x" + hex(onc[2],2));
+			$("selOnOffCmd0").value = String(onc[0]);
+			$("selOnOffCmd1").value = String(onc[1]);
+			$("selOnOffCmd2").value = String(onc[2]);
+			start_read = false;
 	} else {
 		console.log('blk: ' + dump8(value, value.byteLength));
 		addLog('Response to command (' + hex(blkId,2) + '): ' + bytesToHex(value.buffer.slice(1)));
+	}
+}
+
+function getIllumi() {
+	if(cmdCharacteristic != null) {
+		cmdCharacteristic.writeValue(new Uint8Array([0x19])).catch(error => { addLog("getIllumi Error: " + error); });
+	}
+}
+
+function getOnOffCmd() {
+	if(cmdCharacteristic != null) {
+		cmdCharacteristic.writeValue(new Uint8Array([0x1A])).catch(error => { addLog("getOnOff Error: " + error); });
 	}
 }
 
@@ -782,11 +816,9 @@ function setDevMAC(nn) {
         let macRegex = /^[0-9A-Fa-f]{12}$/;
 		let mac_clean = el.replace(/[:\-.\s]/g, '');
 	    if (macRegex.test(mac_clean)) {
-			let len = mac_clean.length;
-			if(len == 12) {
+			if(mac_clean.length == 12) {
 				let mac = hexToBytes(mac_clean);
-				len = mac.length;
-				if(len == 6) {
+				if(mac.length == 6) {
 					let mac_txt = mac_clean.match(/.{2}/g).join(':').toUpperCase();
 		            $("inpDevMAC"+nn).value = mac_txt;
 					let blk = new Uint8Array(8);
@@ -831,11 +863,45 @@ function setBindKey(nn) {
 	}
 }
 
+function setIllumi() {
+	if(cmdCharacteristic != null) {
+    	let l0 = parseInt($("inpIllumi0").value);
+    	let l1 = parseInt($("inpIllumi1").value);
+    	let l2 = parseInt($("inpIllumi2").value);
+		let blk = new Uint8Array(7);
+		blk[0] = 0x19;
+		blk[1] = l0 & 0xff;
+		blk[2] = (l0>>8) & 0xff;
+		blk[3] = l1 & 0xff;
+		blk[4] = (l1>>8) & 0xff;
+		blk[5] = l2 & 0xff;
+		blk[6] = (l2>>8) & 0xff;
+		console.log("Send new level illuminance ("+dump(blk, blk.length)+")...");
+			cmdCharacteristic.writeValue(blk).then(_ => {
+				addLog("Send level illuminance - ok");
+		});
+	}
+}
+
+function setOnOffCmd() {
+	if(cmdCharacteristic != null) {
+    	let l0 = parseInt($("selOnOffCmd0").value);
+    	let l1 = parseInt($("selOnOffCmd1").value);
+    	let l2 = parseInt($("selOnOffCmd2").value);
+		let blk= new Uint8Array(4);
+		blk[0] = 0x1A;
+		blk[1] = l0 & 0xff;
+		blk[2] = l1 & 0xff;
+		blk[3] = l2 & 0xff;
+		console.log("Send new OnOffCmdCode ("+dump(blk, blk.length)+")...");
+			cmdCharacteristic.writeValue(blk).then(_ => {
+				addLog("Send OnOffCmdCode - ok");
+		});
+	}
+}
 
 window.onload = function() {
-
 	showState("Not connected");
-
 	disableControls(true);
 };
 </script>
@@ -849,29 +915,29 @@ window.onload = function() {
 <div id="tabService" class="tabcontent">
 <table>
   <tr>
-	<td style="width:100px;">Command:</td>
+	<td style="width:80px;">Command:</td>
 	<td><button type="button" id="btnSendCommand" onclick="sendCommand()" style="width:120px;">Send</button></td>
-	<td><input type="text" id="inpCmdData" value="00" maxlength="40"></td>
+	<td><input type="text" id="inpCmdData" value="00" maxlength="40" size="40"></td>
   </tr>
 </table>
 <hr>
 <table>
   <tr>
-	<td style="width:100px;">MAC1:</td>
+	<td style="width:80px;">MAC1:</td>
 	<td><button type="button" id="btnGetMAC0" onclick="getDevMAC(0)">Read</button></td>
 	<td><input type="text" id="inpDevMAC0" value="?" maxlength="18"></td>
 	<td><button type="button" id="btnSetMAC0" onclick="setDevMAC(0)">Write</button></td>
 	<td><label id="lblMeasure0"></label></td>
   </tr>
   <tr>
-	<td style="width:100px;">MAC2:</td>
+	<td style="width:80px;">MAC2:</td>
 	<td><button type="button" id="btnGetMAC1" onclick="getDevMAC(1)">Read</button></td>
 	<td><input type="text" id="inpDevMAC1" value="?" maxlength="18"></td>
 	<td><button type="button" id="btnSetMAC1" onclick="setDevMAC(1)">Write</button></td>
 	<td><label id="lblMeasure1"></label></td>
   </tr>
   <tr>
-	<td style="width:100px;">MAC3:</td>
+	<td style="width:80px;">MAC3:</td>
 	<td><button type="button" id="btnGetMAC2" onclick="getDevMAC(2)">Read</button></td>
 	<td><input type="text" id="inpDevMAC2" value="?" maxlength="18"></td>
 	<td><button type="button" id="btnSetMAC2" onclick="setDevMAC(2)">Write</button></td>
@@ -882,22 +948,137 @@ window.onload = function() {
 <div id="divBindKey">
  <table>
   <tr>
-	<td style="width:100px;">BindKey1:</td>
+	<td style="width:80px;">BindKey1:</td>
 	<td><button type="button" id="btnGetBindKey0" onclick="getBindKey(0)">Read</button></td>
 	<td><input size="40" maxlength="32" title="Bind Key must contain 16 bytes in hex format" type="text" id="inpBindKey0" value="?"></td>
 	<td><button type="button" id="btnSetBindKey0" onclick="setBindKey(0)">Write</button></td>
   </tr>
   <tr>
-	<td style="width:100px;">BindKey2:</td>
+	<td style="width:80px;">BindKey2:</td>
 	<td><button type="button" id="btnGetBindKey1" onclick="getBindKey(1)">Read</button></td>
 	<td><input size="40" maxlength="32" title="Bind Key must contain 16 bytes in hex format" type="text" id="inpBindKey1" value="?"></td>
 	<td><button type="button" id="btnSetBindKey1" onclick="setBindKey(1)">Write</button></td>
   </tr>
   <tr>
-	<td style="width:100px;">BindKey3:</td>
+	<td style="width:80px;">BindKey3:</td>
 	<td><button type="button" id="btnGetBindKey2" onclick="getBindKey(2)">Read</button></td>
 	<td><input size="40" maxlength="32" title="Bind Key must contain 16 bytes in hex format" type="text" id="inpBindKey2" value="?"></td>
 	<td><button type="button" id="btnSetBindKey2" onclick="setBindKey(2)">Write</button></td>
+  </tr>
+ </table>
+</div>
+<div id="divLight">
+<hr>
+ <table>
+  <tr>
+  <td>Minimum illumination level for activation by motion event</td>
+  </tr>
+  <tr>
+	<td>1: <input size="10" maxlength="10" type="text" id="inpIllumi0" value="?"> lx</td>
+  </tr>
+  <tr>
+	<td>2: <input size="10" maxlength="10" type="text" id="inpIllumi1" value="?"> lx</td>
+  </tr>
+  <tr>
+	<td>3: <input size="10" maxlength="10" type="text" id="inpIllumi2" value="?"> lx</td>
+  </tr>
+  <tr>
+	<td><button type="button" id="btnGetIllumi" onclick="getIllumi()">Прочитать</button> <button type="button" id="btnSetIllumi" onclick="setIllumi()">Записать</button></td>
+  </tr>
+ </table>
+</div>
+<div id="divOnOffCmd">
+<hr>
+ <table>
+  <tr>
+  <td style="width:300px;">BTHome On/Off Command Code</td>
+  </tr>
+  <tr>
+	<td>1:
+	<select id="selOnOffCmd0">
+	<option value="16">0x10 Power</option>
+	<option value="17" selected>0x11 Opened</option>
+	<option value="26">0x1A Door</option>
+	<option value="27">0x1B Garage Door</option>
+	<option value="28">0x1C Gas</option>
+	<option value="29">0x1D Hot</option>
+	<option value="30">0x1E Light</option>
+	<option value="31">0x1F Locked</option>
+	<option value="32">0x20 Moisture</option>
+	<option value="33">0x21 Motion</option>
+	<option value="34">0x22 Moving</option>
+	<option value="35">0x23 Occupancy</option>
+	<option value="36">0x24 Plug</option>
+	<option value="37">0x25 Presence</option>
+	<option value="38">0x26 Problem</option>
+	<option value="39">0x27 Running</option>
+	<option value="40">0x28 Safe</option>
+	<option value="41">0x29 Smoke</option>
+	<option value="42">0x2A Sound</option>
+	<option value="43">0x2B Tamper</option>
+	<option value="44">0x2C Vibration</option>
+	<option value="45">0x2D Window</option>
+	</select>
+	</td>
+  </tr>
+  <tr>
+	<td>2:
+	<select id="selOnOffCmd1">
+	<option value="16">0x10 Power</option>
+	<option value="17" selected>0x11 Opened</option>
+	<option value="26">0x1A Door</option>
+	<option value="27">0x1B Garage Door</option>
+	<option value="28">0x1C Gas</option>
+	<option value="29">0x1D Hot</option>
+	<option value="30">0x1E Light</option>
+	<option value="31">0x1F Locked</option>
+	<option value="32">0x20 Moisture</option>
+	<option value="33">0x21 Motion</option>
+	<option value="34">0x22 Moving</option>
+	<option value="35">0x23 Occupancy</option>
+	<option value="36">0x24 Plug</option>
+	<option value="37">0x25 Presence</option>
+	<option value="38">0x26 Problem</option>
+	<option value="39">0x27 Running</option>
+	<option value="40">0x28 Safe</option>
+	<option value="41">0x29 Smoke</option>
+	<option value="42">0x2A Sound</option>
+	<option value="43">0x2B Tamper</option>
+	<option value="44">0x2C Vibration</option>
+	<option value="45">0x2D Window</option>
+	</select>
+	</td>
+  </tr>
+  <tr>
+	<td>3:
+	<select id="selOnOffCmd2">
+	<option value="16">0x10 Power</option>
+	<option value="17" selected>0x11 Opened</option>
+	<option value="26">0x1A Door</option>
+	<option value="27">0x1B Garage Door</option>
+	<option value="28">0x1C Gas</option>
+	<option value="29">0x1D Hot</option>
+	<option value="30">0x1E Light</option>
+	<option value="31">0x1F Locked</option>
+	<option value="32">0x20 Moisture</option>
+	<option value="33">0x21 Motion</option>
+	<option value="34">0x22 Moving</option>
+	<option value="35">0x23 Occupancy</option>
+	<option value="36">0x24 Plug</option>
+	<option value="37">0x25 Presence</option>
+	<option value="38">0x26 Problem</option>
+	<option value="39">0x27 Running</option>
+	<option value="40">0x28 Safe</option>
+	<option value="41">0x29 Smoke</option>
+	<option value="42">0x2A Sound</option>
+	<option value="43">0x2B Tamper</option>
+	<option value="44">0x2C Vibration</option>
+	<option value="45">0x2D Window</option>
+	</select>
+	</td>
+  </tr>
+  <tr>
+	<td><button type="button" id="btnGetOnOffCmd" onclick="getOnOffCmd()">Прочитать</button> <button type="button" id="btnSetOnOffCmd" onclick="setOnOffCmd()">Записать</button></td>
   </tr>
  </table>
 </div>
