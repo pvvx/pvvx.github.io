@@ -2217,7 +2217,7 @@ function doConnect() {
 				addLog("Detected THBdevice");
 				setStatus("Detected <a href='https://github.com/pvvx/THB2' target='_blank'>THBdevice</a>");
 				addLog('GitHub: <a href="https://github.com/pvvx/THB2" target="_blank">THB2</a> or Use: <a href="https://pvvx.github.io/THB2/web/PHY62x2BTHome.html" target="_blank">PHY62x2BTHome</a>');
-		    	return getDevVersion(devInfEnabled).then(_ => {
+		    	getDevVersion(devInfEnabled).then(_ => {
 				if (devinfo.hrstr) addLog('Hardware Revision String: ' + devinfo.hrstr);
 				if (devinfo.srstr) addLog('Software Revision String: ' + devinfo.srstr);
 				if (devinfo.frstr) addLog('Firmware Revision String: ' + devinfo.frstr); });
