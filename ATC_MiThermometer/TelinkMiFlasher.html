@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v12.4</title>
+<title>Telink Flasher v13.0</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -45,6 +45,7 @@ var cmf = {enable: false, tmp_lo: 2100, tmp_hi: 2600, hm_lo: 3000, hm_hi: 6000};
 var dnm = {enable: false, name: ""};
 var devtime = {};
 var pincode = {enable: false, value: 0};
+var miClockTime, miClockTimer = null;
 //Mi values
 var miEnabled = false,
 	otaEnabled = false,
@@ -93,6 +94,10 @@ function resetVariables() {
 	devinfo.frstr = null;
 	trsc.int = null;
 	hwver_id = null;
+	if(miClockTimer) {
+	   clearInterval(miClockTimer);
+	   miClockTimer = null;
+	}		
 	//fzigbeeota.used = false;
 	//fwname = '';
 	devtime = {};
@@ -218,7 +223,9 @@ const hw_version_str = [
 'TN_6ATAG3',
 'ZG-303Z',
 'ZBeacon-TH01',
-'ZBeaconMC'];
+'ZBeaconMC',
+'ZBeaconMC2',
+'LYWSD02MMC'];
 
 const id_sensor_str = [
 "None",
@@ -946,6 +953,57 @@ function CGG1_Action(model) {
 			});
 		}).catch(handleError);
 }
+function updateMiClock() {
+	if($("miclk")) {
+		let clk = new Date(miClockTime + Date.now());
+		$("miclk").innerHTML = clk.toLocaleString();
+	}
+}
+var clockCharacteristic;
+function setMiClock() {
+	if(!clockCharacteristic) return;
+	var x = new Date();
+	var tzh = -x.getTimezoneOffset()/60;
+	let buffer = new Uint8Array(6); 
+	let ut = Math.floor(Date.now()/1000);
+	buffer[0] = ut & 0xff;
+	buffer[1] = (ut >> 8) & 0xff;
+	buffer[2] = (ut >> 16) & 0xff;
+	buffer[3] = (ut >> 24) & 0xff;
+	if(tzh < 0)	tzh += 24; // ?
+	buffer[4] = tzh; // local time step 1 hr
+	buffer[5] = 0; // local time step 15 m
+	addClog(bytesToHex(buffer));
+   	clockCharacteristic.writeValue(buffer).then(_ => {
+		miClockTime = 0;
+		let clk = new Date(ut*1000);
+		addAlog("Set MiTime: "+clk.toLocaleString()+" - ok");
+	});
+}
+function showMiClock(value) {
+	if(value.byteLength >= 6 ) {
+		$("MAC").innerHTML='<button type="button" onclick="getMiClock();">Get MiClock</button> <button type="button" onclick="setMiClock();">Set MiClock</button> <span id="miclk">?</span>';
+		console.log("value: " + bytesToHex(value.buffer));  
+		var x = new Date();
+		var tz = x.getTimezoneOffset();
+		let miclk = value.getUint32(0, true)*1000;
+		let tzh = value.getUint8(4); // local time step 1 hr
+		let tzl = value.getUint8(5); // local time step 15 m
+		if(tzh > 12) tzh = 24 - tzh; // ?
+		tzh*=3600000;
+		miClockTime = miclk + tzh - Date.now() + tz*60000;
+		let clk = new Date(miclk);
+		addAlog("Get MiClock: " + clk.toLocaleString());
+		miClockTimer ??= setInterval(updateMiClock, 1000);
+	}
+}
+
+function getMiClock() {
+	if(!clockCharacteristic) return;
+	clockCharacteristic.readValue().then(value => {
+		showMiClock(value);
+	});
+}
 //var micharacteristics;
 function miAction() {
 	writeCharacteristicSpeed = null;
@@ -974,9 +1032,18 @@ function miAction() {
 							let temp = value.getInt16(0, true) / 100;
 							let hum = value.getUint8(2);
 							let vbat = value.getUint16(3,true);
-							let tempTempString = "Temp: " + temp + "°C, Humi: " + hum + "%, "+vbat+" mV";
+							let tempTempString = "Temp: " + temp + "°C, Humi: " + hum + "%, Bat: "+vbat+" mV";
 							$("tempHumiData").innerHTML = '<hr>'+tempTempString;
 							addClog(tempTempString); });
+						});
+					});
+				}
+				else if (characteristics[i].uuid == "ebe0ccb7-7a0a-4b0c-8a1a-6ff2997da3a6") {
+					ServiceMain.getCharacteristic(characteristics[i].uuid).then ( characteristic =>
+					{ addClog('Found MiClock characteristic');
+						clockCharacteristic = characteristic;
+						return clockCharacteristic.readValue().then(value => {
+							showMiClock(value);
 						});
 					});
 				}
@@ -1702,6 +1769,7 @@ function getTestCharacteristic() {
 }
 
 function menuUpgrade() {
+	if(!otaEnabled) return;
 	let is = "";
 	$("ldfile").hidden = false;
 	if(hwver_id != null) {
@@ -2035,8 +2103,14 @@ function miAuthorization() {
 						hwver_id = cfg.hver & 0x0f;
 					let s="'"+bluetoothDevice.name;
 					if (devinfo.hrstr) s+=" HW:"+devinfo.hrstr;
-					s+="' connected, you can now Do the Activation to either get the Token or flash a new Firmware";
+					s+="' connected, you can now Do the Activation to either get the Token";
+					if(otaEnabled) s+=" or flash a new Firmware";
+					else $("ldfile").hidden = true;
 					setStatus(s);
+//					if(hwver_id == 49) {
+//						$("MAC").innerHTML= '<button type="button" onclick="SetMiClock();">SetMiClock</button> <span id="miclk">?</span>';
+//						console.log("!!!!")
+//					}
 				});
 			});
 		}).catch(handleError);
@@ -2147,13 +2221,30 @@ function doConnect() {
 				if (devinfo.hrstr) addLog('Hardware Revision String: ' + devinfo.hrstr);
 				if (devinfo.srstr) addLog('Software Revision String: ' + devinfo.srstr);
 				if (devinfo.frstr) addLog('Firmware Revision String: ' + devinfo.frstr); });
+			} else {
+			    getDevVersion(devInfEnabled).then(_ => {
+				if (devinfo.hrstr) addLog('Hardware Revision String: ' + devinfo.hrstr);
+				if (devinfo.srstr) addLog('Software Revision String: ' + devinfo.srstr);
+				if (devinfo.frstr) addLog('Firmware Revision String: ' + devinfo.frstr); });
+				if (miEnabled) {
+					addLog("Detected Mi device, no Telink OTA service");
+					setStatus("Detected Mi device, no Telink OTA service");
+					if (bluetoothDevice.name.substr(0,10) == "LYWSD02MMC") {
+					    hwver_id = 49;
+					    //fwmaxsize = MAX_BLE_OTA_SIZE;
+						$("custcfg").innerHTML = '<hr>When doing an activation here the device is needed to be activated in the Mi app again when wanted to use there.<br><button type="button" onclick="sendRegister();">Do Activation</button> <button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
+						miAction();
+					}
+				}
 			}
 		}
 		connectTrys = 1000;
 		return;
 	}).then(service => {
-		addClog("Found Telink OTA service");
-		Theservice = service;
+		if(otaEnabled) {
+			addClog("Found Telink OTA service");
+			Theservice = service;
+		}
 		return Theservice.getCharacteristic('00010203-0405-0607-0809-0a0b0c0d2b12');
 	}).then(characteristic => {
 		addClog("Found Telink OTA write characteristic");
@@ -2166,6 +2257,10 @@ function doConnect() {
 		if (miEnabled) {
 			addLog("Detected Mi device");
 			setStatus("Detected Mi device");
+			if (bluetoothDevice.name.substr(0,10) == "LYWSD02MMC") {
+			    hwver_id = 48;
+			    fwmaxsize = MAX_BLE_OTA_SIZE;
+			} else
 			if (bluetoothDevice.name.substr(0,10) == "MJWSD05MMC") {
 				fwmaxsize = MAX_EXT_OTA_SIZE;
 			}
@@ -3929,7 +4024,6 @@ function SendCustomConfig() {
 	</div>
 </div>
 <hr>
-<!-- Copyright: Aaron Christophel / Atc1441	 <a href="https://atcnetz.de">https://ATCnetz.de</a><br> -->
 <div style="height: auto; width: auto;">
   <input type="checkbox" title="Web Experimental Features!" id="advmac">
   <label for="advmac">Get Advertising MAC</label>
@@ -3944,8 +4038,8 @@ function SendCustomConfig() {
  <div id="tempHumiData">Temp/Humidity: waiting for data after connecting</div><hr>
  <div id="MAC"></div>
  <div>
-	<hr>
 	<div id="ldfile" hidden="true">
+	<hr>
 		Select Firmware: <input type="file" accept=".bin,.zigbee" id="file"/></div>
 	<div id="ldfrmw"></div>
  </div>
