@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZigbeeTLc Index Configurator for Zigbee OTA v0.5</title>
+<title>ZigbeeTLc Index Configurator for Zigbee OTA v0.6</title>
 </head>
 <body>
 <script>
@@ -320,13 +320,18 @@ function testOTAFirmware(data, fname) {
 		return "Wrong binary Telink OTA firmware size!";
 	if (fsize > 1024*1024) // 1M
 		return "The file size exceeds 1 Mbytes!";
+	if(fsize > MAX_FW_OTA_SIZE) // 200KB
+		return "Size firmware is more "+(MAX_FW_OTA_SIZE/1024)+"kbytes!";
 	let	head = new DataView(data);
 	if(head.getUint32(0, true) == 0x0beef11e) { // Zigbee OTA
 		if(head.getUint16(4, true) != 0x100	|| head.getUint16(6, true) != 56)
 			return "Unknown Zigbee OTA header!";
-		fzigbeeota.size = head.getUint32(0x3A, true);
-		if(fzigbeeota.size < 1024 || fzigbeeota.size + 0x3e > fsize)
-			return "Wrong binary Zigbee OTA firmware size!";
+		fzigbeeota.hfwsz = head.getUint32(0x34, true);
+		if(fsize != fzigbeeota.hfwsz)
+			return "The firmware file size specified in the Zigbee header is incorrect or the file size is invalid!";
+		fzigbeeota.tagid = head.getUint16(0x38, true);
+		if(fzigbeeota.tagid == 0xf000)
+			return "Zigbee OTA encrypted packaging!";
 		fzigbeeota.man_code = head.getUint16(0x0a, true);
 		fzigbeeota.image_type = head.getUint16(0x0c, true);
 		fzigbeeota.fwversion = head.getUint32(0x0e, true);
@@ -342,6 +347,9 @@ function testOTAFirmware(data, fname) {
 			fzigbeeota.head_str_man = ""; 
 			fzigbeeota.head_str_name = ""; 
 		};
+		fzigbeeota.size = head.getUint32(0x3A, true);
+		if(fzigbeeota.size < 1024 || fzigbeeota.size + 0x3e > fsize)
+			return "Wrong binary Zigbee OTA firmware size!";
 
 		addAlog("Zigbee OTA Info: ManCode: 0x"+hex(fzigbeeota.man_code, 4)+ ", ImageType: 0x" + hex(fzigbeeota.image_type,4) + ", FwVer: 0x" + hex(fzigbeeota.fwversion, 8));
 		addAlog("APP Release: " + ((fzigbeeota.fwversion >> 28)&0x0f) + "." + ((fzigbeeota.fwversion >> 24)&0x0f)
@@ -349,7 +357,7 @@ function testOTAFirmware(data, fname) {
 		+ ", Stack Version: " + ((fzigbeeota.fwversion >> 12)&0x0f) + "." + ((fzigbeeota.fwversion >> 8)&0x0f)
 		+ " Release: " + ((fzigbeeota.fwversion >> 4)&0x0f) + "." + (fzigbeeota.fwversion&0x0f));
 		addAlog("Header String: "+ fzigbeeota.head_str);
-		if(fzigbeeota.fsize > MAX_FW_OTA_SIZE) // 200KB
+		if(fsize > MAX_FW_OTA_SIZE) // 200KB
 			return "Size firmware is more "+(MAX_FW_OTA_SIZE/1024)+"kbytes!";
 
 	 	head = new DataView(data, 0x3e, 0x3e + 28);
