@@ -2,16 +2,77 @@
 <html>
   <head><meta charset="utf-8">
   <title>HOBEIAN ZG-204ZL</title>
+  <style>
+	body {text-align: center;}
+	table {margin: 0 auto;}
+    table, th, td {border-collapse: collapse;}
+  </style>
   </head>
   <body>
 	<div style="height: auto; width: auto; text-align: center;">
-	<h2>HOBEIAN ZG-204ZL: Tuya ZigBee "Mini PIR Sensor" + LUX sensor</h2>
+	<h2>HOBEIAN ZG-204ZL: Sonoff ZigBee "Mini PIR Sensor" + LUX sensor</h2>
 	SoC: TLSR8253<br>
+	SO23-3 Mark: 65NL - LDO XC6206 2.1V<br>
 	<img src="img/ZG-204ZL-3.0.jpg" style="max-width:100%;"><br>
 	<img src="img/pcb.jpg" style="max-width:100%;"><br><br>
+<table align="center" border="1">
+  <tr>
+    <th>GPIO</th>
+    <th>Function</th>
+  </tr>
+  <tr>
+    <td>PA1</td>
+    <td>KEY -> GND</td>
+  </tr>
+  <tr>
+    <td>PC4</td>
+    <td>R to GND + Rsense -> PD3</td>
+  </tr>
+  <tr>
+    <td>PD3</td>
+    <td>Rsense -> PC4 + R to GND</td>
+  </tr>
+  <tr>
+    <td>PD4</td>
+    <td>PIR -> GND / +2.1V</td>
+  </tr>
+  <tr>
+    <td>PD7</td>
+    <td>LED -> R 1k -> +Vbat</td>
+  </tr>
+</table><br><br>
+Connector:<br>
+<table align="center" border="1">
+  <tr>
+    <th>Pin</th>
+    <th>Function</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>+Vbat</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>GND</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>PA7/SWS</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>PB1/TX</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>PB7/RX</td>
+  </tr>
+</table><br><br>
+
 	<a href="bin/ZG-204ZL-3.0_ff.zip">Original FullFlash bin</a><br><br>
 	Average consumption (original FW) of 0.2 mA (!)<br>
 	<img src="img/or_pwr.png" style="max-width:100%;"><br>
+	1286-0203-20013001-Sonoff:ZG-204ZL<br>
 	</div>
   </body>
 </html>
