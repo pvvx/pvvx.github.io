@@ -45,7 +45,7 @@
 | 37 | 0x0225 | [ZY-ZTH02](https://pvvx.github.io/ZY-ZTH02) TS0201_TZ3000_v1w2k9dd without LCD | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Tuya', 'ZY-ZTH02-z'
 | 38 | 0x0226 | [ZY-ZTH02Pro](https://pvvx.github.io/ZY-ZTH02Pro), [ZY-ZTH03Pro](https://pvvx.github.io/TS0201_TZ3000_v1w2k9dd) TS0201_TZ3000_v1w2k9dd LCD | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Tuya', 'ZY-ZTH01-z' |
 | 39 | 0x0227 | [ZG-227Z](https://pvvx.github.io/ZG-227Z) TS0601_TZE200_a8sdabtg | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Tuya', 'ZG-227Z-z' |
-| 40 | 0x0228 | [TS0202_PIR1](https://pvvx.github.io/TS0202_TZ3000) TS0202_TZ3000_lf56vpxj | develop | - |
+| 40 | 0x0228 | [TS0202_PIR1](https://pvvx.github.io/TS0202_TZ3000) TS0202_TZ3000_lf56vpxj | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Tuya', 'TS202PIR1-z' |
 | 41 | 0x0229 | TS0202_PIR2 TS0202_TZ3040_bb6xaihh | develop | - |
 | 42 | 0x022A | [HDP16](https://pvvx.github.io/HDP16) MiLi MiTag HD-P16 | [BLE](https://github.com/pvvx/THB2) | - |
 | 43 | 0x022B | [TN-6ATAG3-V01](https://pvvx.github.io/TN-6ATAG3-V01) - Smart finder, "Apple Find My", PCB mark: TN-6ATAG3-V01 | [BLE](https://github.com/pvvx/THB2) | - |
