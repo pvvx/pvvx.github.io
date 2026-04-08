@@ -1,11 +1,76 @@
-TS0201_TZ3000_1twfmkcc HS09
-TS0201_TZ3000_v1w2k9dd ZY_ZTH03Pro
-TS0001_TZ3000_kqvb5akv "Mini Zigbee Switch"
-TS0001_TZ3000 "DIY Smart Switch"
-TS0041_TZ3000_fa9mlvja CB3S
-TS0201_TZ3000_TH03 ZTH03
-TS0202_TZ3000 ZP01
-DS01_zbeacon TS0003 _TZ3000_gohcgzj7 Tuya ZigBee Door Window Sensor "DS01 zbeacon"
-TS0001_TZ3000_fdxihpp7 "Mini Smart Switch"
-TS000F_TZ3000_xkap8wtb "Mini Smart Switch"
-ZG-807Z HOBEIAN CK-BL702-ROUTER-01(7018)
+ATC_MiThermometer - BLE Xiaomi Thermo-Hygrometer
+MHO_C122 - E-ink Bluetooth Mini Thermo-Hygrometer
+MHO_C401 - E-ink BLE Xiaomi Thermo-Hygrometer
+MHO_C401N - E-ink BLE Xiaomi Thermo-Hygrometer
+CGG1 - E-ink BLE Qingping Temp & RH Monitor
+CGG1_2022 - E-ink BLE Qingping Temp & RH Monitor
+CGG1_old - E-ink BLE Qingping Temp & RH Monitor
+LYWSD02 - E-ink Xiaomi Temp & RH + Clock
+CGPR1 - BLE Xiaomi
+XMWSDJ04MMC - E-ink BLE Xiaomi Temp & RH
+MJWSD05MMC - BLE Xiaomi Temp & RH + Clock
+SJWS01LM - BLE Mijia Mi Flood Detector
+CGDK2 - BLE Qingping Temp & RH Monitor Lite
+CGDK2-2 - Not BLE!, "Qingping Temp & RH Monitor Lite E"
+CX0726B - BLE Thermo-Hygrometer Beijing OnMicro Electronics LT_96F2
+iSearching - BLE, Flash
+iSearching2 - BLE, Flash
+iSearching3 - BLE, OTP
+RemoteShutter - BLE, OTP
+TS0001_TZ3000 - Tuya ZigBee "DIY Smart Switch"
+TS0001_TZ3000_fdxihpp7 - Tuya ZigBee "Mini Smart Switch"
+DS01_zbeacon - Tuya ZigBee Door Window Sensor TS0003 _TZ3000_gohcgzj7
+TS0201_TZ3000 - Tuya ZigBee Thermo-Hygrometer
+TS0201_TZ3000_TH03 - Tuya ZigBee TH03 LCD Thermo-Hygrometer
+TS0202_TZ3000 - Tuya ZigBee ZP01 IR-Motion sensor
+TS0207_TZ3000 - Tuya ZigBee "Wireless Water Detector"
+TS0601_TZE200_zth01 - Tuya ZigBee ZTH01 Thermo-Hygrometer
+TS0601_TZE200_zth02 - Tuya ZigBee ZTH02 Thermo-Hygrometer
+TS0601_TZE204 - Tuya ZigBee ZTH05 Thermo-Hygrometer
+THB1 - Tuya BLE Temperature & Humidity Sensor
+THB3 - Tuya BLE Temperature & Humidity Sensor
+THB2 - Tuya BLE Temperature & Humidity Sensor
+TH03Z - Tuya Zigbee Temperature & Humidity Sensor
+TH-05 - Tuya BLE Temperature & Humidity Sensor
+TH05-v1.3 - Tuya BLE Temperature & Humidity Sensor
+TH05F - Tuya BLE Temperature & Humidity Sensor
+BTH01 - Tuya BLE Temperature & Humidity Sensor
+RSH-GW018_DM - Tuya Smart Gateway WiFi-BLE-Zigbee
+PLANT-MON - Tuya BLE "Plant monitor"
+LKTMZL02 - Tuya Zigbee Temperature & Humidity Sensor (LCD)
+ZSS-ZK-THL - E-ink Moes ZigBee "Smart Brightness Thermometer"
+TS0041_TZ3000_fa9mlvja - Tuya ZigBee "Smart Button"
+TS0201_TZ3000_1twfmkcc - Tuya Zigbee "Smart Humidity Sensor"
+TH04 - Tuya BLE "Wireless Temperature & Humidity Sensor"
+FindMyQMDv1 - Apple FindMy-QMD-v1
+ZG-103Z - Tuya ZigBee Vibration Sensors
+ZG-227Z - Tuya Zigbee "Smart Humidity Sensor"
+SP621E - Bluetooth Controller for WS2812/WS2811
+MJWSD06MMC - Xiaomi Bloetooth Temp & Humidity BLE Sensor
+HDP16 - "Apple Find My" MiLi MiTag HD-P16
+TN-6ATAG3-V01 - Smart finder, "Apple Find My", PCB mark: TN-6ATAG3-V01
+BDT - Telink BDT C1T42A20_V29
+TS000F_TZ3000_xkap8wtb - Tuya ZigBee "Mini Smart Switch"
+TS0201_TZ3000_v1w2k9dd - Tuya ZigBee "Temp & Humidity Sensor"
+DL24 - BLE-USB-tester Atorch DL24
+Zbeacon-TH01 - Tuya ZigBee "Temp & Humidity Sensor"
+TS0001_TZ3000_kqvb5akv - Tuya ZigBee "Mini Zigbee Switch"
+TS011F_TZ3000_gjnozsaz - Tuya ZigBee Switch with Power Monitor (Chip: TLSR8656, Sensor: BL0942)
+ZG-204ZL-3.0 - Tuya ZigBee "Mini PIR Sensor" + LUX sensor HOBEIAN CK-BL702-ROUTER-01(7018)
+Zbeacon-TS0001 - Tuya "Zigbee Smart Switch" + RF433
+Zbeacon-TH01-v2.0 - Tuya ZigBee "Temp & Humidity Sensor"
+ZG-807Z - Zigbee Repeater
+TY0201_TZ3000_bjawzodf - Tuya ZigBee "Temp & Humidity Sensor"
+blethr - BLE T&H repeater
+SPP - PowerProfiler
+tests - wso_adcs.html
+TLB2Z - BLE2Zigbee.html
+TlsrSmartSwitch - zigbeeswconfig.html
+Zbeacon-MC - Zbeacon-MC: Tuya ZigBee
+ZG-303Z - HOBEIAN ZG-303Z Tuya ZigBee Soil moisture sensor
+Zigbee2ble  - Zigbee2ble.html
+ZY-ZTH02 - TS0201_TZ3000_v1w2k9dd, TS0201_TZ3000_dnpd6ayp, Tuya ZigBee "Temp & Humidity Sensor"
+ZY-ZTH02Pro - TS0201_TZ3000_v1w2k9dd, Tuya ZigBee "Temp & Humidity Sensor"
+UBIA - UBIA html
+AdScanerTrg  - AdScanerTrg2.html
+LYWSD03MMC - BoardPinout, img

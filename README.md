@@ -54,6 +54,10 @@
 | 46 | 0x022E | [ZBEACON-MC](https://pvvx.github.io/Zbeacon-MC) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'ZBeacon', 'MC-z' |
 | 47 | 0x022F | [ZBEACON-TH01-v2.0](https://pvvx.github.io/Zbeacon-TH01-v2.0) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'ZBeacon', 'TH01-2-z' |
 | 48 | 0x0230 | [TY0201](https://pvvx.github.io/TY0201_TZ3000_bjawzodf) | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Tuya', 'TY0201-z' |
+| 49 | 0x0231 | LYWSD02MMC | [BLE](https://github.com/pvvx/ATC_MiThermometer) | 'Xiaomi', 'LYWSD02MMC-z' |
+| 50 | 0x0232 | [ZG-204ZL](https://pvvx.github.io/ZG-204ZL-3.0) | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Sonoff', 'ZG-204ZL-z' |
+
+
 
 ### All [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc):
 

@@ -1,6 +1,6 @@
 <html class="b2zClass"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BLE2Zigbee v0.6</title>
+<title>BLE2Zigbee v0.7</title>
 <style type="text/css">
 /* basic sytles */
 
@@ -513,7 +513,7 @@ function doConnect() {
 			}
 			if(cmd)
 				return b2zConnect(true);
-		    addLog("Выбрано неверное устройтво!");
+		    addLog("Выбрано неверное устройство!");
 		    bluetoothDevice.gatt.disconnect();
 		    connectRetries = 10;
 		    return null;
@@ -763,13 +763,33 @@ function parseBlkCustom(value) {
 	    	il[0]  = value.getUint16(1, true);
 	    	il[1]  = value.getUint16(3, true);
 	    	il[2]  = value.getUint16(5, true);
-			addLog("Motion Illuminance: " + il[0] + ", " + il[1] + ", " + il[2] + " lx");
-            $("inpIllumi0").value = String(il[0]);
-            $("inpIllumi1").value = String(il[1]);
-            $("inpIllumi2").value = String(il[2]);
+			console.log("Motion Illuminance: " + il[0] + ", " + il[1] + ", " + il[2]);
+			let ilx = [];
+			if(il[0] < 0xffff) {
+		    	ilx[0] = il[0] == 0 ? 0 : Math.round(10 ** ((il[0] - 1) / 10000));
+				$("inpIllumi0").value = String(ilx[0]);
+			} else {
+				ilx[0] = "?";
+				$("inpIllumi0").value = "?";
+			}
+			if(il[1] < 0xffff) {
+		    	ilx[1] = il[1] == 0 ? 0 : Math.round(10 ** ((il[1] - 1) / 10000));
+	            $("inpIllumi1").value = String(ilx[1]);
+			} else {
+		        ilx[1] = "?";
+				$("inpIllumi1").value = "?";
+			}
+			if(il[2] < 0xffff) {
+				ilx[2] = il[2] == 0 ? 0 : Math.round(10 ** ((il[2] - 1) / 10000));
+				$("inpIllumi2").value = String(ilx[2]);
+		    } else {
+		        ilx[2] = "?";
+			    $("inpIllumi2").value = "?";
+			}
+			addLog("Motion Illuminance: " + ilx[0] + ", " + ilx[1] + ", " + ilx[2] + " lx");
 		    if(start_read && devSrv.version >= 0x0111) writeCmd([0x1A]);
 			else start_read = false;
-	} else if(blkId == 0x1A && len > 3) { // Get/set illuminance min (minLevelLx)
+	} else if(blkId == 0x1A && len > 3) { 
 			console.log('blk: ' + dump8(value, value.byteLength));
 			let onc = [];
 	    	onc[0]  = value.getUint8(1);
@@ -830,7 +850,7 @@ function setDevMAC(nn) {
 					blk[5] = mac[2];
 					blk[6] = mac[1];
 					blk[7] = mac[0];
-					console.log("Send cmd New MAC N"+nn+" ("+dump(blk, blk.length)+")...");
+					console.log("Send cmd New MAC N"+nn+" ["+dump(blk, blk.length)+"]...");
 					cmdCharacteristic.writeValue(blk).then(_ => {
 						addLog("Передача нового MAC"+(nn+1)+": "+mac_txt+" ok");
 					});
@@ -868,6 +888,18 @@ function setIllumi() {
     	let l0 = parseInt($("inpIllumi0").value);
     	let l1 = parseInt($("inpIllumi1").value);
     	let l2 = parseInt($("inpIllumi2").value);
+    	if(l0 != 0) {
+	    	if(l0 > 0 && l0 <= 3576000) l0 = Math.round(10000*Math.log10(l0));
+    		else l0 = 0xffff;
+    	}
+    	if(l1 != 0) {
+	    	if(l1 > 0 && l1 <= 3576000) l1 = Math.round(10000*Math.log10(l1));
+    		else l1 = 0xffff;
+    	}
+    	if(l2 != 0) {
+	    	if(l2 > 0 && l2 <= 3576000) l2 = Math.round(10000*Math.log10(l2));
+    		else l2 = 0xffff;
+   		}
 		let blk = new Uint8Array(7);
 		blk[0] = 0x19;
 		blk[1] = l0 & 0xff;
@@ -876,7 +908,7 @@ function setIllumi() {
 		blk[4] = (l1>>8) & 0xff;
 		blk[5] = l2 & 0xff;
 		blk[6] = (l2>>8) & 0xff;
-		console.log("Send new level illuminance ("+dump(blk, blk.length)+")...");
+		console.log("Send new level illuminance ["+dump(blk, blk.length)+"]...");
 			cmdCharacteristic.writeValue(blk).then(_ => {
 				addLog("Send level illuminance - ok");
 		});
@@ -893,7 +925,7 @@ function setOnOffCmd() {
 		blk[1] = l0 & 0xff;
 		blk[2] = l1 & 0xff;
 		blk[3] = l2 & 0xff;
-		console.log("Send new OnOffCmdCode ("+dump(blk, blk.length)+")...");
+		console.log("Send new OnOffCmdCode ["+dump(blk, blk.length)+"]...");
 			cmdCharacteristic.writeValue(blk).then(_ => {
 				addLog("Send OnOffCmdCode - ok");
 		});
