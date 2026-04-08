@@ -2,20 +2,42 @@
 <html>
   <head><meta charset="utf-8">
   <title>TS0202 (TZ3000)</title>
+  <style>
+	body {text-align: center;}
+	table {margin: 0 auto;}
+    table, th, td {border-collapse: collapse;}
+  </style>
   </head>
   <body>
 	<div style="height: auto; width: auto; text-align: center;">
 	<h2>TS0202 (_TZ3000_lf56vpxj): Tuya ZigBee ZP01</h2><hr>
-	<img src="img/ZP01.jpg" style="max-width:40%;">
-	<br><hr>
-	<a href="https://developer.tuya.com/en/docs/iot/ztu-module-datasheet?id=Ka45nl4ywgabp">Module ZTU</a>, Sensor: <a href="https://www.nysenba.com/pir/">?</a><br>
-
+	<img src="img/ZP01.jpg" style="max-width:40%;"><br>
+	<a href="https://developer.tuya.com/en/docs/iot/ztu-module-datasheet?id=Ka45nl4ywgabp">Module ZTU</a>, Sensor: BS612<br>
 	<img src="img/ts0202_pcb1.png" style="max-width:100%;"><br>
 	<img src="img/ts0202_pcb2.png" style="max-width:100%;"><br><br>
+<table align="center" border="1">
+  <tr>
+    <th>GPIO</th>
+    <th>Function</th>
+  </tr>
+  <tr>
+    <td>PC0</td>
+    <td>KEY (On "0")</td>
+  </tr>
+  <tr>
+    <td>B4</td>
+    <td>LED (On "1")</td>
+  </tr>
+  <tr>
+    <td>PD7</td>
+    <td>PIR (On "1")</td>
+  </tr>
+</table><br><br>
+На плате установлены резисторы R5 и R6. Они задают длительность сигнала срабатывания сенсора на более 30 секунд. Для уменьшения потребления и установки длительности сигнала на 1 секунду эти резисторы следует удалить. Иначе будет не задать длительность включения по срабатыванию на менее чем 40 секунд.<br>
+	<a href="https://github.com/pvvx/ZigbeeTLc">Custom FirmWare</a><br>
 	<hr>
-	<a href="bin/ts0202_ff.zip">FullFlash bin</a><br>
-	<hr>
-	Power consumption when motion is detected:<br>
+	<a href="bin/ts0202_ff.zip">Original FullFlash bin</a><br>
+	Power consumption (original FW) when motion is detected:<br>
 	<img src="img/power_motion.png"">
 	</div>
   </body>
