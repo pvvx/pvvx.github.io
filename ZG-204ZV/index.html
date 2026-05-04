@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+  <head><meta charset="utf-8">
+  <title>HOBEIAN ZG-204ZV</title>
+  <style>
+	body {text-align: center;}
+	table {margin: 0 auto;}
+    table, th, td {border-collapse: collapse;}
+  </style>
+  </head>
+  <body>
+	<div style="height: auto; width: auto; text-align: center;">
+	<h2>HOBEIAN ZG-204ZV: Sonoff ZigBee "Human Motion sensor": Radar + Lx + TH sensors</h2>
+	SoC: TLSR8253, XBR818, Photo-resistor, TH sensor: WHT20, <br>
+	<a href="https://github.com/pvvx/ZigbeeTLc">Custom Zigbee FirmWare</a><br>
+	<a href="https://github.com/pvvx/ATC_MiThermometer">Custom BLE FirmWare</a><br>
+	<img src="img/HOBEIAN-ZG-204ZV.jpg" style="max-width:100%;"><br><br>
+<table align="center" border="1">
+  <tr>
+    <th>GPIO</th>
+    <th>Function</th>
+  </tr>
+  <tr>
+    <td>PD4</td>
+    <td>KEY -> GND</td>
+  </tr>
+  <tr>
+    <td>PB5</td>
+    <td>Rsense -> PB6</td>
+  </tr>
+  <tr>
+    <td>PB6</td>
+    <td>Rsense -> PB5 + R to GND</td>
+  </tr>
+  <tr>
+    <td>PC2</td>
+    <td>LED -> R 1k -> +Vbat</td>
+  </tr>
+  <tr>
+    <td>PC3</td>
+    <td>SDA -> WHT20</td>
+  </tr>
+  <tr>
+    <td>PC5</td>
+    <td>SCL -> WHT20</td>
+  </tr>
+  <tr>
+    <td>PA0</td>
+    <td>SCL -> XBR818</td>
+  </tr>
+  <tr>
+    <td>PA1</td>
+    <td>SDA -> XBR818</td>
+  </tr>
+  <tr>
+    <td>PD7</td>
+    <td>OUT <- XBR818</td>
+  </tr>
+</table><br><br>
+Connector:<br>
+<table align="center" border="1">
+  <tr>
+    <th>Pin</th>
+    <th>Function</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>PB7</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>PB1</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>PA7/SWS</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>GND</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>+Vbat</td>
+  </tr>
+</table><br><br>
+	<a href="bin/HOBEIAN-ZG-204ZV_ff.zip">Original FullFlash bin</a><br><br>
+  </body>
+</html>
