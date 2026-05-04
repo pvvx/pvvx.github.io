@@ -56,6 +56,7 @@
 | 48 | 0x0230 | [TY0201](https://pvvx.github.io/TY0201_TZ3000_bjawzodf) | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Tuya', 'TY0201-z' |
 | 49 | 0x0231 | LYWSD02MMC | [BLE](https://github.com/pvvx/ATC_MiThermometer) | 'Xiaomi', 'LYWSD02MMC-z' |
 | 50 | 0x0232 | [ZG-204ZL](https://pvvx.github.io/ZG-204ZL-3.0) | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Sonoff', 'ZG-204ZL-z' |
+| 51 | 0x0233 | ZG-204ZV | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Sonoff', 'ZG-204ZV-z' |
 
 
 
