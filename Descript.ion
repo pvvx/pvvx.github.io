@@ -55,7 +55,7 @@ TS0201_TZ3000_v1w2k9dd - Tuya ZigBee "Temp & Humidity Sensor"
 DL24 - BLE-USB-tester Atorch DL24
 Zbeacon-TH01 - Tuya ZigBee "Temp & Humidity Sensor"
 TS0001_TZ3000_kqvb5akv - Tuya ZigBee "Mini Zigbee Switch"
-TS011F_TZ3000_gjnozsaz - Tuya ZigBee Switch with Power Monitor (Chip: TLSR8656, Sensor: BL0942)
+TS011F_TZ3000_gjnozsaz - Tuya Zigbee "Smart Power Plug" with Power Monitor (Chip: TLSR8656, Sensor: BL0942)
 ZG-204ZL-3.0 - Tuya ZigBee "Mini PIR Sensor" + LUX sensor HOBEIAN CK-BL702-ROUTER-01(7018)
 Zbeacon-TS0001 - Tuya "Zigbee Smart Switch" + RF433
 Zbeacon-TH01-v2.0 - Tuya ZigBee "Temp & Humidity Sensor"
@@ -76,3 +76,4 @@ AdScanerTrg  - AdScanerTrg2.html
 LYWSD03MMC - BoardPinout, img
 LYWSD02MMC - E-ink Xiaomi Temp & RH + Clock
 ZG-204ZV - HOBEIAN ZigBee "Human Motion sensor": Radar + Lx + TH sensor
+TS011F_TZ3210_w0qqde0g - Tuya Zigbee "Smart Power Plug" with Power Monitor (Chip: TLSR8258, Flash 1MB, Sensor: BL0942)

@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZigbeeTLc Index Configurator for Zigbee OTA v0.7</title>
+<title>ZigbeeTLc Index Configurator for Zigbee OTA v0.8</title>
 </head>
 <body>
 <script>
@@ -320,8 +320,6 @@ function testOTAFirmware(data, fname) {
 		return "Wrong binary Telink OTA firmware size!";
 	if (fsize > 1024*1024) // 1M
 		return "The file size exceeds 1 Mbytes!";
-	if(fsize > MAX_FW_OTA_SIZE) // 200KB
-		return "Size firmware is more "+(MAX_FW_OTA_SIZE/1024)+"kbytes!";
 	let	head = new DataView(data);
 	if(head.getUint32(0, true) == 0x0beef11e) { // Zigbee OTA
 		if(head.getUint16(4, true) != 0x100	|| head.getUint16(6, true) != 56)
@@ -357,8 +355,8 @@ function testOTAFirmware(data, fname) {
 		+ ", Stack Version: " + ((fzigbeeota.fwversion >> 12)&0x0f) + "." + ((fzigbeeota.fwversion >> 8)&0x0f)
 		+ " Release: " + ((fzigbeeota.fwversion >> 4)&0x0f) + "." + (fzigbeeota.fwversion&0x0f));
 		addAlog("Header String: "+ fzigbeeota.head_str);
-		if(fsize > MAX_FW_OTA_SIZE) // 200KB
-			return "Size firmware is more "+(MAX_FW_OTA_SIZE/1024)+"kbytes!";
+		if(fsize > MAX_FW_OTA_SIZE) // 512KB
+			return "Size firmware is more "+(MAX_FW_OTA_SIZE/1024)+" kbytes!";
 
 	 	head = new DataView(data, 0x3e, 0x3e + 28);
 		fsize = fzigbeeota.size;
@@ -387,6 +385,8 @@ function testOTAFirmware(data, fname) {
 				addr_offset = 0x8000;
 			} else if(fsize > 0x9400 && head.getUint32(0x9008, true) == 0x544c4e4b) { // Zigbee Boot
 				addr_offset = 0x9000;
+			} else if(fsize > 0x10400 && head.getUint32(0x10008, true) == 0x544c4e4b) { // Zigbee Boot
+				addr_offset = 0x10000;
 			} else if(fsize > 0x40400 && head.getUint32(0x40008, true) == 0x544c4e4b) { // Zigbee/BLE OTA 
 				addr_offset = 0x40000;
 			} else
@@ -413,7 +413,7 @@ function testOTAFirmware(data, fname) {
 			return "Invalid size pointer in Telink OTA binary firmware!";
 		}
 		if(fzigbeeota.fwsize > MAX_FW_OTA_SIZE)
-			return "Size firmware is more "+(MAX_FW_OTA_SIZE/1024)+" kbytes!";
+			return "Size firmware ("+fzigbeeota.fwsize+" bytes) is more "+(MAX_FW_OTA_SIZE/1024)+" kbytes!";
 
 		data = data.slice(addr_offset, fzigbeeota.fwsize + addr_offset);
 		fsize = fzigbeeota.fwsize; 
@@ -423,7 +423,7 @@ function testOTAFirmware(data, fname) {
 		fcrc[1] = (new DataView(data, fzigbeeota.fwsize - 4, 4)).getUint32(0, true);
 		addAlog("FW CRC = 0x" + hex(fcrc[1],8) + ", Check CRC = 0x" + hex(fcrc[0],8))
 		if(fcrc[0] != fcrc[1]) 
-			return "Incorrect CRC in Telink OTA binary firmware! ";
+			return "Incorrect CRC in Telink OTA binary firmware!";
 		fzigbeeota.man_code = head.getUint16(18,true);
 		fzigbeeota.image_type = head.getUint16(20,true);
 		fzigbeeota.fwversion = head.getUint32(2,true);
@@ -455,7 +455,8 @@ function testOTAFirmware(data, fname) {
 			+ " Release: " + ((fzigbeeota.fwversion >> 4)&0x0f) + "." + (fzigbeeota.fwversion&0x0f));
 			addAlog("Added `Header String`: '"+ fzigbeeota.head_str+"'");
 		  	fzigbeeota.head_ok	= true;
-		}
+		} else
+			addAlog("FW header does not contain data for ZigbeeOTA!");
 		addAlog("Specify the name of the manufacturer and device using the ':' symbol in the head `Header String`.");
 		addAlog("Or describe the type of firmware, without using the ':' symbol.");
 	}

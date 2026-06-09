@@ -136,7 +136,7 @@ ManufacturerName: "B2Z"
 | 0x222b | REL-BZ01 | [TS0001_TZ3000](https://pvvx.github.io/TS0001_TZ3000/) |
 
 
---
+---
 
 ## Web files for projects:
 
@@ -149,8 +149,6 @@ ManufacturerName: "B2Z"
 [MHO-C401 (2022.11)](https://pvvx.github.io/MHO_C401N) - E-ink BLE Xiaomi Thermo-Hygrometer
 
 [CGG1-M (2020,2021)](https://pvvx.github.io/CGG1) - E-ink BLE Qingping Temp & RH Monitor
-
----
 
 [CGG1-M (2022)](https://pvvx.github.io/CGG1_2022) - E-ink BLE Qingping Temp & RH Monitor
 
@@ -256,7 +254,9 @@ ManufacturerName: "B2Z"
 
 [TS0001_TZ3000_kqvb5akv](https://pvvx.github.io/TS0001_TZ3000_kqvb5akv) - Tuya ZigBee "Mini Zigbee Switch"
 
-[TS011F_TZ3000_gjnozsaz](https://pvvx.github.io/TS011F_TZ3000_gjnozsaz) - Tuya ZigBee Switch with Power Monitor (Chip: TLSR8656, Sensor: BL0942)
+[TS011F_TZ3000_gjnozsaz](https://pvvx.github.io/TS011F_TZ3000_gjnozsaz) - Tuya Zigbee "Smart Power Plug" with Power Monitor (Chip: TLSR8656, Sensor: BL0942)
+
+[TS011F_TZ3210_w0qqde0g](https://pvvx.github.io/TS011F_TZ3210_w0qqde0g) - Tuya Zigbee "Smart Power Plug" with Power Monitor (Chip: TLSR8258, Flash 1MB, Sensor: BL0942)
 
 [HOBEIAN ZG-204ZL](https://pvvx.github.io/ZG-204ZL-3.0) - Tuya ZigBee "Mini PIR Sensor" + LUX sensor
 
@@ -269,6 +269,7 @@ ManufacturerName: "B2Z"
 [TY0201_TZ3000_bjawzodf](https://pvvx.github.io/TY0201_TZ3000_bjawzodf) - Tuya ZigBee "Temp & Humidity Sensor"
 
 [ZG-204ZV](https://pvvx.github.io/ZG-204ZV) - HOBEIAN ZigBee "Human Motion sensor": Radar + Lx + TH sensor
+
 
 ---
 
