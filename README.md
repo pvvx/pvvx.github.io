@@ -57,6 +57,7 @@
 | 49 | 0x0231 | [LYWSD02MMC](https://pvvx.github.io/LYWSD02MMC) | [BLE](https://github.com/pvvx/ATC_MiThermometer) | 'Xiaomi', 'LYWSD02MMC' |
 | 50 | 0x0232 | [ZG-204ZL](https://pvvx.github.io/ZG-204ZL-3.0) | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Sonoff', 'ZG-204ZL-z' |
 | 51 | 0x0233 | [ZG-204ZV](https://pvvx.github.io/ZG-204ZV) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Sonoff', 'ZG-204ZV-z' |
+| 52 | 0x0234 | TS0201_TZ3000_dnpd6ayp | [BLE](https://github.com/pvvx/ATC_MiThermometer) | 'Wing', 'TS0201-z' |
 
 
 
