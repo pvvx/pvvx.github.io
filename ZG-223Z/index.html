@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head><meta charset="utf-8">
+  <title>HOBEIAN ZG-223Z</title>
+  <style>
+	body {text-align: center;}
+	table {margin: 0 auto; width: 20vh;}
+    table, th, td {border-collapse: collapse;}
+  </style>
+  </head>
+  <body>
+	<div style="height: auto; width: auto; text-align: center;">
+	<h2>HOBEIAN Zigbee, "Raindrop Detection Senser" + Lx, ZG-223Z</h2><hr><br>
+	Custom firmware <a href="https://github.com/pvvx/ZigbeeTLc">Zigbee</a><br><br>
+	<img src="img/ZG-223Z-r.jpg" style="max-width:40%;"><br><br>
+	<br>
+	SoC: TLSR8253 (512KB Flash, 64KB RAM), RF +20dBm: CB2401, Battery: CR123A<br>
+	<img src="img/ZG223Z.jpg" style="max-width:60%;"><br><br>
+	SoC<br>
+ 	<table align="center" border="1">
+	<tr><td> PC0 </td><td> +LXsensor </td></tr>
+	<tr><td> PC1 </td><td> LED to R to +BAT </td></tr>
+	<tr><td> PC2 </td><td> Button to GND </td></tr>
+	<tr><td> PC3 </td><td> CB2401 pin 6: RXEN </td></tr>
+	<tr><td> PC4 </td><td> CB2401 pin 5: TXEN</td></tr>
+	<tr><td> PB4 </td><td> R 10k to PB5 </td></tr>
+	<tr><td> PB5 </td><td> R 10k -> Raindrop-sensor to GND </td></tr>
+	<tr><td> PB6 </td><td> -LXsensor + R 50k to GND </td></tr>
+ 	</table><br>
+ 	J1<br>
+ 	<table align="center" border="1">
+	<tr><td> 1 </td><td> +Vbat </td></tr>
+	<tr><td> 2 </td><td> GND </td></tr>
+	<tr><td> 3 </td><td> SWS, PA7 </td></tr>
+	<tr><td> 4 </td><td> TX, PB1 </td></tr>
+	<tr><td> 5 </td><td> RX, PB7 </td></tr>
+ 	</table><br>
+	<a href="bin/HOBEIAN_ZG223Z_ff.zip">Original FullFlash bin</a><br>
+	<hr>
+	</div>
+  </body>
+</html>
