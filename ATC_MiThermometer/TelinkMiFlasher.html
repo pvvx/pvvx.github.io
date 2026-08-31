@@ -598,7 +598,7 @@ function catchAdvertisement(device) {
 			let cnt = b.getUint8(13);
 			let flg = b.getUint8(14);
 			s = 'MAC: '+hex(buf[5],2)+hex(buf[4],2)+hex(buf[3],2)+hex(buf[2],2)+hex(buf[1],2)+hex(buf[0],2);
-			s += ', Bat: '+bat+'%, Vbat: '+vbat+' mV , Temp: '+temp+'°C, Humi: '+humi+'%, Count: '+cnt+', Flg: '+flg;
+			s += ', Bat: '+bat+'%, Vbat: '+vbat+' mV, Temp: '+temp+'°C, Humi: '+humi+'%, Count: '+cnt+', Flg: '+flg;
 		} else if(b.byteLength == 13) { // atc1441
 			// A4 C1 38 56 58 70 01 0A 18 48 0B 25 70
 			let temp = b.getInt16(6, false) / 10.0;
@@ -1192,7 +1192,7 @@ function CustomBlkParse(value) {
 			let u3 = value.getUint16(13, true);
 			let count = value.getUint16(15, true);
 			let flg = value.getUint8(17);
-			s = 'Vbat: '+vbat+' mV , I: '+i1+':'+i2+':'+i3+' mA, U: '+u1+':'+u2+':'+u3+' mV, ID: '+count+', TRG Out: ' + ((flg & 2) >> 1) + ', flg: 0x'+hex(flg,2);
+			s = 'Vbat: '+vbat+' mV, I: '+i1+':'+i2+':'+i3+' mA, U: '+u1+':'+u2+':'+u3+' mV, ID: '+count+', TRG Out: ' + ((flg & 2) >> 1) + ', flg: 0x'+hex(flg,2);
 		} else {
 			let temp = value.getInt16(3, true) / 100.0;
 			let humi = value.getUint16(5, true) / 100.0;
@@ -1207,14 +1207,14 @@ function CustomBlkParse(value) {
 			let sw = 'Open';
 			if((flg & 1) == 0) sw = 'Close';
 			if(cfg.ver >= 0x37) {
-				s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%';
+				s = 'Vbat: '+vbat+' mV, Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%';
 				if(hwver_id == 44)
 					s += ', Mois: '+(count/100.0).toFixed(2)+'%';
 				else
 					s += ', ID: '+count;
 				s +=', Switch: '+ sw +', Counter: '+ rds_count+', TRG Out: ' + ((flg & 2) >> 1) + ', flg: 0x'+hex(flg,2);
 			} else
-				s = 'Vbat: '+vbat+' mV , Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', Switch ' + sw +', TRG Out: ' + ((flg & 2) >> 1) + ', flg: 0x'+hex(flg,2);
+				s = 'Vbat: '+vbat+' mV, Temp: '+temp.toFixed(2)+'°C, Humi: '+humi.toFixed(2)+'%, ID: '+count+', Switch ' + sw +', TRG Out: ' + ((flg & 2) >> 1) + ', flg: 0x'+hex(flg,2);
 		}
 		$("tempHumiData").innerHTML = s;
 		addClog(s);
@@ -1426,7 +1426,7 @@ function CustomBlkParse(value) {
 				let hm = value.getUint16(9, true) / 100.0;
 				let vb = value.getUint16(11, true);
 				let dt = new Date(tc*1000);
-				addAlog(((dt.toISOString().slice(0, -1)).replace('T',' ')).replace('.000','')+' # Vbat: '+vb+' mV , Temp: '+tm+'°C, Humi: '+hm+'%, Count: '+cnt);
+				addAlog(((dt.toISOString().slice(0, -1)).replace('T',' ')).replace('.000','')+' # Vbat: '+vb+' mV, Temp: '+tm+'°C, Humi: '+hm+'%, Count: '+cnt);
 			} else if(len >= 2) {
 				let cnt = value.getUint16(1, true);
 				addAlog('Memo end: '+cnt);
@@ -3625,7 +3625,7 @@ function CustomConfig() {
 	if(cfg.ver >= 0x22)
 		is += ', Encrypted beacon: <input title="Bindkey encrypted beacon" type="checkbox" id="cfg_adv_crypto">';
 	is += '<br><br>Advertising interval: <input size="5" title="62.5 ms .. 10 000 ms, step: 62.5 ms, default 2500 ms" id="cfg_adv_int" maxlength="6" value="40"> ms, step: 62.5 ms<br><br>';
-	is += 'Measure interval: <input size="5" title="1..25 (62.5 ms .. 250 sec), default 4 (10 sec)" id="cfg_meas_int" maxlength="2" value="4"> x(Advertising interval) <span id="cfg_meas_int_val"></span><br><br>';
+	is += 'Measure interval: <input size="5" title="1..25 (62.5 ms .. 250 sec), default 4 (10 sec)" id="cfg_meas_int" maxlength="3" value="4"> x(Advertising interval) <span id="cfg_meas_int_val"></span><br><br>';
 	if(cfg.ver > 0x40)
 		is += 'Connect latency: <input size="5" title="0..1000 ms, default 1000 ms" id="cfg_con_lat" maxlength="4" value="1000"> ms, step 20 ms<br><br>';
 	else
@@ -3640,7 +3640,7 @@ function CustomConfig() {
 	is += ', AdFlags: <input title="Toggle support for third-party software" type="checkbox" id="adv_flags">';
 	is += ', Encrypted beacon: <input title="Bindkey encrypted beacon" type="checkbox" id="cfg_adv_crypto">';
 	is += '<br><br>Advertising interval: <input size="5" title="62.5 ms .. 10 000 ms, step: 62.5 ms, default 2500 ms" id="cfg_adv_int" maxlength="6" value="40"> ms, step: 62.5 ms<br><br>';
-	is += 'Measure interval: <input size="5" title="1..25 (62.5 ms .. 250 sec), default 4 (10 sec)" id="cfg_meas_int" maxlength="2" value="4"> x(Advertising interval) <span id="cfg_meas_int_val"></span><br><br>';
+	is += 'Measure interval: <input size="5" title="1..25 (62.5 ms .. 250 sec), default 4 (10 sec)" id="cfg_meas_int" maxlength="3" value="4"> x(Advertising interval) <span id="cfg_meas_int_val"></span><br><br>';
 	is += 'Connect latency: <input size="5" title="0..1000 ms, default 1000 ms" id="cfg_con_lat" maxlength="4" value="1000"> ms, step 20 ms<br><br>';
 	//MAX_RF_TX_Power = true;
   }
@@ -3994,10 +3994,10 @@ function SendCustomConfig() {
 	}
 	cfg.advertising_interval = Math.round(parseFloat($("cfg_adv_int").value) / 62.5)
 	if(cfg.advertising_interval < 1) cfg.advertising_interval = 1;
-	else if(cfg.advertising_interval > 160) cfg.advertising_interval = 160;
+	else if(cfg.advertising_interval > 255) cfg.advertising_interval = 255;
 	cfg.measure_interval = parseInt($("cfg_meas_int").value);
 	if(cfg.measure_interval < 1) cfg.measure_interval = 1;
-	else if(cfg.measure_interval > 25) cfg.measure_interval = 25;
+	else if(cfg.measure_interval > 255) cfg.measure_interval = 255;
 	cfg.rf_tx_power = parseInt($("cfg_rf_tx").value);
 	if(cfg.rf_tx_power&0x80) { /*VANT*/
 		if(cfg.rf_tx_power > 191) cfg.rf_tx_power = 191;
