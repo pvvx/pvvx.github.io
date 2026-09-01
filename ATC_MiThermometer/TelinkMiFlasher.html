@@ -101,6 +101,7 @@ function resetVariables() {
 	//fzigbeeota.used = false;
 	//fwname = '';
 	devtime = {};
+	devSens = {};
 	writeCharacteristicSpeed = null;
 	$("ldfrmw").innerHTML ='';
 	$("custcfg").innerHTML = '';
@@ -229,7 +230,8 @@ const hw_version_str = [
 'LYWSD02MMC',
 'ZG204ZL',
 'ZG204ZV',
-'TS0201_WING'];
+'TS0201_WING',
+'DIY-SCD41'];
 
 const id_sensor_str = [
 "None",
@@ -1254,11 +1256,12 @@ function CustomBlkParse(value) {
 		devSens.i2c_addr = value.getUint8(17);
 		if(len > 17) { // ver 4.9
 			devSens.id = value.getUint32(13, true);
-				let sentype = value.getUint8(18);
-				if(sentype < id_sensor_str.length) 
-					st = id_sensor_str[sentype];
-				else
-				    st = "N:" + sentype;
+			devSens.sentype = value.getUint8(18);
+			if(devSens.sentype < id_sensor_str.length) {
+				st = id_sensor_str[devSens.sentype];
+				addMenuSensors();
+			} else
+			    st = "N:" + devSens.sentype;
 		} else {
 			devSens.id = value.getUint32(13, false);
 			if((devSens.id & 0xFFFF) == 0x2000)
@@ -1293,6 +1296,41 @@ function CustomBlkParse(value) {
 		$('inpTemp2K').value  = (devSens.temp2_k/100.0).toFixed(2);
 		$('inpTemp2Z').value = (devSens.temp2_z/100.0).toFixed(2);
 		addAlog("Sensor2: Kt: " + devSens.temp2_k + ", Zt: " + devSens.temp2_z);
+	} else if((blkid == 0x2e || blkid == 0x2f) && (len > 13)) {
+	// CMD_ID_SCD Get/Set sensor SCD41 config
+		devSens.temp_offset = value.getUint16(1, true);
+		devSens.altitude = value.getUint16(3, true);
+		devSens.asc_co2 = value.getUint16(5, true);
+		devSens.asc_ena = value.getUint16(7, true);
+		devSens.asc_ini_per = value.getUint16(9, true);
+		devSens.asc_std_per = value.getUint16(11, true);
+		devSens.pressure = value.getUint16(13, true);
+		$('inpSCD4xTempOffset').value = devSens.temp_offset;
+		$('inpSCD4xAltitude').value = devSens.altitude;
+		$('inpSCD4xPressure').value = (devSens.pressure * 100.0).toFixed(0);
+		$('inpSCD4xAscCo2').value = devSens.asc_co2;
+		$('inpSCD4xInitPeriod').value = devSens.asc_ini_per;
+		$('inpSCD4xStdPeriod').value = devSens.asc_std_per;
+		$('chbSDC41asc').checked = devSens.asc_ena;
+		addAlog("Sensor SCD41: Toff: " + (devSens.temp_offset*175/65535).toFixed(2)
+		   + ", Alt: " + devSens.altitude
+		   + ", Prs: " + (devSens.pressure * 100.0).toFixed(0)
+		   + "; ASC: enable: " + devSens.asc_ena
+		   + ", CO2: " + devSens.asc_co2
+		   + ", It: " + devSens.asc_ini_per
+		   + ", Is: " + devSens.asc_std_per);
+	} else if((blkid == 0x77) && (len > 4)) {
+		devSens.cmd = value.getUint8(1);
+		devSens.errors = value.getUint16(2, true);
+		devSens.value = value.getUint16(4, true);
+		addAlog("Sensor SCD41 ExtStatus: cmd: " + devSens.cmd
+		   + ", value: " + devSens.value
+		   + "; errors: " + devSens.errors);
+		if(devSens.errors == 0) {
+			if(devSens.cmd == 6 || devSens.cmd == 7) getSensSCD4x();
+			$('txtSCD4xResponse').innerHTML = '<b>Response: ok, Command: '+devSens.cmd+', Status: ' + hex(devSens.value,4)+'</b>';
+		}else
+			$('txtSCD4xResponse').innerHTML = '<b>Error: '+hex(devSens.errors,4)+', Command: '+devSens.cmd+', Status: ' + hex(devSens.value,4)+'</b>';
 	} else if(blkid == 0x44 && len >= 7) {
 		trg.tmp_thr = value.getInt16(1, true) / 100.0; // temp threshold
 		trg.hm_thr = value.getInt16(3, true) / 100.0; // humi threshold
@@ -3373,6 +3411,53 @@ function setSensCfg() {
 		.catch(error => { addAlog("Send Sensor Settings Error: " + error); });
 	}
 }
+function addMenuSensors() {
+	if(devSens.sentype && devSens.sentype == 14) {
+		let s = '<hr><label id="lblSensorSCD41"><b>SCD41 Settings:</b></label><br>Temp. Offset: <input size="8" type="text" id="inpSCD4xTempOffset" maxlength="16"> °C, Altitude: <input size="8" type="text" id="inpSCD4xAltitude" maxlength="16"> m, Pressure: <input size="8" type="text" id="inpSCD4xPressure" maxlength="16"> Pa<br><br> <label><b>Automatic Self Calibration:</b><br></label> Enabled: <input type="checkbox" id="chbSDC41asc">, ASC CO2: <input size="8" type="text" id="inpSCD4xAscCo2" maxlength="16"> ppm<br>Initial Period: <input size="8" type="text" id="inpSCD4xInitPeriod" maxlength="16"> , Standard Period: <input size="8" type="text" id="inpSCD4xStdPeriod" maxlength="16"><br><button type="button" id="btnGetSensSCD4x" onclick="getSensSCD4x()">Get Sensor Settings</button> <button type="button" id="btnSetSensSCD4x" onclick="setSensSCD4x()">Send Sensor Settings</button>	<button type="button" id="btnSetDefCfgSCD4x" onclick="setDefCfgSCD4x()">Set Default</button><br><label><b>Chip Functions:</b></label><br> <button type="button" id="btnf3SensSCD4x" onclick="fnSensSCD4x(3)" >Forced Recalibration:</button> <input size="8" type="text" id="inpSCD4xPFRecal" maxlength="16" value="400"> ppm<br><button type="button" id="btnf4SensSCD4x" title="The Read Current Settings command reading current settings from SCD41." onclick="fnSensSCD4x(4)" >Read Current Settings</button> <button type="button" id="btnf6SensSCD4x" title="The Read Settings from EEPROM command reinitializes the sensor by reloading user settings from EEPROM." onclick="fnSensSCD4x(6)" >Read Settings from EEPROM</button> <button type="button" id="btnf5SensSCD4x" title="The Write settings to EEPROM command stores the current configuration in the EEPROM of the SCD4x" onclick="fnSensSCD4x(5)" >Write settings to EEPROM</button><br>	<button type="button" id="btnf8SensSCD4x" title="The perform_self_test command can be used as an end-of-line test to check the sensor functionality" onclick="fnSensSCD4x(8)" >Self Test</button> <button type="button" id="btnf7SensSCD4x" title="The perform_factory_reset command resets all configuration settings stored in the EEPROM and erases the FRC and ASC algorithm history" onclick="fnSensSCD4x(7)" >Factory Reset</button> <label id="txtSCD4xResponse"><b>Response: ?</b></label><br>';
+		s += '<label><b>Debug:</b></label> <button type="button" id="btnf1SensSCD4x" onclick="fnSensSCD4x(0)" >Read Run Status</button><br>';
+		$("addSensors").innerHTML = s;
+		$("addSensors").disabled = false;
+		if(devSens.altitude == null)
+			getSensSCD4x();
+	}
+}
+function fnSensSCD4x(cmd) {
+	if(settingsCharacteristics != null) {
+		if(cmd == 0 ) {
+			settingsCharacteristics.writeValue(new Uint8Array(new Uint8Array([0x77]))).then(_ => {	addAlog("Get run status SCD41 - ok")})
+			.catch(error => { addAlog("Error get run status SCD41: " + error); });
+		} else if(cmd > 0 && cmd < 11){
+			let arg = 0;
+			if(cmd == 3) arg = parseInt($('inpSCD4xPFRecal').value);
+			blk = new Uint8Array([0x77,
+			    cmd & 0xff,
+			    arg & 0xff, (arg >> 8) & 0xff ]);
+			settingsCharacteristics.writeValue(new Uint8Array(blk)).then(_ => {	addAlog("Send Command to SCD41: "+dump(blk, blk.length)+" - ok")})
+			.catch(error => { addAlog("Send Command to SCD41 Error: " + error); });
+		} 
+	}
+}
+function setSensSCD4x() {
+	if(settingsCharacteristics != null) {
+		devSens.temp_offset = (parseFloat($('inpSCD4xTempOffset').value)*65535/175.0).toFixed(2);
+		devSens.altitude = parseInt($('inpSCD4xAltitude').value);
+		devSens.pressure = parseInt($('inpSCD4xPressure').value) / 100;
+		devSens.asc_co2 = parseInt($('inpSCD4xAscCo2').value);
+		devSens.asc_ena = (($("chbSDC41asc").checked) ? 1 : 0);
+		devSens.asc_ini_per = parseInt($('inpSCD4xInitPeriod').value);
+		devSens.asc_std_per = parseInt($('inpSCD4xStdPeriod').value);
+		blk = new Uint8Array([0x2e,
+		    devSens.temp_offset & 0xff, (devSens.temp_offset >> 8) & 0xff, 
+		    devSens.altitude & 0xff, (devSens.altitude >> 8) & 0xff, 
+	    	devSens.asc_co2 & 0xff, (devSens.asc_co2 >> 8) & 0xff,
+		    devSens.asc_ena & 0x1, 0,
+		    devSens.asc_ini_per & 0xff, (devSens.asc_ini_per >> 8) & 0xff,
+		    devSens.asc_std_per & 0xff, (devSens.asc_std_per >> 8) & 0xff,
+		    devSens.pressure & 0xff, (devSens.pressure >> 8) & 0xff]);
+		settingsCharacteristics.writeValue(new Uint8Array(blk)).then(_ => {	addAlog("Send Sensor SCD41 Settings: "+dump(blk, blk.length)+" - ok")})
+		.catch(error => { addAlog("Send Sensor SCD41 Settings Error: " + error); });
+	}
+}
 function setSens2Cfg() {
 	if(settingsCharacteristics != null) {
 		devSens.temp2_k = Math.round(100.0 * parseFloat($('inpTemp2K').value));
@@ -3388,6 +3473,18 @@ function getSensCfg() {
 	if(settingsCharacteristics != null) {
 		addAlog("Get Sensor Settings...");
 		settingsCharacteristics.writeValue(new Uint8Array([0x25])).catch(error => { addAlog("Get Sensor Settings Error: " + error); });
+	}
+}
+function getSensSCD4x() {
+	if(settingsCharacteristics != null) {
+		addAlog("Get Sensor SCD41 Settings...");
+		settingsCharacteristics.writeValue(new Uint8Array([0x2e])).catch(error => { addAlog("Get Sensor SCD41 Settings Error: " + error); });
+	}
+}
+function setDefCfgSCD4x() {
+	if(settingsCharacteristics != null) {
+		addAlog("Set Default SCD41 Settings...");
+		settingsCharacteristics.writeValue(new Uint8Array([0x2f])).catch(error => { addAlog("Set Defasult SCD41 Settings Error: " + error); });
 	}
 }
 function getSens2Cfg() {
@@ -3665,6 +3762,9 @@ function CustomConfig() {
 	if(cfg.ver >= 0x47)
 		is += '<hr><label id="lblSensor"><b>Sensor Settings:</b></label><br>Temperature Slope factor: <input size="8" type="text" id="inpTempK" maxlength="16" title="Tk: Slope factor (linear function) for temperature calculation (T=RegT*Tk/65536+Tz)"> , Zero offset: <input size="8" type="text" id="inpTempZ" maxlength="16" title="Tz: Zero offset with correction value for temperature calculation (T=RegT*Tk/65536+Tz)"><br>Humidity Slope factor: <input size="8" type="text" id="inpHumK" maxlength="16" title="Hk: Slope factor (linear function) for humidity calculation (H=RegH*Hk/65536+Hz)"> , Zero offset: <input size="8" type="text" id="inpHumZ" maxlength="16" title="Hz: Zero offset with correction value for humidity calculation (H=RegH*Hk/65536+Hz)"><br><button type="button"id="btnGetSens" onclick="getSensCfg()">Get Sensor Settings</button> <button type="button"id="btnSetSens" onclick="setSensCfg()">Send Sensor Settings</button> <button type="button"id="btnRstSens" onclick="resetSensCfg()" title="Restore default sensor settings">Set Default</button><br>';
 
+	//if(devSens.sentype && devSens.sentype == 14)
+	//	is += '<hr><label id="lblSensorSCD41"><b>SCD41 Settings:</b></label><br>Altitude: <input size="8" type="text" id="inpSCD4xAltitude" maxlength="16"> , Pressure: <input size="8" type="text" id="inpSCD4xPressure" maxlength="16"><br><br><label><b>Automatic Self Calibration:</b><br></label> Enabled: <input type="checkbox" id="chbSDC41asc">, ASC CO2: <input size="8" type="text" id="inpSCD4xAscCo2" maxlength="16"><br> Initial Period: <input size="8" type="text" id="inpSCD4xInitPeriod" maxlength="16"> , Standard Period: <input size="8" type="text" id="inpSCD4xStdPeriod" maxlength="16"><br><button type="button"id="btnGetSensSCD4x" onclick="getSensSCD4x()">Get Sensor SCD41 Settings</button> <button type="button"id="btnSetSensSCD4x" onclick="setSensSCD4x()">Send Sensor SCD41 Settings</button><br><label><b>Functions:</b></label><br><button type="button" id="btnf1SensSCD4x" onclick="funSensSCD4x(1)" >Forced Recalibration:</button> <input size="8" type="text" id="inpSCD4xPFRecal" maxlength="16"> ppm<br><button type="button" id="btnf2SensSCD4x" title="Stores the current configuration in the EEPROM of the SCD4x" onclick="funSensSCD4x(2)" >Persist Settings</button><br>';
+	/* --- */
 	if((hwver_id == 17) || (hwver_id == 27))
 		is += '<hr><label id="lblSensor2"><b>Sensor2 Settings:</b></label><br>Temperature Slope factor: <input size="8" type="text" id="inpTemp2K" maxlength="16" title="Tk: Slope factor (linear function) for temperature calculation (T=RegT*Tk/65536+Tz)"> , Zero offset: <input size="8" type="text" id="inpTemp2Z" maxlength="16" title="Tz: Zero offset with correction value for temperature calculation (T=RegT*Tk/65536+Tz)"><br><button type="button"id="btnGetSens2" onclick="getSens2Cfg()">Get Sensor2 Settings</button> <button type="button"id="btnSetSens2" onclick="setSens2Cfg()">Send Sensor2 Settings</button> <button type="button"id="btnRstSens2" onclick="resetSens2Cfg()" title="Restore default sensor2 settings">Set Default</button><br>';
 
@@ -3835,7 +3935,7 @@ function CustomConfig() {
 	is +=' <button type="button" onclick="sendDeltaTime();">Set delta time</button>';
 	is +=' <button type="button" title="The minimum period for calculation is 3 hours!" onclick="calkDeltaTime();">Calk delta time</button><br>';
 	if(cfg.ver >= 0x47)
-		is += '<hr><label id="lblSensor"><b>Sensor Settings:</b></label><br>Temperature Slope factor: <input size="8" type="text" id="inpTempK" maxlength="8" title="Tk: Slope factor (linear function) for temperature calculation (T=RegT*Tk/65536+Tz)"> , Zero offset: <input size="8" type="text" id="inpTempZ" maxlength="8" title="Tz: Zero offset with correction value for temperature calculation (T=RegT*Tk/65536+Tz)"><br>Humidity Slope factor: <input size="8" type="text" id="inpHumK" maxlength="8" title="Hk: Slope factor (linear function) for humidity calculation (H=RegH*Hk/65536+Hz)"> , Zero offset: <input size="8" type="text" id="inpHumZ" maxlength="8" title="Hz: Zero offset with correction value for humidity calculation (H=RegH*Hk/65536+Hz)"><br><button type="button"id="btnGetSens" onclick="getSensCfg()">Get Sensor Settings</button> <button type="button"id="btnSetSens" onclick="setSensCfg()">Send Sensor Settings</button> <button type="button"id="btnRstSens" onclick="resetSensCfg()" title="Restore default sensor settings">Set Default</button><br>';
+		is += '<hr><label id="lblSensor"><b>Sensor Settings:</b></label><br>Temperature Slope factor: <input size="8" type="text" id="inpTempK" maxlength="8" title="Tk: Slope factor (linear function) for temperature calculation (T=RegT*Tk/65536+Tz)"> , Zero offset: <input size="8" type="text" id="inpTempZ" maxlength="8" title="Tz: Zero offset with correction value for temperature calculation (T=RegT*Tk/65536+Tz)"><br>Humidity Slope factor: <input size="8" type="text" id="inpHumK" maxlength="8" title="Hk: Slope factor (linear function) for humidity calculation (H=RegH*Hk/65536+Hz)"> , Zero offset: <input size="8" type="text" id="inpHumZ" maxlength="8" title="Hz: Zero offset with correction value for humidity calculation (H=RegH*Hk/65536+Hz)"><br><button type="button"id="btnGetSens" onclick="getSensCfg()">Get Sensor Settings</button> <button type="button"id="btnSetSens" onclick="setSensCfg()">Send Sensor Settings</button> <button type="button"id="btnRstSens" onclick="resetSensCfg()" title="Restore default sensor settings">Set Default</button><br><div id="addSensors" disabled></div>';
    	if(cfg.ver >= 0x48) {
 		is += '<hr><b>Management GPIO_TRG:</b>';
 		is += '&nbsp;<button type="button" title="Get/read current setings" onclick="sendCustomSetting(&quot;44&quot;);">Get TRG</button><br>';
