@@ -1324,21 +1324,29 @@ function CustomBlkParse(value) {
 		   + ", CO2: " + devSens.asc_co2
 		   + ", It: " + devSens.asc_ini_per
 		   + ", Is: " + devSens.asc_std_per);
-	} else if((blkid == 0x77) && (len > 4)) {
+	} else if(blkid == 0x77 && len > 1) {
 		devSens.cmd = value.getUint8(1);
-		devSens.errors = value.getUint16(2, true);
-		devSens.value = value.getUint16(4, true);
-		addAlog("Sensor SCD41 ExtStatus: cmd: " + devSens.cmd
-		   + ", value: " + devSens.value
-		   + "; errors: " + devSens.errors);
-		let s ='Response: ok, Command: '+devSens.cmd+', Status: ' + hex(devSens.value,4);
-		if(devSens.errors == 0) {
-			if(devSens.cmd == 5 || devSens.cmd == 6) getSensSCD4x();
-			else if(devSens.cmd == 2) {
-				if(devSens.value == 0xffff) s='Recalibration Failed: Status: ' + hex(devSens.value,4);
-				else s='Response: ok, Command: '+devSens.cmd+', FCR-correction: ' + (devSens.value-0x800);	
-			}
-		} else	s='Error: '+hex(devSens.errors,4)+', Command: '+devSens.cmd+', Status: ' + hex(devSens.value,4);
+		let s = "";
+		if(len > 4) {
+			devSens.errors = value.getUint16(2, true);
+			devSens.value = value.getUint16(4, true);
+			addAlog("Sensor SCD41 ExtStatus: cmd: " + devSens.cmd
+			   + ", value: " + devSens.value
+			   + "; errors: " + devSens.errors);
+			s ='Response: ok, Command: '+devSens.cmd+', Status: ' + hex(devSens.value,4);
+			if(devSens.errors == 0) {
+				if(devSens.cmd == 5 || devSens.cmd == 6) getSensSCD4x();
+				else if(devSens.cmd == 2) {
+					if(devSens.value == 0xffff) s='Recalibration Failed: Status: ' + hex(devSens.value,4);
+					else s='Response: ok, Command: '+devSens.cmd+', FCR-correction: ' + (devSens.value-0x800);	
+				}
+			} else	s='Error: '+hex(devSens.errors,4)+', Command: '+devSens.cmd+', Status: ' + hex(devSens.value,4);
+		} else {
+			let err = value.getUint8(1);
+			if(err == 0xff) s ='Command number error!';
+			else if(err == 0xfe) s ='Please wait: previous command is being executed!';
+			else s ='Unknown error!';
+		}
 		$('txtSCD4xResponse').innerHTML = '<b>' + s + '</b>';
 	} else if(blkid == 0x44 && len >= 7) {
 		trg.tmp_thr = value.getInt16(1, true) / 100.0; // temp threshold
@@ -3440,7 +3448,7 @@ function fnSensSCD4x(cmd) {
 			let arg = 0;
 			if(cmd == 2) {
 				arg = parseInt($('inpSCD4xPFRecal').value);
-				$('txtSCD4xResponse').innerHTML = '<b>Wait response (3 minutes)...</b>';
+				$('txtSCD4xResponse').innerHTML = '<b>Wait response (2 minutes)...</b>';
 			} else $('txtSCD4xResponse').innerHTML = '<b>Wait response...</b>';
 			blk = new Uint8Array([0x77,
 			    cmd & 0xff,
