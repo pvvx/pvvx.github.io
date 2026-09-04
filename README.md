@@ -58,7 +58,7 @@
 | 50 | 0x0232 | [ZG-204ZL](https://pvvx.github.io/ZG-204ZL-3.0) | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Sonoff', 'ZG-204ZL-z' |
 | 51 | 0x0233 | [ZG-204ZV](https://pvvx.github.io/ZG-204ZV) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Sonoff', 'ZG-204ZV-z' |
 | 52 | 0x0234 | [TS0201_TZ3000_dnpd6ayp](https://pvvx.github.io/TS0201_TZ3000_dnpd6ayp) | [BLE](https://github.com/pvvx/ATC_MiThermometer) & [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Wing', 'TS0201-z' |
-| 53 | 0x0235 | [ZG-223Z](https://pvvx.github.io/ZG-223Z) | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'HOBIAN', 'ZG223Z-z' |
+| 53 | 0x0235 | [ZG-223Z](https://pvvx.github.io/ZG-223Z) | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'HOBEIAN', 'ZG223Z-z' |
 
 
 
