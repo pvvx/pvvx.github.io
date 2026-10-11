@@ -255,6 +255,8 @@ const id_sensor_str = [
 const tabid2name = [
   { id: 0x01AA, name: "LYWSDCGQ"},
   { id: 0x045B, name: "LYWSD02"},
+  { id: 0x16e4, name: "LYWSD02MMC"},
+  { id: 0x2542, name: "LYWSD02MMC"},
   { id: 0x055B, name: "LYWSD03MMC"},
   { id: 0x1203, name: "XMWSDJ04MMC"},
   { id: 0x04E1, name: "XMMF01JQD"},
@@ -297,9 +299,9 @@ const tabid2name = [
   { id: 0x04E9, name: "MJZNMSQ01YD"},
   { id: 0x098C, name: "XMZNMST02YD"},
   { id: 0x2832, name: "MJWSD05MMC"},
+  { id: 0x4C47, name: "MJWSD05MMC"},
   { id: 0x55B5, name: "MJWSD06MMC"},
-  { id: 0x5BEA, name: "MJWSD06MMC-n"}
-  
+  { id: 0x5BEA, name: "MJWSD06MMC"}
 ];
 function id2name(dev_id) {
 	let did = tabid2name.map(el => el.id);
