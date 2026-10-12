@@ -34,6 +34,25 @@ var hwver_id = null;
 //Connection values
 var state = 0,
 	connectTrys = 0;
+// Android Chrome allows only one GATT operation at a time; serialize all characteristic/descriptor operations.
+(function() {
+	if (typeof BluetoothRemoteGATTCharacteristic === 'undefined' || window.__gattQueue) return;
+	let q = Promise.resolve();
+	const wrap = (proto, name) => {
+		const orig = proto[name];
+		if (!orig) return;
+		proto[name] = function(...args) {
+			const run = () => orig.apply(this, args);
+			const p = q.then(run, run);
+			q = p.catch(() => {});
+			return p;
+		};
+	};
+	["readValue", "writeValue", "writeValueWithResponse", "writeValueWithoutResponse",
+	 "startNotifications", "stopNotifications"].forEach(n => wrap(BluetoothRemoteGATTCharacteristic.prototype, n));
+	["readValue", "writeValue"].forEach(n => wrap(BluetoothRemoteGATTDescriptor.prototype, n));
+	window.__gattQueue = true;
+})();
 //Custom firmware
 var customEnabled, devTest = false;
 var settingsCharacteristics = null;
@@ -2327,12 +2346,12 @@ function doConnect() {
 			if (bluetoothDevice.name.substr(0,10) == "MJWSD05MMC") {
 				fwmaxsize = MAX_EXT_OTA_SIZE;
 			}
-			if ((bluetoothDevice.name.substr(0,10) == "LYWSD03MMC") && (devinfo.frstr.substr(0,10) == "2.1.1_0159")) {
+			if ((bluetoothDevice.name.substr(0,10) == "LYWSD03MMC") && ((devinfo.frstr || "").substr(0,10) == "2.1.1_0159")) {
 			    $("custcfg").innerHTML = '<hr><b>Warning:</b> Firmware LYWSD03MMC <a href="https://github.com/pvvx/ATC_MiThermometer/issues/602">version 2.1.1_0159 requires registration in MI-Home</a> and obtaining IDs. <a href="https://github.com/pvvx/ATC_MiThermometer/issues/602" target="_blank">Help</a><br><button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
 			    fwmaxsize = MAX_BLE_OTA_SIZE;
 				fsignota = "sign_2.1.1_0159c.bin";
 				miAction();
-			} else if ((bluetoothDevice.name.substr(0,10) == "MJWSD06MMC") && (devinfo.frstr.substr(0,4) == "0009")) {
+			} else if ((bluetoothDevice.name.substr(0,10) == "MJWSD06MMC") && ((devinfo.frstr || "").substr(0,4) == "0009")) {
 			    $("custcfg").innerHTML = '<hr><b>Warning:</b> Firmware MJWSD06MMC <a href="https://github.com/pvvx/ATC_MiThermometer/issues/602">version 2.1.1_0009 requires registration in MI-Home</a> and obtaining IDs. <a href="https://github.com/pvvx/ATC_MiThermometer/issues/636" target="_blank">Help</a><br><button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
 			    fwmaxsize = MAX_EXT_OTA_SIZE;
 			    hwver_id = 13;
