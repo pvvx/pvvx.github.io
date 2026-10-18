@@ -63,6 +63,8 @@
 | 55 | 0x0237 | [ZG-204ZV1](https://pvvx.github.io/ZG-204ZV) | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Sonoff', 'ZG-204ZV1-z' |
 | 56 | 0x0238 | [ZG-204ZV2-TH](https://pvvx.github.io/ZG-204ZV) | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Sonoff', 'ZG-204ZV2-TH-z' |
 | 57 | 0x0239 | [ZG-204ZV2](https://pvvx.github.io/ZG-204ZV) | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Sonoff', 'ZG-204ZV2-z' |
+| 58 | 0x023A | ZBEACON-TH01-v2 | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'ZBeacon', 'TH01-2-z' |
+| 59 | 0x023B | TH03_ZBPS1.0 | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'ZBeacon', 'TH03-ZBPS-z' |
 
 
 
@@ -226,7 +228,7 @@ ManufacturerName: "B2Z"
 
 [LKTMZL02: TS0201_TZ3210_ncw88jfq](https://pvvx.github.io/LKTMZL02) - Tuya Zigbee Temperature & Humidity Sensor (LCD)
 
-[ZSS-ZK-THL](https://pvvx.github.io/ZSS-ZK-THL) - E-ink Moes ZigBee "Smart Brightness Thermometer"
+[ZSS-ZK-THL: TS0222_TYZB01_kvwjujy9](https://pvvx.github.io/ZSS-ZK-THL) - E-ink Moes ZigBee "Smart Brightness Thermometer"
 
 [CB3S: TS0041_TZ3000_fa9mlvja](https://pvvx.github.io/TS0041_TZ3000_fa9mlvja) - Tuya ZigBee "Smart Button"
 
