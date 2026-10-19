@@ -65,7 +65,7 @@
 | 57 | 0x0239 | [ZG-204ZV2](https://pvvx.github.io/ZG-204ZV) | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Sonoff', 'ZG-204ZV2-z' |
 | 58 | 0x023A | ZBEACON-TH01-v2 | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'ZBeacon', 'TH01-2-z' |
 | 59 | 0x023B | TH03_ZBPS1.0 | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'ZBeacon', 'TH03-ZBPS-z' |
-
+| 59 | 0x023C | [ZG-204ZS / ZG-204ZM](https://github.com/pvvx/ZigbeeTLc/pull/308) | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Sonoff', 'ZG-204ZS-z' |
 
 
 ### All [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc):
