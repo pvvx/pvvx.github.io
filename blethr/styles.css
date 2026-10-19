@@ -1,4 +1,4 @@
-/* basic sytles */
+/* basic styles */
 
 body {
   font-family: Arial, 'Open Sans', sans-serif;
@@ -45,7 +45,7 @@ span#info {
 }
 
 .button, [type='button'].danger {
-  background-color: #f44336; /* Green */
+  background-color: #f44336; /* Red */
   color: white;
   border-color: #f44336;
 }
