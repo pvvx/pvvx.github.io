@@ -1,0 +1,99 @@
+=========================================================
+PHY62x2/ST17H66B/TG7100B Utility version 01.03.25
+---------------------------------------------------------
+Connecting...
+PHY62x2/TG7100B: Release RST_N if RTS is not connected...
+PHY6252/ST17H66B: Turn on the power...
+Chip Reset Ok. Response: b'cmd>>:'
+Revision: b'00124485 6222M005'
+FlashID: 124485, size: 256 kbytes
+PHY6222 - connected Ok
+Flash Status: 0x0000
+Flash Serial Number: 4150343033373205
+Flash OTP: ffffffffffffffffff...
+Flash 0x11002000: 03000000ffffffff3818ff1fffffffff
+Flash 0x11002100: 00000200e4fa000000000211ffffffff
+eFuse Lock Status: 0x0000000f
+eFuse 0: 0000000000000000
+eFuse 1: 0000000000000000
+eFuse 2: 0000000000000000
+eFuse 3: 74bdc420a09e80d5
+Security Boot: 0
+
+
+AT+FACTORY
+
+AT+ROLE=1
+
+AT+ROLE?
++ROLE:Central
+OK
+
+AT+ROLE=2
+
+AT+ROLE?
++ROLE:Peripheral
+OK
+
+
+AT+MAC?
++MAC:EC2309105ADB
+OK
+
+AT+CONINTMIN?
++CONINTMIN:6
+OK
+AT+CONINTMAX?
++CONINTMAX:12
+OK
+
+AT+LATENCY?
++LATENCY:0
+OK
+AT+CONTIMEOUT?
++CONTIMEOUT:300
+OK
+AT+PASSWORD?
++PASSWORD:
+OK
+AT+ADVPKT?
++ADVPKT:
+OK
+AT+SCANRES?
++SCANRES:
+OK
+AT+SCANRESC
+OK
+AT+BUUID?
++BUUID:00000000000000000000000000000000
+OK
+AT+MAJOR?
++MAJOR:0000
+OK
+AT+MINOR?
++MINOR:0000
+OK
+AT+BPOWER?
++BPOWER:00
+OK
+
+AT+FACTORY
+AT+ROLE=
+AT+BONDMAC=
+AT+BONDNAME=
+AT+CONINTMIN=
+AT+CONINTMAX=
+AT+LATENCY=
+AT+CONTIMEOUT=
+AT+PASSWORD=
+AT+ADVPKT=
+AT+SCANRES=
+AT+SCANRESC
+AT+BEACON=
+AT+BUUID=
+AT+MAJOR=
+AT+MINOR=
+AT+BPOWER=
+
+
+
