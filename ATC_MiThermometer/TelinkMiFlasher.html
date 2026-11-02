@@ -250,7 +250,14 @@ const hw_version_str = [
 'ZG204ZL',
 'ZG204ZV',
 'TS0201_WING',
-'DIY-SCD41'];
+'DIY-SCD41',
+'ZG-204ZV1',
+'ZG-204ZV2-TH',
+'ZG-204ZV2',
+'ZBEACON-TH01-v2',
+'TH03_ZBPS1.0',
+'ZG-204ZS',
+'MJWSD07MMC(ch)'];
 
 const id_sensor_str = [
 "None",
@@ -320,7 +327,8 @@ const tabid2name = [
   { id: 0x2832, name: "MJWSD05MMC"},
   { id: 0x4C47, name: "MJWSD05MMC"},
   { id: 0x55B5, name: "MJWSD06MMC"},
-  { id: 0x5BEA, name: "MJWSD06MMC"}
+  { id: 0x5BEA, name: "MJWSD06MMC"},
+  { id: 0x9AB9, name: "MJWSD07MMC"}
 ];
 function id2name(dev_id) {
 	let did = tabid2name.map(el => el.id);
@@ -1061,9 +1069,13 @@ function miAction() {
 							let temp = value.getInt16(0, true) / 100;
 							let hum = value.getUint8(2);
 							let vbat = value.getUint16(3,true);
-							let tempTempString = "Temp: " + temp + "°C, Humi: " + hum + "%, Bat: "+vbat+" mV";
-							$("tempHumiData").innerHTML = '<hr>'+tempTempString;
-							addClog(tempTempString); });
+							let tmpString = "Temp: " + temp + "°C, Humi: " + hum + "%, Bat: "+vbat+" mV";
+							if(value.byteLength == 7) {
+								let co2 = value.getUint16(5,true);
+								tmpString += ", CO₂: " + co2 + " ppm";
+							}
+							$("tempHumiData").innerHTML = '<hr>'+tmpString;
+							addClog(tmpString); });
 						});
 					});
 				}
@@ -2177,18 +2189,24 @@ function miAuthorization() {
 					else if (bluetoothDevice.name == "MJWSD05MMC") {
 						if(devinfo.frstr.substr(0,4) == "0005") cfg.hver = 12;
 						else cfg.hver = 9;
-					} else {
+					} 
+					else {
 						cfg.hver = null;
 						$("ldfile").hidden = false;
 					}
 					if(cfg.hver != null)
 						hwver_id = cfg.hver & 0x0f;
+					if (bluetoothDevice.name == "MJWSD07MMC") {
+						cfg.hver = 62;
+						hwver_id = 62;
+					}
 					let s="'"+bluetoothDevice.name;
 					if (devinfo.hrstr) s+=" HW:"+devinfo.hrstr;
 					s+="' connected, you can now Do the Activation to either get the Token";
 					if(otaEnabled) s+=" or flash a new Firmware";
 					else $("ldfile").hidden = true;
 					setStatus(s);
+					console.log("hwver_id: " + hwver_id);
 //					if(hwver_id == 49) {
 //						$("MAC").innerHTML= '<button type="button" onclick="SetMiClock();">SetMiClock</button> <span id="miclk">?</span>';
 //						console.log("!!!!")
@@ -2346,7 +2364,12 @@ function doConnect() {
 			if (bluetoothDevice.name.substr(0,10) == "MJWSD05MMC") {
 				fwmaxsize = MAX_EXT_OTA_SIZE;
 			}
-			if ((bluetoothDevice.name.substr(0,10) == "LYWSD03MMC") && ((devinfo.frstr || "").substr(0,10) == "2.1.1_0159")) {
+			if (bluetoothDevice.name.substr(0,10) == "MJWSD07MMC") {
+			    $("custcfg").innerHTML = '<hr><b>Warning:</b> Firmware MJWSD07MMC requires registration in MI-Home</a> and obtaining IDs!<br>Use the <a href="https://github.com/PiotrMachowski/Xiaomi-cloud-tokens-extractor" target="_blank">program</a> to extract Xiaomi cloud tokens.<br><button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
+				fwmaxsize = MAX_EXT_OTA_SIZE;
+				hwver_id = 62;
+				miAction();
+			} else if ((bluetoothDevice.name.substr(0,10) == "LYWSD03MMC") && ((devinfo.frstr || "").substr(0,10) == "2.1.1_0159")) {
 			    $("custcfg").innerHTML = '<hr><b>Warning:</b> Firmware LYWSD03MMC <a href="https://github.com/pvvx/ATC_MiThermometer/issues/602">version 2.1.1_0159 requires registration in MI-Home</a> and obtaining IDs. <a href="https://github.com/pvvx/ATC_MiThermometer/issues/602" target="_blank">Help</a><br><button type="button" onclick="keyMiLogin();">Login</button><br>Device known id:<br><input size="40" type="text" id="known_id" value=""><br>Mi Token:<br><input size="40" type="text" id="mi_token" value=""><br>Mi Bind Key:<br><input size="40" type="text" id="mi_bind_key" value=""><br><br>';
 			    fwmaxsize = MAX_BLE_OTA_SIZE;
 				fsignota = "sign_2.1.1_0159c.bin";

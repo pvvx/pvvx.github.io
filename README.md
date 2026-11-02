@@ -67,6 +67,7 @@
 | 59 | 0x023B | TH03_ZBPS1.0 | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'ZBeacon', 'TH03-ZBPS-z' |
 | 60 | 0x023C | [ZG-204ZS / ZG-204ZM](https://github.com/pvvx/ZigbeeTLc/pull/308) | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Sonoff', 'ZG-204ZS-z' |
 | 61 | 0x023D | [KCTW1Z](https://github.com/pvvx/ZigbeeTLc/pull/310) Moes ZSS-KB-TH | [ZigBee](https://github.com/pvvx/ZigbeeTLc) | 'Tuya', 'KCTW1Z-z' |
+| 62 | 0x023E | MJWSD07MMC | develop | BLE |
 
 ### All [ZigBeeTLc](https://github.com/pvvx/ZigbeeTLc):
 
