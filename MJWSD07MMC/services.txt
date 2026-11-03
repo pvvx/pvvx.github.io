@@ -1,0 +1,71 @@
+
+Service Name: GenericAccess
+
+ Service UID: 00001800-0000-1000-8000-008059b341b
+
+ Characteristic Name: DeviceName - Characteristic Short UUID: 0x2A00 - User Description: - Handle: 2 - 0x00000002 - Value: MJWSD07MMC
+ Characteristic Name: Appearance - Characteristic Short UUID: 0x2A01 - User Description: - Handle: 4 - 0x00000004 - Value: 00-00
+ Characteristic Name: PeripheralPreferredConnectionParameters - Characteristic Short UUID: 0x2A04 - User Description: - Handle: 6 - 0x00000006 - Value: 14-00-28-00-00-00-Å8-03
+
+Service Name: GenericAttribute
+
+ Service UID: 00001801-0000-1000-8000-008059b341b
+
+ Characteristic Name: ServiceChanged - Characteristic Short UUID: 0x2A05 - User Description: - Handle: 9 - 0x00000009 - Value:
+
+Service Name: Devicelnformation
+
+ Service UUID: 0000180a-0000-1000-8000-0080579b34fb
+
+ Characteristic Name: Pnpld - Characteristic Short UUID: 0x2A50 - User Description: - Handle: 13 - 0x0000000D - Value: 02-8A-24-66-82-01-00
+ Characteristic Name: Systemld - Characteristic Short UUID: 0x2A23 - User Description: - Handle: 15 - 0x0000000F - Value: A4-C1-38-5B-B2-54
+ Characteristic Name: ModelNumberString - Characteristic Short UUID: 0x2A24 - User Description: - Handle: 17 - 0x00000011 - Value: MJWSD07MMC
+ Characteristic Name: SerialNumberString - Characteristic Short UUID: 0x2A25 - User Description:  - Handle: 19 - 0x00000013 - Value: F2.0-5-FY-YF-5-G-TM-
+ Characteristic Name: FirmwareRevisionString - Characteristic Short UUID: 0x2A26 - User Description: - Handle: 21 - 0x00000015 - Value: 0043
+ Characteristic Name: HardwareRevisionString - Characteristic Short UUID: 0x2A27 - User Description: - Handle: 23 - 0x00000017 - Value: V1.5
+ Characteristic Name: SoftwareRevisionString - Characteristic Short UUID: 0x2A28 - User Description: - Handle: 25 - 0x00000019 - Value: 0043
+
+Service Name: 00010203-0405-0607-0809-0a0b0c0d1912
+
+ Service UID: 00010203-0405-0607-0809-020b0c0d1912
+
+ Characteristic Name: 00010203-0405-0607-0809-0a0b0c0d2b12 - Characteristic Short UUID:  - User Description: OTA - Handle: 28 - 0x0000001C - Value: 00
+
+Service Name: ebeOccb0-7a0a-4b0c-8ala-6f2997da3a6
+
+ Service UID: ebelccb0-Ta0a-4b0c-8ata-6f2997da3a6
+
+ Characteristic Name: ebeOccb1-7a0a-4b0c-8a1a-6ff2997da3a6 - Characteristic Short UUID: - User Description: peripheral swich - Handle: 32 - 0x00000020 - Value: <
+ Characteristic Name: ebeOccbd-7a0a-4b0c-8a1a-6ff2997da3a6 - Characteristic Short UUID: - User Description: Recalibrate - Handle: 35 - 0x00000023 - Value: 00-01-00-00
+ Characteristic Name: ebeOcch7-7a0a-4b0c-8a1a-6ff2997da3a6 - Characteristic Short UUID: - User Description: Time - Handle: 38 - 0x00000026 - Value: 81-C5-E7-6A-03-00
+ Characteristic Name: ebeOcch9-7a0a-4b0c-8a1a-6ff2997da3a6 - Characteristic Short UUID: - User Description: Data Count - Handle: 41 - 0x00000029 - Value:
+ Characteristic Name: ebeOccba-Ta0a-4b0c-8a1a-6ff2997da3a6 - Characteristic Short UUID: - User Description: Index - Handle: 44 - 0x0000002C - Value:
+ Characteristic Name: ebeOccbb-7a0a-4b0c-8a1a-6ff2997da3a6 - Characteristic Short UUID: - User Description: Data Read - Handle: 47 - 0x0000002F - Value:
+ Characteristic Name: ebeOcchc-7a0a-4b0c-8a1a-6ff2997da3a6 - Characteristic Short UUID: - User Description: Data Notify - Handle: 50 - 0x00000032 - Value:
+ Characteristic Name: ebeOcche-7a0a-4b0c-8a1a-6ff2997da3a6 - Characteristic Short UUID: - User Description: Temperature Uint - Handle: 54 - 0x00000036 - Value: 00
+ Characteristic Name: ebeOccc1-7a0a-4b0c-8a1a-6ff2997da3a6 - Characteristic Short UUID: - User Description: Current Temp and Humi - Handle: 57 - 0x00000039 - Value: 56-09-2C-75-0C-00-00
+ Characteristic Name: ebeOccc2-7a0a-4b0c-8a1a-6ff2997da3a6 - Characteristic Short UUID: - User Description: Set Notify Size - Handle: 61 - 0x0000003D - Value: 00
+ Characteristic Name: ebeOcccd-7a0a-4b0c-8a1a-6ff2997da3a6 - Characteristic Short UUID: - User Description: Battery - Handle: 64 - 0x00000040 - Value: 64
+ Characteristic Name: ebeOccc8-7ala-4b0c-8a1a-6ff2997da3a6 - Characteristic Short UUID: - User Description: Disconnect - Handle: 67 - 0x00000043 - Value: 0C-0C-0C-08
+ Characteristic Name: ebeOccd9-7a0a-4b0c-8a1a-6ff2997da3a6 - Characteristic Short UUID: - User Description: MISN - Handle: 70 - 0x00000046 - Value: 85822/A6AHDF6WP00581
+ Characteristic Name: ebeOcced-7a0a-4b0c-8a1a-6ff2997da3a6 - Characteristic Short UUID: - User Description: Time Mode - Handle: 73 - 0x00000049 - Value: 00
+
+Service Name: fafafa00-fafa-fafa-fafa-fafafafafafa
+
+ Service UID: fafafa00-fafa-fafa-fafa-fafafafafafa
+
+ Characteristic Name: fafafa01-fafa-fafa-fafa-fafafafafafa - Characteristic Short UUID: - User Description: factory check - Handle: 77 - 0x0000004D - Value:
+
+Service Name: 65173
+
+ Service UUID: 0000f95-0000-1000-8000-00805f9b34fb
+
+ Characteristic Name:  4 - Characteristic Short UUID: 0x04 - User Description: - Handle: 89 - 0x00000059 - Value: 2.1.1.0043
+ Characteristic Name: 16 - Characteristic Short UUID: 0x10 - User Description: - Handle: 91 - 0x0000005B - Value:
+ Characteristic Name: 23 - Characteristic Short UUID: 0x17 - User Description: - Handle: 94 - 0x0000005E - Value:
+ Characteristic Name: 24 - Characteristic Short UUID: 0x18 - User Description: - Handle: 97 - 0x00000061 - Value:
+ Characteristic Name: 25 - Characteristic Short UUID: 0x19 - User Description: - Handle: 100 - 0x00000064 - Value:
+ Characteristic Name: 26 - Characteristic Short UUID: 0x1A - User Description: - Handle: 103 - 0x00000067 - Value:
+ Characteristic Name: 27 - Characteristic Short UUID: 0x1B - User Description: - Handle: 106 - 0x0000006A - Value:
+ Characteristic Name: 28 - Characteristic Short UUID: 0x1C - User Description: - Handle: 109 - 0x0000006D - Value:
+

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head><meta charset="utf-8">
+  <title>MJWSD07MMC</title>
+  <style>
+	body {text-align: center;}
+	table {margin: 0 auto; width: 10vh;}
+    table, th, td {border-collapse: collapse;}
+  </style>
+  </head>
+  <body>
+	<div style="height: auto; width: auto; text-align: center;">
+	<h2>Mijia Smart Thermometer 3 Pro, BLE, Model: MJWSD07MMC</h2>
+	<a href="https://github.com/pvvx/ATC_MiThermometer/issues/826">ATC_MiThermometer/issues</a>
+	<!--- <a href="https://github.com/pvvx/ATC_MiThermometer">Custom firmware</a><br> -->
+	<hr>
+	<h2>Starter version with a sensor from Sensirion.</h2>
+	SoC: TLSR8250, Sensors: SHV4 & STCC4, LCD driver: <a href="pdf/aip31729.pdf">AIP31729</a>, RTC: <a href="pdf/GX8563.pdf">GX8563Z</a><br>
+	<img src="img/MJWSD07MMC.jpg" style="max-width:40%;"><br>
+	<img src="img/pcb1.jpg" style="max-width:40%;"><br>
+	<img src="img/pcb2.jpg" style="max-width:40%;"><br><br>
+	<table align="center" border="1">
+	<tr><td>PD7</td><td>"TX"</td></tr>
+	<tr><td>PB7</td><td>"RX"</td></tr>
+	<tr><td>PC1</td><td>SCK</td></tr>
+	<tr><td>PC2</td><td>SDA</td></tr>
+	<tr><td>PA0</td><td>KEY2</td></tr>
+	<tr><td>PD4</td><td>KEY1</td></tr>
+	<tr><td>PB1</td><td>R1+R7-Vbat</td></tr>
+	<tr><td>PC3</td><td>x-xx?</td></tr>
+	<tr><td>PA7</td><td>"SWS"</td></tr>
+	<tr><td>PB5</td><td>"PB5"</td></tr>
+	<tr><td>PB4</td><td>?</td></tr>
+	<tr><td>PB6</td><td>?</td></tr>
+	<tr><td>PC4</td><td>C13?</td></tr>
+ 	</table><br>
+	<a href="bin/MJWSD07MMC_ch_2.1.1.0043_ff.zip">Original FullFlash 2.1.1.0043</a><br>
+	<a href="bin/MJWSD07MMC_ch_2.1.1.0045_ff.zip">Original FullFlash 2.1.1.0045</a><br><br>
+	MAC:A4C1385BB254<br>
+	blt.3.1qoa3tcmg4000<br>
+	C3BBAC96DA53888DEE83CC4C<br>
+	CDD12FC37C989B229F06D544A1A31C38<br><br>
+	<a href="services.txt">UUIDs</a><br><br>
+	Power consumption of the original firmware:<br>
+	<img src="img/or_power.png" style="max-width:40%;"><br>
+	Опрос сенсора CO2 производится каждые 60 секунд.<br>
+	А передача измерений идет с шагом 5 минут.<br>
+	При этом среднее потребление от 3.3В составляет около 44 мкА. <br><br>
+	<hr>
+	</div>
+  </body>
+</html>
