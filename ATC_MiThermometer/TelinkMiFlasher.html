@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v14.2</title>
+<title>Telink Flasher v14.3</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -1532,7 +1532,11 @@ function CustomBlkParse(value) {
 				let hm = value.getUint16(9, true) / 100.0;
 				let vb = value.getUint16(11, true);
 				let dt = new Date(tc*1000);
-				addAlog(((dt.toISOString().slice(0, -1)).replace('T',' ')).replace('.000','')+' # Vbat: '+vb+' mV, Temp: '+tm+'°C, Humi: '+hm+'%, Count: '+cnt);
+				let s = ((dt.toISOString().slice(0, -1)).replace('T',' ')).replace('.000','')+' # '
+				if(hwver_id = 62) s += 'CO₂: '+vb+' ppm,';
+				else s += 'Vbat: '+vb+' mV,';
+				s += ' Temp: '+tm+'°C, Humi: '+hm+'%, Count: '+cnt;
+				addAlog(s);
 			} else if(len >= 2) {
 				let cnt = value.getUint16(1, true);
 				addAlog('Memo end: '+cnt);
@@ -3254,11 +3258,17 @@ function sendMAC() {
 
 function UpdExt() {
 	if(ext.enable && $("extbignumb").value) {
-		if((hwver_id == 9) || (hwver_id == 12) || (hwver_id == 49) || (hwver_id == 62)) {
+		if((hwver_id == 9) || (hwver_id == 12) || (hwver_id == 49)) {
 			$("extbignumb").value = (ext.big_number / 100.0).toFixed(2);
 			$("exttmpsmb").value = (ext.flg >> 4) & 0x07;
 			$("extpersent").checked = ((ext.flg & 0x80) !=0 ? 1 : 0);
 			$("extbattery").checked = ((ext.flg & 8) !=0 ? 1 : 0);
+			$("extsmiley").value = ext.flg & 7;
+		} else if (hwver_id == 62){
+			$("extbignumb").value = (ext.big_number / 10.0).toFixed(1);
+			$("extpersent").checked = ((ext.flg & 8) !=0 ? 1 : 0);
+			$("exttmpsmb").value = (ext.flg >> 5) & 0x07;
+			$("extbattery").checked = ((ext.flg & 16) !=0 ? 1 : 0);
 		} else {
 			$("extbignumb").value = (ext.big_number / 10.0).toFixed(1);
 			if(hwver_id == 2 || hwver_id == 6 || hwver_id == 7)	 // CGG1 & CGDK2
@@ -3268,20 +3278,23 @@ function UpdExt() {
 			$("extpersent").checked = ((ext.flg & 8) !=0 ? 1 : 0);
 			$("exttmpsmb").value = (ext.flg >> 5) & 0x07;
 			$("extbattery").checked = ((ext.flg & 16) !=0 ? 1 : 0);
+			$("extsmiley").value = ext.flg & 7;
 		}
-		$("extsmiley").value = ext.flg & 7;
 		$("extvtimed").value = ext.vtime;
 	}
 }
 
 function sendExt() {
 	if(ext.enable) {
-		if((hwver_id == 9) || (hwver_id == 12) || (hwver_id == 49) || (hwver_id == 62)) {
+		if((hwver_id == 9) || (hwver_id == 12) || (hwver_id == 49)) {
 			ext.big_number = Math.round(100.0 * parseFloat($("extbignumb").value));
 			ext.cfg = (parseInt($("extsmiley").value) & 7) +
 			($("extbattery").checked ? 8 : 0) +
 			($("extpersent").checked ? 0x80 : 0) +
 			((parseInt($("exttmpsmb").value) & 0x07) << 4);
+		} else if(hwver_id == 62) {
+			ext.big_number = Math.round(10.0 * parseFloat($("extbignumb").value));
+			ext.cfg = ($("extbattery").checked ? 8 : 0) + ($("extpersent").checked ? 0x80 : 0) + ((parseInt($("exttmpsmb").value) & 0x07) << 4);
 		} else {
 			ext.big_number = Math.round(10.0 * parseFloat($("extbignumb").value));
 			if(hwver_id == 2 || hwver_id == 6 || hwver_id == 7) // CGG1 & CGDK2
@@ -3300,7 +3313,7 @@ function sendExt() {
 		let blk;
 		if((hwver_id == 9) || (hwver_id == 12) || (hwver_id == 49) || (hwver_id == 62)) {
 			blk = new Uint8Array([0x22, ext.big_number&0xff, (ext.big_number>>8)&0xff, (ext.big_number>>16)&0xff, (ext.big_number>>24)&0xff, ext.vtime&0xff,(ext.vtime>>8)&0xff,ext.cfg]);
-		} else{
+		} else {
 			blk = new Uint8Array([0x22, ext.big_number&0xff, (ext.big_number>>8)&0xff,ext.small_number&0xff,(ext.small_number>>8)&0xff,ext.vtime&0xff,(ext.vtime>>8)&0xff,ext.cfg]);
 		}
 		settingsCharacteristics.writeValue(blk).then(_ => {
@@ -3719,10 +3732,15 @@ function CustomConfig() {
 		is += ' <select id="exttmpsmb"><option value="0">&nbsp;&nbsp;</option><option value="1">°Г</option><option value="2">&nbsp;-</option><option value="3">°F</option><option value="4">&nbsp;_</option><option value="5">°C</option><option value="6" selected>&nbsp;=</option><option value="7">°E</option></select>';
 		is += ' <select id="extsmiley"><option value="0" selected>&nbsp;&nbsp;&nbsp;</option><option value="5">&nbsp;---&nbsp;</option></select>';
 		is += '	<input size="5" title="Small number: -99.5..999.5" id="extsmalnumb" maxlength="5" value="56.7">';
-	}else if((hwver_id == 9) || (hwver_id == 12) || (hwver_id == 49) || (hwver_id == 62)) {
+	}else if((hwver_id == 9) || (hwver_id == 12) || (hwver_id == 49)) {
 		is += '<input size="8" title="Big number: -999.50..19999.50" id="extbignumb" maxlength="8" value="123.45">';
 		is += ' <select id="exttmpsmb"><option value="0">&nbsp;&nbsp;</option><option value="1">°г</option><option value="2">&nbsp;-</option><option value="3">°C</option><option value="4">&nbsp;i</option><option value="5">°Г</option><option value="6" selected>&nbsp;г</option><option value="7">°F</option></select>';
 		is += ' <select id="extsmiley"><option value="0">&nbsp;&nbsp;&nbsp;</option><option value="1">&nbsp;^_^&nbsp;</option><option value="2">&nbsp;-&and;-&nbsp;</option><option value="3">&nbsp;&Delta;&#9651;&Delta;&nbsp;</option><option value="4">(&nbsp;&nbsp;&nbsp;)</option><option value="5">(^_^)</option><option value="6">(-&and;-)</option><option value="7" selected>(&Delta;&#9651;&Delta;)</option></select>';
+    }else if (hwver_id == 62) {
+		is += '<input size="6" title="Big number: -99.5..9999" id="extbignumb" maxlength="5" value="123.4">';
+		is += ' <select id="exttmpsmb"><option value="0">&nbsp;&nbsp;</option><option value="1">°Г</option><option value="2">&nbsp;-</option><option value="3">°F</option><option value="4">&nbsp;_</option><option value="5">°C</option><option value="6" selected>&nbsp;=</option><option value="7">°E</option></select>';
+		//is += ' <select id="extsmiley"><option value="0" selected>&nbsp;&nbsp;&nbsp;</option><option value="5">&nbsp;---&nbsp;</option></select>';
+		//is += '	<input size="5" title="Small number: -99.5..999.5" id="extsmalnumb" maxlength="5" value="56.7">';
 	}else {
 		is += '<input size="6" title="Big number: -99.5..1999.5" id="extbignumb" maxlength="5" value="123.4">';
 		is += ' <select id="exttmpsmb"><option value="0">&nbsp;&nbsp;</option><option value="1">°Г</option><option value="2">&nbsp;-</option><option value="3">°F</option><option value="4">&nbsp;_</option><option value="5">°C</option><option value="6" selected>&nbsp;=</option><option value="7">°E</option></select>';
@@ -3768,12 +3786,10 @@ function CustomConfig() {
 	}else
 		is += ', Blinking: <input type="checkbox" id="cfg_flg_blinking">';
 	is += '<br><br>Sensor in "LowPower mode": <input title="Sensor measurements in Low Power mode" type="checkbox" id="cfg_flg_lp_meas">';
-	is += ', Tx measures: <input title="When connected, start transferring measurements" type="checkbox" id="cfg_flg_tx_meas">';
   } else {
 	is += '<br><hr><br><b>Configuration:</b>&nbsp;<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br><br>';
-	//is += 'Sensor in "LowPower mode": <input title="Sensor measurements in Low Power mode" type="checkbox" id="cfg_flg_lp_meas">';
-	is += 'Tx measures: <input title="When connected, start transferring measurements" type="checkbox" id="cfg_flg_tx_meas">';
   }
+	is += 'Tx measures: <input title="When connected, start transferring measurements" type="checkbox" id="cfg_flg_tx_meas">';
 	is += ' <button type="button" title="Start transferring measurements. Only in the current connection." onclick="sendCustomSetting(&quot;33ff&quot;);">Start Tx Measure</button>';
 	is += ' <button type="button" title="Stop transferring measurements. Only in the current connection." onclick="sendCustomSetting(&quot;3300&quot;);">Stop Tx Measure</button><br><br>';
 	if(cfg.ver < 0x47) {
@@ -3791,7 +3807,7 @@ function CustomConfig() {
 		else
 			is += 'BT5+ PHY: <input title="Support BT5.0+ PHY (LE 2M/1M/500K/125K)" type="checkbox" id="bt5_flags">, CSA2: <input title="Channel Selection Algorithm 2 or 1" type="checkbox" id="csa2_flags"><br><br>';
 	}
-  if(hwver_id <= 15 || (hwver_id >= 30 && hwver_id <= 33) || (hwver_id == 38) || (hwver_id == 52)) { // LCD
+  if(hwver_id <= 15 || (hwver_id >= 30 && hwver_id <= 33) || (hwver_id == 38) || (hwver_id == 52) || (hwver_id == 62)) { // LCD
 		is += 'Advertising type: <select id="cfg_flg_adv_type"><option value="0">ATC1441</option><option value="1">PVVX (Custom)</option><option value="2">MIJIA (MiHome)</option><option value="3" selected>';
 	if(cfg.ver >= 0x37)
 		if(cfg.ver >= 0x45)
@@ -3814,7 +3830,6 @@ function CustomConfig() {
 	if(cfg.ver < 0x48) {
 	  	is += 'Advertising type: <select id="cfg_flg_adv_type"><option value="0">BTHome v2</option><option value="1"  selected>PVVX (Custom)</option><option value="2">MIJIA (MiHome)</option><option value="3">BTHome v1</option></select>';
 	} else {
-		is += 'Sensor in "LowPower mode": <input title="Sensor measurements in Low Power mode" type="checkbox" id="cfg_flg_lp_meas"><br><br>';
 		is += 'Advertising type: <select id="cfg_flg_adv_type"><option value="0">ATC1441</option><option value="1">PVVX (Custom)</option><option value="2">MIJIA (MiHome)</option><option value="3" selected>BTHome v2</option></select>';
 	}
 	is += ', AdFlags: <input title="Toggle support for third-party software" type="checkbox" id="adv_flags">';
