@@ -3782,13 +3782,13 @@ function CustomConfig() {
 	if(cfg.ver >= 0x18) {
 		if(!((hwver_id == 9)||(hwver_id == 12)||(hwver_id == 49)||(hwver_id == 62)))
 			is += ', Clock: <input type="checkbox" id="cfg_flg_blinking"> ';
-		is += '<button type="button" onclick="setDevTime();">Set Time</button> <button type="button" onclick="sendCustomSetting(&quot;23&quot;);">Get Time</button>';
+		is += '<button type="button" onclick="setDevTime();">Set Time</button> <button type="button" onclick="sendCustomSetting(&quot;23&quot;);">Get Time</button><br><br>';
 	}else
-		is += ', Blinking: <input type="checkbox" id="cfg_flg_blinking">';
-	is += '<br><br>Sensor in "LowPower mode": <input title="Sensor measurements in Low Power mode" type="checkbox" id="cfg_flg_lp_meas">';
+		is += ', Blinking: <input type="checkbox" id="cfg_flg_blinking"><br><br>';
   } else {
 	is += '<br><hr><br><b>Configuration:</b>&nbsp;<button type="button" onclick="sendCustomSetting(&quot;55&quot;);">Get Config</button><br><br>';
   }
+	is += 'Sensor in "LowPower mode": <input title="Sensor measurements in Low Power mode" type="checkbox" id="cfg_flg_lp_meas"><br><br>';
 	is += 'Tx measures: <input title="When connected, start transferring measurements" type="checkbox" id="cfg_flg_tx_meas">';
 	is += ' <button type="button" title="Start transferring measurements. Only in the current connection." onclick="sendCustomSetting(&quot;33ff&quot;);">Start Tx Measure</button>';
 	is += ' <button type="button" title="Stop transferring measurements. Only in the current connection." onclick="sendCustomSetting(&quot;3300&quot;);">Stop Tx Measure</button><br><br>';
