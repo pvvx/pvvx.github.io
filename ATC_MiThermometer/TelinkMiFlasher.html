@@ -1533,7 +1533,7 @@ function CustomBlkParse(value) {
 				let vb = value.getUint16(11, true);
 				let dt = new Date(tc*1000);
 				let s = ((dt.toISOString().slice(0, -1)).replace('T',' ')).replace('.000','')+' # '
-				if(hwver_id = 62) s += 'CO₂: '+vb+' ppm,';
+				if(hwver_id == 62) s += 'CO₂: '+vb+' ppm,';
 				else s += 'Vbat: '+vb+' mV,';
 				s += ' Temp: '+tm+'°C, Humi: '+hm+'%, Count: '+cnt;
 				addAlog(s);
