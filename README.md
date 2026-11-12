@@ -281,7 +281,7 @@ ManufacturerName: "B2Z"
 
 [TS0201_TZ3000_dnpd6ayp](https://pvvx.github.io/TS0201_TZ3000_dnpd6ayp) - Tuya Zigbee "Temp & Humidity Sensor": Wing TS0201
 
-
+[ECB02C](https://pvvx.github.io/ECB02C) - Bluetooth 5.2 Serial Port Module, AT command.
 ---
 
 [UBIA](https://github.com/pvvx/UBIA)
