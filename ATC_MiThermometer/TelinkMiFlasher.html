@@ -3,7 +3,7 @@
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <link rel="stylesheet" href="styles.css">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telink Flasher v14.3</title>
+<title>Telink Flasher v14.4</title>
 <script type="text/javascript" src="./core.js"></script>
 </head>
 <body>
@@ -1079,7 +1079,7 @@ function miAction() {
 							let tmpString = "Temp: " + temp + "°C, Humi: " + hum + "%, Bat: "+vbat+" mV";
 							if(value.byteLength == 7) {
 								let co2 = value.getUint16(5,true);
-								tmpString += ", CO₂: " + co2 + " ppm";
+								tmpString += ", CO<sub>2</sub>: " + co2 + " ppm";
 							}
 							$("tempHumiData").innerHTML = '<hr>'+tmpString;
 							addClog(tmpString); });
@@ -1289,14 +1289,16 @@ function CustomBlkParse(value) {
 	} else if(blkid == 0x22 && len >= 7) {
 		if((hwver_id == 9) || (hwver_id == 12) || (hwver_id == 49) || (hwver_id == 62)) {
 			ext.big_number = value.getInt32(1, true); // -9950..199950, x0.01
-			ext.small_number = 0;
+			ext.vtime = value.getUint16(5, true); // in sec
+			ext.flg = value.getUint8(7);
+			s = 'ExtShow: big_number: '+ext.big_number+', ext.vtime: '+ext.vtime+' s, flg: '+hex(ext.flg,2);
 		} else {
 			ext.big_number = value.getInt16(1, true); // -995..19995, x0.1
 			ext.small_number = value.getInt16(3, true); // -9..99, x1
+			ext.vtime = value.getUint16(5, true); // in sec
+			ext.flg = value.getUint8(7);
+			s = 'ExtShow: big_number: '+ext.big_number+', small_number: '+ext.small_number+', ext.vtime: '+ext.vtime+' s, flg: '+hex(ext.flg,2);
 		}
-		ext.vtime = value.getUint16(5, true); // in sec
-		ext.flg = value.getUint8(7);
-		s = 'ExtShow: big_number: '+ext.big_number+', small_number: '+ext.small_number+', ext.vtime: '+ext.vtime+' s, flg: '+hex(ext.flg,2);
 		addAlog(s); UpdExt();
 	} else if((blkid == 0x25 || blkid == 0x26 || blkid == 0x2b || blkid == 0x2c)  && (len > 16)) {
 	// CMD_ID_CFS Get/Set sensor config
@@ -1372,7 +1374,7 @@ function CustomBlkParse(value) {
 		   + ", Alt: " + devSens.altitude
 		   + ", Prs: " + (devSens.pressure * 100.0).toFixed(0)
 		   + "; ASC: enable: " + devSens.asc_ena
-		   + ", CO2: " + devSens.asc_co2
+		   + ", CO<sub>2</sub>: " + devSens.asc_co2
 		   + ", It: " + devSens.asc_ini_per
 		   + ", Is: " + devSens.asc_std_per);
 	} else if(blkid == 0x77 && len > 1) {
@@ -1533,7 +1535,7 @@ function CustomBlkParse(value) {
 				let vb = value.getUint16(11, true);
 				let dt = new Date(tc*1000);
 				let s = ((dt.toISOString().slice(0, -1)).replace('T',' ')).replace('.000','')+' # '
-				if(hwver_id == 62) s += 'CO₂: '+vb+' ppm,';
+				if(hwver_id == 62) s += 'CO<sub>2</sub>: '+vb+' ppm,';
 				else s += 'Vbat: '+vb+' mV,';
 				s += ' Temp: '+tm+'°C, Humi: '+hm+'%, Count: '+cnt;
 				addAlog(s);
@@ -3258,17 +3260,15 @@ function sendMAC() {
 
 function UpdExt() {
 	if(ext.enable && $("extbignumb").value) {
-		if((hwver_id == 9) || (hwver_id == 12) || (hwver_id == 49)) {
-			$("extbignumb").value = (ext.big_number / 100.0).toFixed(2);
+		if((hwver_id == 9) || (hwver_id == 12) || (hwver_id == 49) || (hwver_id == 62)) {
+			if(hwver_id == 62)
+				$("extbignumb").value = (ext.big_number / 10.0).toFixed(1);
+			else
+				$("extbignumb").value = (ext.big_number / 100.0).toFixed(2);
 			$("exttmpsmb").value = (ext.flg >> 4) & 0x07;
 			$("extpersent").checked = ((ext.flg & 0x80) !=0 ? 1 : 0);
 			$("extbattery").checked = ((ext.flg & 8) !=0 ? 1 : 0);
 			$("extsmiley").value = ext.flg & 7;
-		} else if (hwver_id == 62){
-			$("extbignumb").value = (ext.big_number / 10.0).toFixed(1);
-			$("extpersent").checked = ((ext.flg & 8) !=0 ? 1 : 0);
-			$("exttmpsmb").value = (ext.flg >> 5) & 0x07;
-			$("extbattery").checked = ((ext.flg & 16) !=0 ? 1 : 0);
 		} else {
 			$("extbignumb").value = (ext.big_number / 10.0).toFixed(1);
 			if(hwver_id == 2 || hwver_id == 6 || hwver_id == 7)	 // CGG1 & CGDK2
@@ -3286,15 +3286,15 @@ function UpdExt() {
 
 function sendExt() {
 	if(ext.enable) {
-		if((hwver_id == 9) || (hwver_id == 12) || (hwver_id == 49)) {
-			ext.big_number = Math.round(100.0 * parseFloat($("extbignumb").value));
+		if((hwver_id == 9) || (hwver_id == 12) || (hwver_id == 49) || (hwver_id == 62)) {
+			if(hwver_id == 62)
+				ext.big_number = Math.round(10.0 * parseFloat($("extbignumb").value));
+			else
+				ext.big_number = Math.round(100.0 * parseFloat($("extbignumb").value));
 			ext.cfg = (parseInt($("extsmiley").value) & 7) +
 			($("extbattery").checked ? 8 : 0) +
 			($("extpersent").checked ? 0x80 : 0) +
 			((parseInt($("exttmpsmb").value) & 0x07) << 4);
-		} else if(hwver_id == 62) {
-			ext.big_number = Math.round(10.0 * parseFloat($("extbignumb").value));
-			ext.cfg = ($("extbattery").checked ? 8 : 0) + ($("extpersent").checked ? 0x80 : 0) + ((parseInt($("exttmpsmb").value) & 0x07) << 4);
 		} else {
 			ext.big_number = Math.round(10.0 * parseFloat($("extbignumb").value));
 			if(hwver_id == 2 || hwver_id == 6 || hwver_id == 7) // CGG1 & CGDK2
@@ -3505,7 +3505,7 @@ function setSensCfg() {
 }
 function addMenuSensors() {
 	if(devSens.sentype && devSens.sentype == 14) {
-		let s = '<hr><label id="lblSensorSCD41"><b>SCD41 Settings:</b></label><br>Temp. Offset: <input size="8" type="text" id="inpSCD4xTempOffset" maxlength="16"> °C, Altitude: <input size="8" type="text" id="inpSCD4xAltitude" maxlength="16"> m, Pressure: <input size="8" type="text" id="inpSCD4xPressure" maxlength="16"> Pa<br><br> <label><b>Automatic Self Calibration:</b><br></label> Enabled: <input type="checkbox" id="chbSDC41asc">, ASC CO2: <input size="8" type="text" id="inpSCD4xAscCo2" maxlength="16"> ppm<br>Initial Period: <input size="8" type="text" id="inpSCD4xInitPeriod" maxlength="16"> , Standard Period: <input size="8" type="text" id="inpSCD4xStdPeriod" maxlength="16"><br><button type="button" id="btnGetSensSCD4x" onclick="getSensSCD4x()">Get Sensor Settings</button> <button type="button" id="btnSetSensSCD4x" onclick="setSensSCD4x()">Send Sensor Settings</button>	<button type="button" id="btnSetDefCfgSCD4x" onclick="setDefCfgSCD4x()">Set Default</button><br><label><b>Chip Functions:</b></label><br> <button type="button" id="btnf3SensSCD4x" onclick="fnSensSCD4x(2)" >Forced Recalibration:</button> <input size="8" type="text" id="inpSCD4xPFRecal" maxlength="16" value="400"> ppm<br><button type="button" id="btnf4SensSCD4x" title="The Read Current Settings command reading current settings from SCD41." onclick="fnSensSCD4x(3)" >Read Current Settings</button> <button type="button" id="btnf6SensSCD4x" title="The Read Settings from EEPROM command reinitializes the sensor by reloading user settings from EEPROM." onclick="fnSensSCD4x(5)" >Read Settings from EEPROM</button> <button type="button" id="btnf5SensSCD4x" title="The Write settings to EEPROM command stores the current configuration in the EEPROM of the SCD4x" onclick="fnSensSCD4x(4)" >Write settings to EEPROM</button><br>	<button type="button" id="btnf8SensSCD4x" title="The perform_self_test command can be used as an end-of-line test to check the sensor functionality" onclick="fnSensSCD4x(7)" >Self Test</button> <button type="button" id="btnf7SensSCD4x" title="The perform_factory_reset command resets all configuration settings stored in the EEPROM and erases the FRC and ASC algorithm history" onclick="fnSensSCD4x(6)" >Factory Reset</button> <label id="txtSCD4xResponse"><b>Response: ?</b></label><br>';
+		let s = '<hr><label id="lblSensorSCD41"><b>SCD41 Settings:</b></label><br>Temp. Offset: <input size="8" type="text" id="inpSCD4xTempOffset" maxlength="16"> °C, Altitude: <input size="8" type="text" id="inpSCD4xAltitude" maxlength="16"> m, Pressure: <input size="8" type="text" id="inpSCD4xPressure" maxlength="16"> Pa<br><br> <label><b>Automatic Self Calibration:</b><br></label> Enabled: <input type="checkbox" id="chbSDC41asc">, ASC CO<sub>2</sub>: <input size="8" type="text" id="inpSCD4xAscCo2" maxlength="16"> ppm<br>Initial Period: <input size="8" type="text" id="inpSCD4xInitPeriod" maxlength="16"> , Standard Period: <input size="8" type="text" id="inpSCD4xStdPeriod" maxlength="16"><br><button type="button" id="btnGetSensSCD4x" onclick="getSensSCD4x()">Get Sensor Settings</button> <button type="button" id="btnSetSensSCD4x" onclick="setSensSCD4x()">Send Sensor Settings</button>	<button type="button" id="btnSetDefCfgSCD4x" onclick="setDefCfgSCD4x()">Set Default</button><br><label><b>Chip Functions:</b></label><br> <button type="button" id="btnf3SensSCD4x" onclick="fnSensSCD4x(2)" >Forced Recalibration:</button> <input size="8" type="text" id="inpSCD4xPFRecal" maxlength="16" value="400"> ppm<br><button type="button" id="btnf4SensSCD4x" title="The Read Current Settings command reading current settings from SCD41." onclick="fnSensSCD4x(3)" >Read Current Settings</button> <button type="button" id="btnf6SensSCD4x" title="The Read Settings from EEPROM command reinitializes the sensor by reloading user settings from EEPROM." onclick="fnSensSCD4x(5)" >Read Settings from EEPROM</button> <button type="button" id="btnf5SensSCD4x" title="The Write settings to EEPROM command stores the current configuration in the EEPROM of the SCD4x" onclick="fnSensSCD4x(4)" >Write settings to EEPROM</button><br>	<button type="button" id="btnf8SensSCD4x" title="The perform_self_test command can be used as an end-of-line test to check the sensor functionality" onclick="fnSensSCD4x(7)" >Self Test</button> <button type="button" id="btnf7SensSCD4x" title="The perform_factory_reset command resets all configuration settings stored in the EEPROM and erases the FRC and ASC algorithm history" onclick="fnSensSCD4x(6)" >Factory Reset</button> <label id="txtSCD4xResponse"><b>Response: ?</b></label><br>';
 		s += '<label><b>Debug:</b></label> <button type="button" id="btnf1SensSCD4x" onclick="fnSensSCD4x(0)" >Read Run Status</button><br>';
 		$("addSensors").innerHTML = s;
 		$("addSensors").disabled = false;
@@ -3737,10 +3737,9 @@ function CustomConfig() {
 		is += ' <select id="exttmpsmb"><option value="0">&nbsp;&nbsp;</option><option value="1">°г</option><option value="2">&nbsp;-</option><option value="3">°C</option><option value="4">&nbsp;i</option><option value="5">°Г</option><option value="6" selected>&nbsp;г</option><option value="7">°F</option></select>';
 		is += ' <select id="extsmiley"><option value="0">&nbsp;&nbsp;&nbsp;</option><option value="1">&nbsp;^_^&nbsp;</option><option value="2">&nbsp;-&and;-&nbsp;</option><option value="3">&nbsp;&Delta;&#9651;&Delta;&nbsp;</option><option value="4">(&nbsp;&nbsp;&nbsp;)</option><option value="5">(^_^)</option><option value="6">(-&and;-)</option><option value="7" selected>(&Delta;&#9651;&Delta;)</option></select>';
     }else if (hwver_id == 62) {
-		is += '<input size="6" title="Big number: -99.5..9999" id="extbignumb" maxlength="5" value="123.4">';
-		is += ' <select id="exttmpsmb"><option value="0">&nbsp;&nbsp;</option><option value="1">°Г</option><option value="2">&nbsp;-</option><option value="3">°F</option><option value="4">&nbsp;_</option><option value="5">°C</option><option value="6" selected>&nbsp;=</option><option value="7">°E</option></select>';
-		//is += ' <select id="extsmiley"><option value="0" selected>&nbsp;&nbsp;&nbsp;</option><option value="5">&nbsp;---&nbsp;</option></select>';
-		//is += '	<input size="5" title="Small number: -99.5..999.5" id="extsmalnumb" maxlength="5" value="56.7">';
+		is += '<input size="8" title="Big number: -999.5..9999.5" id="extbignumb" maxlength="8" value="123.4">';
+		is += ' <select id="exttmpsmb"><option value="0">&nbsp;</option><option value="1">°C</option><option value="2">°F</option><option value="3">°E</option><option value="4">=</option><option value="5" selected>ppm</option><option value="6">%</option></select>';
+		is += ' <select id="extsmiley"><option value="0" selected>&nbsp;</option><option value="1">(@)1</option><option value="2">(@)2</option><option value="3">(@)3</option></select>';
 	}else {
 		is += '<input size="6" title="Big number: -99.5..1999.5" id="extbignumb" maxlength="5" value="123.4">';
 		is += ' <select id="exttmpsmb"><option value="0">&nbsp;&nbsp;</option><option value="1">°Г</option><option value="2">&nbsp;-</option><option value="3">°F</option><option value="4">&nbsp;_</option><option value="5">°C</option><option value="6" selected>&nbsp;=</option><option value="7">°E</option></select>';
@@ -3758,22 +3757,22 @@ function CustomConfig() {
 		is += 'Screen Off: <input title="Screen Off" type="checkbox" id="cfg_scr_off"><br><br>';
 	is += 'Temperature: <select id="cfg_flg_cf"><option value="0">°C</option><option value="1">°F</option></select>';
 	if((hwver_id == 9) || (hwver_id == 12) || (hwver_id == 62))  {
-		is += '&nbsp;&nbsp;12-hour clock:<input type="checkbox" id="cfg_flg_am_pm">&nbsp;&nbsp;T&H 2 decimal places<input type="checkbox" id="cfg_flg_x100">';
-	  if((hwver_id == 12) || (hwver_id == 62))
-		is += '<br><br>Date DD/MM: <input type="checkbox" id="cfg_flg3_ddmm">';
+	  is += '&nbsp;&nbsp;12-hour clock:<input type="checkbox" id="cfg_flg_am_pm">';
+	  if(hwver_id != 62) is += '&nbsp;&nbsp;T&H 2 decimal places<input type="checkbox" id="cfg_flg_x100">';
+	  if(hwver_id == 12) is += '<br><br>Date DD/MM: <input type="checkbox" id="cfg_flg3_ddmm">';
 	} else if (hwver_id == 49) {
 		is += '&nbsp;&nbsp;12-hour clock:<input type="checkbox" id="cfg_flg_am_pm"> , Show WeekDay: <input type="checkbox" id="cfg_flg3_weekday">'
 	}
 	is += '<br><br>';
 	if((hwver_id == 2)||(hwver_id == 6)||(hwver_id == 7))
 		is += 'Line: <select id="cfg_smiley"><option value="0" selected>&nbsp;&nbsp;&nbsp;</option><option value="5">&nbsp;---&nbsp;</option></select>';
-	else if((hwver_id == 9) || (hwver_id == 12) || (hwver_id == 62))
+	else if((hwver_id == 9) || (hwver_id == 12))
 		is += 'Show: <select id="cfg_scr_type"><option value="0">Time</option><option value="1">Temperature</option><option value="2">Humidity</option><option value="3">Battery %</option><option value="4">Battery V</option><option value="5">ExtNumber&Symbols</option></select>';
-	//else if(hwver_id == 49)
-	//	is += 'Show: <select id="cfg_smiley"><option value="0">&nbsp;&nbsp;&nbsp;</option><option value="1">&nbsp;^_^&nbsp;</option><option value="2">&nbsp;-&and;-&nbsp;</option><option value="3">&nbsp;&Delta;&#9651;&Delta;&nbsp;</option><option value="4">(&nbsp;&nbsp;&nbsp;)</option><option value="5">(^_^)</option><option value="6">(-&and;-)</option><option value="7">(&Delta;&#9651;&Delta;)</option></select>';
+	else if(hwver_id == 62)
+		is += 'Show: <select id="cfg_scr_type"><option value="0">Time</option><option value="1">Temperature</option><option value="2">Humidity</option><option value="3">CO<sub>2</sub></option><option value="4">Battery V</option><option value="5">ExtNumber&Symbols</option></select>';
 	else
 		is += 'Smiley: <select id="cfg_smiley"><option value="0">&nbsp;&nbsp;&nbsp;</option><option value="1">&nbsp;^_^&nbsp;</option><option value="2">&nbsp;-&and;-&nbsp;</option><option value="3">&nbsp;&Delta;&#9651;&Delta;&nbsp;</option><option value="4">(&nbsp;&nbsp;&nbsp;)</option><option value="5">(^_^)</option><option value="6">(-&and;-)</option><option value="7">(&Delta;&#9651;&Delta;)</option></select>';
-	is += ', Comfort: <input type="checkbox" id="cfg_flg_comfort">';
+	if(hwver_id != 62) is += ', Comfort: <input type="checkbox" id="cfg_flg_comfort">';
 	if((hwver_id == 9) || (hwver_id == 12) || (hwver_id == 62)) {
 	  if(cfg.ver > 0x48)
 		is += ', Show WeekDay: <input type="checkbox" id="cfg_flg3_weekday">';
@@ -3807,7 +3806,13 @@ function CustomConfig() {
 		else
 			is += 'BT5+ PHY: <input title="Support BT5.0+ PHY (LE 2M/1M/500K/125K)" type="checkbox" id="bt5_flags">, CSA2: <input title="Channel Selection Algorithm 2 or 1" type="checkbox" id="csa2_flags"><br><br>';
 	}
-  if(hwver_id <= 15 || (hwver_id >= 30 && hwver_id <= 33) || (hwver_id == 38) || (hwver_id == 52) || (hwver_id == 62)) { // LCD
+  if(hwver_id == 62) {
+	is += 'AdFlags: <input title="Toggle support for third-party software" type="checkbox" id="adv_flags">';
+	is += ', Encrypted beacon: <input title="Bindkey encrypted beacon" type="checkbox" id="cfg_adv_crypto">';
+	is += '<br><br>Advertising interval: <input size="5" title="62.5 ms .. 10 000 ms, step: 62.5 ms, default 2500 ms" id="cfg_adv_int" maxlength="6" value="40"> ms, step: 62.5 ms<br><br>';
+	is += 'Measure interval: <input size="5" title="1..25 (62.5 ms .. 250 sec), default 4 (10 sec)" id="cfg_meas_int" maxlength="3" value="4"> x(Advertising interval) <span id="cfg_meas_int_val"></span><br><br>';
+	is += 'Connect latency: <input size="5" title="0..1000 ms, default 1000 ms" id="cfg_con_lat" maxlength="4" value="1000"> ms, step 20 ms<br><br>';
+  }else if(hwver_id <= 15 || (hwver_id >= 30 && hwver_id <= 33) || (hwver_id == 38) || (hwver_id == 52)) { // LCD
 		is += 'Advertising type: <select id="cfg_flg_adv_type"><option value="0">ATC1441</option><option value="1">PVVX (Custom)</option><option value="2">MIJIA (MiHome)</option><option value="3" selected>';
 	if(cfg.ver >= 0x37)
 		if(cfg.ver >= 0x45)
@@ -3859,10 +3864,6 @@ function CustomConfig() {
 	is += ' <button type="button" onclick="sendCustomSetting(&quot;56&quot;);">Set default</button><br>';
 	if(cfg.ver >= 0x47)
 		is += '<hr><label id="lblSensor"><b>Sensor Settings:</b></label><br>Temperature Slope factor: <input size="8" type="text" id="inpTempK" maxlength="16" title="Tk: Slope factor (linear function) for temperature calculation (T=RegT*Tk/65536+Tz)"> , Zero offset: <input size="8" type="text" id="inpTempZ" maxlength="16" title="Tz: Zero offset with correction value for temperature calculation (T=RegT*Tk/65536+Tz)"><br>Humidity Slope factor: <input size="8" type="text" id="inpHumK" maxlength="16" title="Hk: Slope factor (linear function) for humidity calculation (H=RegH*Hk/65536+Hz)"> , Zero offset: <input size="8" type="text" id="inpHumZ" maxlength="16" title="Hz: Zero offset with correction value for humidity calculation (H=RegH*Hk/65536+Hz)"><br><button type="button"id="btnGetSens" onclick="getSensCfg()">Get Sensor Settings</button> <button type="button"id="btnSetSens" onclick="setSensCfg()">Send Sensor Settings</button> <button type="button"id="btnRstSens" onclick="resetSensCfg()" title="Restore default sensor settings">Set Default</button><br>';
-
-	//if(devSens.sentype && devSens.sentype == 14)
-	//	is += '<hr><label id="lblSensorSCD41"><b>SCD41 Settings:</b></label><br>Altitude: <input size="8" type="text" id="inpSCD4xAltitude" maxlength="16"> , Pressure: <input size="8" type="text" id="inpSCD4xPressure" maxlength="16"><br><br><label><b>Automatic Self Calibration:</b><br></label> Enabled: <input type="checkbox" id="chbSDC41asc">, ASC CO2: <input size="8" type="text" id="inpSCD4xAscCo2" maxlength="16"><br> Initial Period: <input size="8" type="text" id="inpSCD4xInitPeriod" maxlength="16"> , Standard Period: <input size="8" type="text" id="inpSCD4xStdPeriod" maxlength="16"><br><button type="button"id="btnGetSensSCD4x" onclick="getSensSCD4x()">Get Sensor SCD41 Settings</button> <button type="button"id="btnSetSensSCD4x" onclick="setSensSCD4x()">Send Sensor SCD41 Settings</button><br><label><b>Functions:</b></label><br><button type="button" id="btnf1SensSCD4x" onclick="funSensSCD4x(1)" >Forced Recalibration:</button> <input size="8" type="text" id="inpSCD4xPFRecal" maxlength="16"> ppm<br><button type="button" id="btnf2SensSCD4x" title="Stores the current configuration in the EEPROM of the SCD4x" onclick="funSensSCD4x(2)" >Persist Settings</button><br>';
-	/* --- */
 	if((hwver_id == 17) || (hwver_id == 27))
 		is += '<hr><label id="lblSensor2"><b>Sensor2 Settings:</b></label><br>Temperature Slope factor: <input size="8" type="text" id="inpTemp2K" maxlength="16" title="Tk: Slope factor (linear function) for temperature calculation (T=RegT*Tk/65536+Tz)"> , Zero offset: <input size="8" type="text" id="inpTemp2Z" maxlength="16" title="Tz: Zero offset with correction value for temperature calculation (T=RegT*Tk/65536+Tz)"><br><button type="button"id="btnGetSens2" onclick="getSens2Cfg()">Get Sensor2 Settings</button> <button type="button"id="btnSetSens2" onclick="setSens2Cfg()">Send Sensor2 Settings</button> <button type="button"id="btnRstSens2" onclick="resetSens2Cfg()" title="Restore default sensor2 settings">Set Default</button><br>';
 
@@ -3907,7 +3908,7 @@ function CustomConfig() {
 	is += '<br> <button type="button" title="Set/save current setings" onclick="sendTrg();">Set TRG</button>';
 	is += ' <button type="button" title="GPIO_TRG PullUp 10 kOm. Work only TRG off!" onclick="sendCustomSetting(&quot;4501&quot;);">Set pin to "1"</button>';
 	is += ' <button type="button" title="GPIO_TRG PullDown 100 kOm. Work only TRG off!" onclick="sendCustomSetting(&quot;4500&quot;);">Set pin to "0"</button><br><hr>';
-	if(cfg.ver >= 0x13 && hwver_id != 31 && hwver_id != 38) {
+	if(cfg.ver >= 0x13 && hwver_id != 31 && hwver_id != 38 && hwver_id != 62) {
 		is += '<b>Comfort parameters:</b>&nbsp;';
 		is += '<button type="button" title="Get current comfort parameters. The parameters are processed if the configuration is set to &quot;Comfort: On&quot;." onclick="sendCustomSetting(&quot;20&quot;);">Get current comfort parameters</button><br>';
 		is += 'Temperature Lo:<input size="8" title="-40.00..125.00°C, default 21.00°C" id="cmf_tmp_lo" maxlength="6" value="21.00">, ';
@@ -3961,15 +3962,18 @@ function CustomConfig() {
 	$("custcfg").innerHTML = is;
 	if(cfg.ver >= 0x43)
 		$("cfg_scr_off").checked = (cfg.flg2&0x80) != 0
-	$("cfg_flg_adv_type").value = cfg.flg&3;
-	$("cfg_flg_comfort").checked = (cfg.flg&4) != 0;
+	
+	if(hwver_id != 62) {
+		$("cfg_flg_adv_type").value = cfg.flg&3;
+		$("cfg_flg_comfort").checked = (cfg.flg&4) != 0;
+	}
 	if((hwver_id == 9) || (hwver_id == 12) || (hwver_id == 62)) {
 		$("cfg_flg_am_pm").checked = (cfg.flg&32) != 0;
-		$("cfg_flg_x100").checked = (cfg.flg&8) != 0;
+		if(hwver_id != 62) $("cfg_flg_x100").checked = (cfg.flg&8) != 0;
 		$("cfg_scr_type").value = cfg.flg2&7;
 	    if(cfg.ver > 0x48) {
 	    	$("cfg_flg3_weekday").checked = ((cfg.temp_offset&128) == 0);
-		    if(hwver_id == 12 || (hwver_id == 62))
+		    if(hwver_id == 12)
 		    	$("cfg_flg3_ddmm").checked = ((cfg.temp_offset&64) != 0);
 		}
 		$("adv_flags").checked = (cfg.flg2&0x10) != 0;
@@ -4122,13 +4126,11 @@ function SendCustomConfig() {
 		cfg.flg2 += (($("cfg_scr_off").checked) ? 0x80 : 0);
 		cfg.temp_offset = ($("cfg_flg3_weekday").checked) ? 128 : 0;
 	} else if(hwver_id == 9 || hwver_id == 12 || hwver_id == 62) {
-		cfg.flg = ($("cfg_flg_adv_type").value & 3)+
-		(($("cfg_flg_comfort").checked) ? 4 : 0) +
-		(($("cfg_flg_x100").checked != 0) ? 8 : 0) +
-		(($("cfg_flg_cf").value != 0) ? 16 : 0) +
+		cfg.flg = (($("cfg_flg_cf").value != 0) ? 16 : 0) +
 		(($("cfg_flg_am_pm").checked) ? 32 : 0) +
 		(($("cfg_flg_tx_meas").checked) ? 64 : 0) +
 		(($("cfg_flg_lp_meas").checked) ? 128 : 0);
+		if(hwver_id != 62) cfg.flg += ($("cfg_flg_adv_type").value & 3) + (($("cfg_flg_comfort").checked) ? 4 : 0) + (($("cfg_flg_x100").checked != 0) ? 8 : 0);
 		cfg.flg2 = (parseInt($("cfg_scr_type").value) & 7);
 		cfg.flg2 += (($("cfg_adv_crypto").checked) ? 0x08 : 0);
 		cfg.flg2 += (($("adv_flags").checked )? 0x10 : 0);
@@ -4137,8 +4139,7 @@ function SendCustomConfig() {
 		if(cfg.ver >= 0x43)	cfg.flg2 += (($("cfg_scr_off").checked) ? 0x80 : 0);
 		if(cfg.ver > 0x48) { 
 			cfg.temp_offset = ($("cfg_flg3_weekday").checked) ? 0 : 128;
-	  		if(hwver_id == 12 || hwver_id == 62)
-		  		cfg.temp_offset += ($("cfg_flg3_ddmm").checked) ? 64 : 0;
+	  		if(hwver_id == 12) cfg.temp_offset += ($("cfg_flg3_ddmm").checked) ? 64 : 0;
 		}
 	} else {
 		cfg.flg = ($("cfg_flg_adv_type").value & 3)+
